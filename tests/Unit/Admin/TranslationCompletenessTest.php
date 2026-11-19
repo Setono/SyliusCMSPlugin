@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Admin\ChannelCompleteness;
 use Setono\SyliusCMSPlugin\Admin\LocaleCompleteness;
 use Setono\SyliusCMSPlugin\Admin\TranslationCompleteness;
 use Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Locale\Model\Locale;
@@ -35,12 +36,15 @@ final class TranslationCompletenessTest extends TestCase
             self::channel(null, 'Unfinished', null),
         ]);
         $query = $this->prophesize(CompletenessQueryInterface::class);
-        $query->count(['WEB' => ['en_US', 'da_DK'], 'NORDIC' => ['sv_SE', 'da_DK']])->willReturn([
+        $contentTypes = $this->prophesize(ContentTypeRegistryInterface::class);
+        $contentTypes->disabledCodes()->willReturn(['store_location']);
+        // Without the entries of the content types switched off
+        $query->count(['WEB' => ['en_US', 'da_DK'], 'NORDIC' => ['sv_SE', 'da_DK']], ['store_location'])->willReturn([
             'WEB' => ['entries' => 3, 'complete' => ['en_US' => 3, 'da_DK' => 1]],
             'NORDIC' => ['entries' => 0, 'complete' => ['sv_SE' => 0, 'da_DK' => 0]],
         ]);
 
-        $byChannel = (new TranslationCompleteness($channels->reveal(), $query->reveal()))->byChannel();
+        $byChannel = (new TranslationCompleteness($channels->reveal(), $query->reveal(), $contentTypes->reveal()))->byChannel();
 
         self::assertEquals([
             new ChannelCompleteness('WEB', 'Web store', 3, [new LocaleCompleteness('en_US', 3, 3), new LocaleCompleteness('da_DK', 3, 1)]),

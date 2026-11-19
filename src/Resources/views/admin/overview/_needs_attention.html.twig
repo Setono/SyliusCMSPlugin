@@ -7,45 +7,21 @@
  #}
 {% set needs_attention = cms_admin_needs_attention() %}
 {% set missing_alt_text = cms_admin_missing_alt_text() %}
+{% set preset_problems = cms_admin_preset_problems() %}
 <div class="column">
     <section class="ui segment" data-panel="needs_attention" aria-labelledby="cms-panel-needs-attention">
         <h2 class="ui dividing header" id="cms-panel-needs-attention">{{ 'setono_sylius_cms.ui.status_filter.needs_attention'|trans }}</h2>
 
-        {% if needs_attention.groups is empty and missing_alt_text == 0 %}
+        {% if needs_attention.groups is empty and preset_problems is empty and missing_alt_text == 0 %}
             <p>{{ 'setono_sylius_cms.ui.nothing_needs_attention'|trans }}</p>
         {% endif %}
 
         {% for group in needs_attention.groups %}
-            {% set error = group.severity.value == 'error' %}
-            {% set kind_label = 'setono_sylius_cms.problem_kind.' ~ group.kind %}
-            <div class="cms-problem-group" data-problem-kind="{{ group.kind }}" data-severity="{{ group.severity.value }}">
-                <h3 class="ui small header">
-                    <i class="{{ error ? 'red times circle' : 'orange exclamation triangle' }} icon" aria-hidden="true"></i>
-                    <div class="content">
-                        {{ kind_label|trans != kind_label ? kind_label|trans : group.kind }}
-                        <span class="ui {{ error ? 'red' : 'orange' }} circular mini label">{{ group.problems|length }}</span>
-                    </div>
-                </h3>
+            {{ _self.problem_group(group) }}
+        {% endfor %}
 
-                <div class="ui divided relaxed list">
-                    {% for problem in group.problems %}
-                        {% set row = cms_admin_entry_row(problem.entry) %}
-                        <div class="item" data-entry="{{ problem.entry.uuid }}"{% if problem.block is not null %} data-block="{{ problem.block }}"{% endif %}>
-                            {% if problem.fix is not null %}
-                                <div class="right floated content">
-                                    <a class="ui mini labeled icon button" href="{{ path(problem.fix.route, problem.fix.parameters) }}">
-                                        <i class="wrench icon"></i> {{ problem.fix.label|trans }}
-                                    </a>
-                                </div>
-                            {% endif %}
-                            <div class="content">
-                                <a class="header" href="{{ path('setono_sylius_cms_admin_entry_show', {'uuid': problem.entry.uuid}) }}">{{ row.title|default('setono_sylius_cms.ui.untitled'|trans) }}</a>
-                                <div class="description">{{ problem.message|trans }}</div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
+        {% for group in preset_problems %}
+            {{ _self.problem_group(group) }}
         {% endfor %}
 
         {% if needs_attention.total > 0 %}
@@ -61,3 +37,49 @@
         {% endif %}
     </section>
 </div>
+
+{#
+ # A group of problems of one kind, of entries or of presets: its kind and how many, with each problem and a link to
+ # where it's fixed. An entry's problem names its entry, which links to the entry's overview page. Presets aren't
+ # entries, so a preset's problem is listed by the preset's name, a code preset marked as coming from code
+ #}
+{% macro problem_group(group) %}
+    {% set error = group.severity.value == 'error' %}
+    {% set kind_label = 'setono_sylius_cms.problem_kind.' ~ group.kind %}
+    <div class="cms-problem-group" data-problem-kind="{{ group.kind }}" data-severity="{{ group.severity.value }}">
+        <h3 class="ui small header">
+            <i class="{{ error ? 'red times circle' : 'orange exclamation triangle' }} icon" aria-hidden="true"></i>
+            <div class="content">
+                {{ kind_label|trans != kind_label ? kind_label|trans : group.kind }}
+                <span class="ui {{ error ? 'red' : 'orange' }} circular mini label">{{ group.problems|length }}</span>
+            </div>
+        </h3>
+
+        <div class="ui divided relaxed list">
+            {% for problem in group.problems %}
+                {% set preset = problem.preset ?? null %}
+                <div class="item"{% if preset is not null %} data-preset="{{ preset.id }}"{% else %} data-entry="{{ problem.entry.uuid }}"{% if problem.block is not null %} data-block="{{ problem.block }}"{% endif %}{% endif %}>
+                    {% if problem.fix is not null %}
+                        <div class="right floated content">
+                            <a class="ui mini labeled icon button" href="{{ path(problem.fix.route, problem.fix.parameters) }}">
+                                <i class="wrench icon"></i> {{ problem.fix.label|trans }}
+                            </a>
+                        </div>
+                    {% endif %}
+                    <div class="content">
+                        {% if preset is not null %}
+                            {% set name = preset.name %}
+                            <div class="header">
+                                {{- name.key is defined ? name|trans : name -}}
+                                {% if preset.fromCode %} <span class="ui mini basic label">{{ 'setono_sylius_cms.ui.from_code'|trans }}</span>{% endif %}
+                            </div>
+                        {% else %}
+                            <a class="header" href="{{ path('setono_sylius_cms_admin_entry_show', {'uuid': problem.entry.uuid}) }}">{{ cms_admin_entry_row(problem.entry).title|default('setono_sylius_cms.ui.untitled'|trans) }}</a>
+                        {% endif %}
+                        <div class="description">{{ problem.message|trans }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endmacro %}

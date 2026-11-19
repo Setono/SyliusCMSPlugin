@@ -14,6 +14,8 @@ export interface BridgeStrings {
     moveUp: string;
     moveDown: string;
     duplicate: string;
+    /** ★ in the selected block's toolbar, which saves it as a preset. Without it, the toolbar has no ★. */
+    savePreset?: string;
     /** The toolbar of rich text typed in place, and its marks, as the right pane's toolbar names them. */
     formatting: string;
     bold: string;
@@ -57,6 +59,8 @@ export type FromBridge =
     /** One place up or down in its list. */
     | { type: 'move'; key: string; direction: 'up' | 'down' }
     | { type: 'duplicate'; key: string }
+    /** ★: the editor wants to save the block, or the selection it's part of, as a preset. */
+    | { type: 'save_preset'; key: string }
     /** ⌘Z or ⇧⌘Z pressed in the page. */
     | { type: 'undo' }
     | { type: 'redo' }

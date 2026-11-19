@@ -45,6 +45,8 @@ use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\Banner;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\SharedNote;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
@@ -460,6 +462,38 @@ final class ChangeSetApplierTest extends TestCase
     }
 
     /**
+     * A content type's own fields are drafted like the base fields: a shared one without a locale, sanitised by its
+     * field type and held as Doctrine maps it, and a translatable one in a locale. See "Content types" in
+     * docs/spec/extending.md
+     *
+     * @test
+     */
+    public function it_sets_and_removes_a_content_types_own_fields(): void
+    {
+        $shop = self::shop();
+
+        self::applier()->apply(new ChangeSet([
+            new SetEntryValue('city', null, 'Aarhus'),
+            new SetEntryValue('renovatedAt', null, '2026-11-13T10:30:00+01:00'),
+            new SetEntryValue('directions', 'da_DK', 'Drej til venstre'),
+            new SetEntryTranslated('directions', 'da_DK', ['from' => 'en_US', 'fingerprint' => hash('sha256', '"Turn left"')]),
+        ]), $shop);
+
+        self::assertSame('Aarhus', $shop->getCity());
+        self::assertEquals(new \DateTimeImmutable('2026-11-13T09:30:00Z'), $shop->getRenovatedAt());
+        $translation = $shop->getTranslation('da_DK');
+        self::assertInstanceOf(ShopTranslation::class, $translation);
+        self::assertSame('Drej til venstre', $translation->getDirections());
+        self::assertSame('en_US', $translation->getTranslated()['directions']['from'] ?? null);
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('city', null, ''), new SetEntryValue('renovatedAt', null, null), new SetEntryValue('directions', 'da_DK', null)]), $shop);
+
+        self::assertNull($shop->getCity());
+        self::assertNull($shop->getRenovatedAt());
+        self::assertNull($translation->getDirections());
+    }
+
+    /**
      * A snippet's declared context is a drafted field shared by all translations. See "Snippets and their context" in
      * docs/spec/slots.md
      *
@@ -774,6 +808,9 @@ final class ChangeSetApplierTest extends TestCase
         yield 'a context of an entry that is not a snippet' => [$page, new SetEntryValue('context', null, ['product']), 'The content type "page" has no entry field "context"'];
         yield 'a context in a locale' => [new Snippet(), new SetEntryValue('context', 'en_US', ['product']), 'The entry field "context" is shared by all translations, so a value takes no locale'];
         yield 'a context that is not a list of context keys' => [new Snippet(), new SetEntryValue('context', null, 'product'), 'The entry field "context" must be a list of context keys or null'];
+        yield 'an own shared field in a locale' => [self::shop(), new SetEntryValue('city', 'en_US', 'Aarhus'), 'The entry field "city" is shared by all translations, so a value takes no locale'];
+        yield 'an own translatable field without a locale' => [self::shop(), new SetEntryValue('directions', null, 'Turn left'), 'The entry field "directions" is translatable, so a value needs a locale'];
+        yield 'the translation state of an own shared field' => [self::shop(), new SetEntryTranslated('city', 'en_US', null), 'The entry field "city" is shared by all translations, so it has no translation state'];
     }
 
     /**
@@ -865,6 +902,16 @@ final class ChangeSetApplierTest extends TestCase
         return $page;
     }
 
+    private static function shop(): Shop
+    {
+        $shop = new Shop();
+        $shop->setCurrentLocale('en_US');
+        $shop->setFallbackLocale('en_US');
+        $shop->setTitle('Aarhus');
+
+        return $shop;
+    }
+
     private static function applier(): ChangeSetApplier
     {
         return new ChangeSetApplier(
@@ -884,6 +931,7 @@ final class ChangeSetApplierTest extends TestCase
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
                 'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
+                'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
             ]),
             Conditions::registry(),
             new LayoutRegistry(['page' => ['standard' => Standard::class, 'banner' => Banner::class]], new FieldReader()),

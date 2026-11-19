@@ -18,8 +18,9 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * setono:cms:lint reports stored values that don't fit their field type and blocks of unknown types, in the published
- * content and in drafts, and exits non-zero on any, for CI. See "Console commands" in docs/spec/extending.md
+ * setono:cms:lint reports stored values that don't fit their field type, blocks of unknown types and broken references,
+ * in the published content and in drafts, and exits non-zero on any, for CI. See "Console commands" in
+ * docs/spec/extending.md
  */
 final class LintCommandTest extends KernelTestCase
 {
@@ -63,6 +64,21 @@ final class LintCommandTest extends KernelTestCase
         self::assertContains(sprintf('%s draft %s A block of the type "promo", which the code no longer has, isn\'t shown.', $page->getUuid(), self::PROMO), $lines);
         self::assertStringNotContainsString($clean->getUuid(), self::display($tester));
         self::assertStringContainsString('[ERROR] Found 2 problems in 1 entry.', self::display($tester));
+    }
+
+    /**
+     * @test
+     */
+    public function it_exits_non_zero_listing_a_reference_to_a_record_that_was_deleted(): void
+    {
+        self::bootKernel();
+        $image = new StoredBlock(self::PROMO, 'image', 1, fields: ['image' => '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e51']);
+        $page = self::createPageWithBlocks('About us', 'about-us', [$image]);
+
+        $tester = self::lint();
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertContains(sprintf('%s draft %s image Image in the Image block refers to a media item that was deleted, so it isn\'t shown.', $page->getUuid(), self::PROMO), self::lines($tester));
     }
 
     /**

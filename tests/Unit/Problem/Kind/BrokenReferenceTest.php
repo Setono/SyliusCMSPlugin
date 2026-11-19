@@ -13,7 +13,9 @@ use Setono\SyliusCMSPlugin\Field\MediaHandler;
 use Setono\SyliusCMSPlugin\Field\MediaListHandler;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -29,6 +31,9 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Kiosk;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Hero;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
@@ -87,6 +92,32 @@ final class BrokenReferenceTest extends TestCase
     }
 
     /**
+     * A content type's own fields hold references too, such as a shop's photo, and are fixed in the entry's settings
+     *
+     * @test
+     */
+    public function it_finds_a_reference_in_one_of_the_content_types_own_fields_that_no_longer_resolves(): void
+    {
+        $shop = new Shop();
+        $shop->setPhoto(self::DELETED);
+
+        $mediaItems = $this->prophesize(ReferenceTypeLoaderInterface::class);
+        $mediaItems->existing([self::DELETED])->willReturn([]);
+
+        self::assertEquals([
+            new Problem(
+                'broken_reference',
+                Severity::Error,
+                $shop,
+                new TranslatableMessage('setono_sylius_cms.problem.broken_entry_reference', ['%field%' => new TranslatableMessage('app.cms.field.image'), '%type%' => new TranslatableMessage('setono_sylius_cms.reference_type.media_item')]),
+                Fix::inBuilder($shop),
+                null,
+                'photo',
+            ),
+        ], [...$this->kind($mediaItems->reveal())->findIn($shop)]);
+    }
+
+    /**
      * @test
      */
     public function it_finds_nothing_when_every_reference_resolves_or_has_no_type_to_check(): void
@@ -138,6 +169,35 @@ final class BrokenReferenceTest extends TestCase
             'content',
             'da_DK',
         )], [...$this->kind($this->prophesize(ReferenceTypeLoaderInterface::class)->reveal(), products: $products->reveal())->findIn($page)]);
+    }
+
+    /**
+     * A link in the rich text of one of the content type's own fields too
+     *
+     * @test
+     */
+    public function it_says_a_link_in_the_rich_text_of_one_of_the_content_types_own_fields_that_leads_to_a_deleted_record_shows_as_plain_text(): void
+    {
+        $kiosk = new Kiosk();
+        $kiosk->intro = ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [
+            ['type' => 'text', 'text' => 'Waffles', 'marks' => [['type' => 'cmsLink', 'attrs' => ['target' => 'recipe', 'ref' => 'WAFFLES', 'anchor' => null]]]],
+        ]]]];
+
+        $products = $this->prophesize(ReferenceTypeLoaderInterface::class);
+        $products->existing(['WAFFLES'])->willReturn([])->shouldBeCalledOnce();
+
+        self::assertEquals([new Problem(
+            'broken_reference',
+            Severity::Error,
+            $kiosk,
+            new TranslatableMessage('setono_sylius_cms.problem.broken_entry_rich_text_reference', [
+                '%field%' => new TranslatableMessage('app.cms.field.intro'),
+                '%type%' => new TranslatableMessage('setono_sylius_cms.reference_type.product'),
+            ]),
+            Fix::inBuilder($kiosk),
+            null,
+            'intro',
+        )], [...$this->kind($this->prophesize(ReferenceTypeLoaderInterface::class)->reveal(), products: $products->reveal())->findIn($kiosk)]);
     }
 
     /**
@@ -250,6 +310,7 @@ final class BrokenReferenceTest extends TestCase
         $blockTypes = new BlockTypeRegistry(['gallery' => Gallery::class, 'rich_text' => RichText::class], new FieldReader());
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
+            ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
             MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),
             RichTextHandler::class => Links::richTextHandler(...),
@@ -258,7 +319,11 @@ final class BrokenReferenceTest extends TestCase
 
         return new BrokenReference(
             new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader())), $handlers),
-            new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
+                'kiosk' => ['model' => Kiosk::class, 'translation' => EntryTranslation::class, 'resource' => 'app.kiosk'],
+            ]),
             $blockTypes,
             new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()),
             new ServiceLocator([

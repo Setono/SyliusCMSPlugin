@@ -1,0 +1,12 @@
+[
+    {
+        "uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b",
+        "name": "Campaigns",
+        "parent": null
+    },
+    {
+        "uuid": "0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c",
+        "name": "Autumn",
+        "parent": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b"
+    }
+]

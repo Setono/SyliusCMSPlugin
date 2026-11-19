@@ -9,8 +9,25 @@
         <service id="Setono\SyliusCMSPlugin\Twig\CMSRuntime" class="Setono\SyliusCMSPlugin\Twig\CMSRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\FieldMarker"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\EntryFieldValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
+        <!-- cms_card(): an entry through its content type's card for a display -->
+        <service id="Setono\SyliusCMSPlugin\Twig\CardRuntime" class="Setono\SyliusCMSPlugin\Twig\CardRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\CardDisplays"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Twig\RenderContexts"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
+        <!-- cms_pagination(): the page of the entry's paginated Entries block that shows, and its links -->
+        <service id="Setono\SyliusCMSPlugin\Twig\PaginationRuntime" class="Setono\SyliusCMSPlugin\Twig\PaginationRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Twig\RenderContexts"/>
 
             <tag name="twig.runtime"/>
         </service>
@@ -84,6 +101,8 @@
             <argument type="service" id="sylius.repository.customer_group"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryRows"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\TranslationChips"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\Collections"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\CollectionNames"/>
 
             <tag name="twig.runtime"/>
             <tag name="kernel.reset" method="reset"/>
@@ -118,6 +137,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\TranslationCompleteness"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
 
             <tag name="twig.runtime"/>
         </service>

@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { useBuilder, useBuilderState, useValidationState } from '../context';
+import { DISPLAY_FIELD, ENTRIES_BLOCK, ENTRIES_FIELD, offeredDisplayChoices } from '../entriesBlock';
 import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator } from '../i18n';
@@ -8,22 +9,30 @@ import { canDuplicate } from '../nesting';
 import { isSnippetBlock, shownSnippet } from '../snippets';
 import { locks } from '../store';
 import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
-import type { BlockStyleDefinition, StoredBlock } from '../types';
+import type { BlockStyleDefinition, JsonValue, StoredBlock } from '../types';
 import { blockMessages, fieldMessages } from '../validation';
 import { translatedValues } from '../bindings';
+import { useOfferedDisplays } from '../sources/context';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import { blockHint, blockLabel } from './BlockTreePane';
-import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlusIcon, TrashIcon } from './icons';
+import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlusIcon, StarIcon, TrashIcon } from './icons';
 import styles from './SelectionPane.module.css';
 import { SettingsPane } from './SettingsPane';
 import { VisibilityConditions } from './VisibilityConditions';
+
+export interface SelectionPaneProps {
+    /** ★: opens Save as preset for the blocks with these keys. Without it, there's no ★. */
+    onSavePreset?: ((keys: readonly string[]) => void) | undefined;
+    /** Opens Save as starting point for the whole tree, from the entry's settings. Without it, there's none. */
+    onSaveStartingPoint?: (() => void) | undefined;
+}
 
 /**
  * The right pane: the selected block's path, its actions, its block style when its block type offers any, its fields,
  * rendered from their schemas, its children and its visibility conditions, or the entry's settings. With several blocks selected, the actions for all of them.
  */
-export function SelectionPane() {
+export function SelectionPane({ onSavePreset, onSaveStartingPoint }: SelectionPaneProps = {}) {
     const t = useTranslator();
     const { store, locales } = useBuilder();
     const block = useBuilderState((state) => (state.selectedKey === null ? undefined : findBlock(state.entry.tree.blocks, state.selectedKey)));
@@ -33,13 +42,16 @@ export function SelectionPane() {
     const errors = useValidationState((state) => state.errors);
     // While a scheduled publish locks the working copy, the block is only looked at
     const locked = useBuilderState((state) => locks(state.schedule));
+    // An Entries block offers the displays the content type it lists has cards for
+    const listsEntries = block?.type === ENTRIES_BLOCK;
+    const offeredDisplays = useOfferedDisplays(listsEntries ? block?.fields[ENTRIES_FIELD] : undefined, listsEntries);
 
     if (selection.length > 1) {
         return (
             <div className={styles.pane}>
                 <h2 className={styles.heading}>{t('setono_sylius_cms.builder.blocks_selected', { '%count%': String(selection.length) })}</h2>
                 <fieldset className={styles.locked} disabled={locked}>
-                    <Actions keys={selection} />
+                    <Actions keys={selection} onSavePreset={onSavePreset} />
                 </fieldset>
             </div>
         );
@@ -47,7 +59,7 @@ export function SelectionPane() {
 
     // With nothing selected, or the entry's settings selected, it shows the settings
     if (block === undefined) {
-        return <SettingsPane />;
+        return <SettingsPane onSaveStartingPoint={onSaveStartingPoint} />;
     }
 
     const label = blockLabel(block, blockType, t);
@@ -59,7 +71,7 @@ export function SelectionPane() {
             {blockType === undefined && <p className={styles.unknown}>{t('setono_sylius_cms.builder.unknown_block_type_help')}</p>}
             <BlockErrors blockKey={block.key} />
             <fieldset className={styles.locked} disabled={locked}>
-            <Actions keys={[block.key]} />
+            <Actions keys={[block.key]} onSavePreset={onSavePreset} />
             {isSnippetBlock(block) && <SharedSnippet block={block} />}
             {blockType !== undefined && blockType.styles.length > 0 && <StylePicker block={block} styles={blockType.styles} />}
             <div key={block.key} className={styles.fields}>
@@ -67,7 +79,7 @@ export function SelectionPane() {
                     <FieldRow
                         key={name}
                         id={`cms-field-${block.key}-${name}`}
-                        schema={schema}
+                        schema={listsEntries && name === DISPLAY_FIELD ? offeredDisplayChoices(schema, offeredDisplays, displayOf(block.fields[name])) : schema}
                         locale={locale}
                         value={readFieldValue(block.fields, name, schema['x-cms-translatable'], locale)}
                         onChange={(value) => store.getState().setFieldValue(block.key, name, value)}
@@ -191,8 +203,11 @@ function Path({ block }: { block: StoredBlock }) {
     );
 }
 
-/** Move, duplicate and delete, for the selected blocks. A block inside another selected block counts once. */
-function Actions({ keys }: { keys: readonly string[] }) {
+/**
+ * Move, duplicate, save as preset (★) and delete, for the selected blocks. A block inside another selected block counts
+ * once.
+ */
+function Actions({ keys, onSavePreset }: { keys: readonly string[]; onSavePreset: SelectionPaneProps['onSavePreset'] }) {
     const t = useTranslator();
     const { store } = useBuilder();
     const canMoveUp = useBuilderState((state) => canShift(state.entry.tree.blocks, keys, 'up'));
@@ -208,6 +223,7 @@ function Actions({ keys }: { keys: readonly string[] }) {
         { label: t('setono_sylius_cms.builder.move_up'), icon: <ArrowUpIcon />, enabled: canMoveUp, act: () => store.getState().shiftBlocks(keys, 'up') },
         { label: t('setono_sylius_cms.builder.move_down'), icon: <ArrowDownIcon />, enabled: canMoveDown, act: () => store.getState().shiftBlocks(keys, 'down') },
         { label: t('setono_sylius_cms.builder.duplicate'), icon: <CopyIcon />, enabled: duplicable, act: () => store.getState().duplicateBlocks(keys) },
+        ...(onSavePreset === undefined ? [] : [{ label: t('setono_sylius_cms.builder.save_as_preset'), icon: <StarIcon />, enabled: true, act: () => onSavePreset(keys) }]),
         { label: t('setono_sylius_cms.builder.delete_block'), icon: <TrashIcon />, enabled: true, act: () => store.getState().removeBlocks(keys) },
     ];
 
@@ -292,4 +308,9 @@ function Children({ block, label }: { block: StoredBlock; label: string }) {
             )}
         </section>
     );
+}
+
+/** The display an Entries block holds, or undefined while it holds the default. */
+function displayOf(value: JsonValue | undefined): string | undefined {
+    return typeof value === 'string' ? value : undefined;
 }

@@ -1,0 +1,32 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.related_posts.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.blog"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.related_posts.description"
+    },
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "01a1f1a1-c1c7-7118-b6b1-8f2512a6cb2a",
+            "type": "entries",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "entries": {
+                    "$limit": 3,
+                    "$params": {},
+                    "$source": "related_entries"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

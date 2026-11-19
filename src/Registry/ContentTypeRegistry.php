@@ -8,8 +8,8 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 
 /**
  * Content types are the Sylius resources whose model carries #[ContentType]. The container hands this registry
- * their model classes by code, and the URL prefixes the project set in setono_sylius_cms.content_types, and it reads
- * their attributes on first use
+ * their model classes by code, the URL prefixes the project set in setono_sylius_cms.content_types, and the codes of
+ * those switched off in setono_sylius_cms.disabled.content_types, and it reads their attributes on first use
  */
 final class ContentTypeRegistry implements ContentTypeRegistryInterface
 {
@@ -19,10 +19,12 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
     /**
      * @param array<string, array{model: class-string<EntryInterface>, translation: class-string|null, resource: string}> $resources content type code => its resource
      * @param array<string, string> $prefixes content type code => the URL prefix the project set, in place of the attribute's
+     * @param list<string> $disabled the codes of the content types switched off
      */
     public function __construct(
         private readonly array $resources,
         private readonly array $prefixes = [],
+        private readonly array $disabled = [],
     ) {
     }
 
@@ -31,13 +33,18 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
         return isset($this->resources[$code]);
     }
 
+    public function isEnabled(string $code): bool
+    {
+        return $this->has($code) && !in_array($code, $this->disabled, true);
+    }
+
     public function get(string $code): ContentTypeMetadata
     {
         if (!isset($this->resources[$code])) {
             throw new UnknownContentTypeException(sprintf('There is no content type with the code "%s"', $code));
         }
 
-        return $this->contentTypes[$code] ??= self::read($this->resources[$code], $this->prefixes[$code] ?? null);
+        return $this->contentTypes[$code] ??= $this->read($this->resources[$code], $this->prefixes[$code] ?? null, in_array($code, $this->disabled, true));
     }
 
     public function getByEntry(EntryInterface $entry): ContentTypeMetadata
@@ -51,16 +58,43 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
         throw new UnknownContentTypeException(sprintf('The entry class %s is no registered content type', $entry::class));
     }
 
+    public function getByClass(string $class): ContentTypeMetadata
+    {
+        $code = ContentTypeModels::codeNamedBy($class, $this->models());
+
+        return null === $code ? throw new UnknownContentTypeException(sprintf('No content type\'s model is or extends %s', $class)) : $this->get($code);
+    }
+
     public function all(): array
     {
         return array_map($this->get(...), array_keys($this->resources));
     }
 
+    public function disabledCodes(): array
+    {
+        return array_values(array_filter($this->disabled, $this->has(...)));
+    }
+
+    public function enabled(): array
+    {
+        return array_values(array_filter($this->all(), static fn (ContentTypeMetadata $contentType): bool => !$contentType->disabled));
+    }
+
     /**
+     * @return array<string, class-string<EntryInterface>> by code
+     */
+    private function models(): array
+    {
+        return array_map(static fn (array $resource): string => $resource['model'], $this->resources);
+    }
+
+    /**
+     * The content type's attribute, with the category content type it names in categoryType resolved to its code, once
+     *
      * @param array{model: class-string<EntryInterface>, translation: class-string|null, resource: string} $resource
      * @param string|null $prefix the prefix the project set, or null for the attribute's
      */
-    private static function read(array $resource, ?string $prefix): ContentTypeMetadata
+    private function read(array $resource, ?string $prefix, bool $disabled): ContentTypeMetadata
     {
         $attribute = AttributeReader::contentType($resource['model']) ?? throw new \LogicException(sprintf('The class %s must carry #[ContentType]', $resource['model']));
 
@@ -74,6 +108,10 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
             $resource['translation'],
             $resource['resource'],
             $attribute->descriptionField,
+            EntryOrder::parse($attribute->order),
+            $attribute->cards,
+            null === $attribute->categoryType ? null : ContentTypeModels::codeNamedBy($attribute->categoryType, $this->models()),
+            $disabled,
         );
     }
 }

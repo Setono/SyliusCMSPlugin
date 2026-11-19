@@ -10,7 +10,7 @@ The developer-facing API: attributes, field types, interfaces, events, Twig func
 Everything a developer adds is a PHP class registered by attribute: block types, layouts, content types, sources, condition kinds, bindable properties, link targets, context resolvers and upgraders. Where one of these has settings that editors fill in, each setting is a typed property with a [field attribute](#field-types). Symfony Validator constraints sit on the same properties.
 
 - **Discovery.** Classes with these attributes are registered through Symfony autoconfiguration, so in an app they only need to be under a resource the app's `services.yaml` loads. A bundle registers them as services. Block types and layouts are registered as metadata, not as shared services, because they're hydrated per use.
-- **Services.** Sources, condition kinds, bindable properties, link targets, context resolvers, upgraders, field type handlers and block renderers are services and can take constructor dependencies.
+- **Services.** Sources, condition kinds, bindable properties, link targets, context resolvers, upgraders and field type handlers are services and can take constructor dependencies.
 - **Parameters.** A source, condition kind or bindable property with parameters names a parameters class in its attribute (`params:`). That class's typed properties carry field attributes, and the plugin passes a hydrated instance to the service's method. Without `params:`, the method gets an instance of `Setono\SyliusCMSPlugin\Attribute\NoParams`.
 - **Codes are unique per kind.** Two block types with the same code fail the container build, and so on for every kind. Codes match `^[a-z][a-z0-9_]*$` and never change once content uses them. Projects should prefix theirs, such as `app_hero`.
 - **Labels** are translation keys, translated in the admin user's locale.
@@ -54,13 +54,12 @@ final class Hero
 | `code` | `string` | required | Stored in each block's `type`. |
 | `label` | `string` | required | Shown in the picker and the tree. |
 | `version` | `int` | `1` | Bumped with an upgrader when stored data can't be read as it is ([Content model](content-model.md#schema-changes)). |
-| `template` | `string` | required | The Twig template the default renderer renders. |
+| `template` | `string` | required | The Twig template that renders the block ([Block templates](#block-templates)). |
 | `children` | `list<Allow>` | `[]` | Which block types the block may hold. Empty means none. |
 | `parents` | `list<class-string>\|null` | `null` | The only block types this one may sit inside. `null` means anywhere a parent allows it. |
 | `needs` | `list<string>` | `[]` | The context keys the block type needs ([Slots](slots.md#context-keys)). |
 | `styles` | `list<Style>` | `[]` | The block styles it offers. Projects add more in config. |
 | `thumbnail` | `string\|null` | `null` | A public path to the picker's preview image. |
-| `renderer` | `class-string<BlockRendererInterface>\|null` | `null` | A renderer other than the default ([Block renderers](#block-renderers)). |
 
 - `Allow(string $type, ?int $min = null, ?int $max = null)`: `$type` is a block type class, or `'*'` for any block type whose `parents` allows it.
 - `Style(string $code, string $label, string $class)`: the code is stored in the block's `style`, and `$class` is added to the block's root element.
@@ -80,18 +79,7 @@ A block template gets these variables:
 
 Templates print fields with `cms_field()` so the builder can type them in place ([Twig](#twig)). They put `view.styleClass` on their root element.
 
-### Block renderers
-
-```php
-namespace Setono\SyliusCMSPlugin\Rendering;
-
-interface BlockRendererInterface
-{
-    public function render(BlockView $view, RenderContext $context): string;
-}
-```
-
-The default renderer renders the block type's `template`. `#[BlockType(renderer: …)]` names another one. This is the seam for a future sandboxed code block, whose renderer would render a template stored in one of its fields through Twig's sandbox.
+A per-block-type renderer may come with a future sandboxed code block, which would render a template stored in one of its fields through Twig's sandbox.
 
 ## Layouts
 
@@ -215,7 +203,7 @@ class StoreLocation extends Entry
                   classes:
                       model: App\Entity\PageTranslation
   ```
-- **Disabling a shipped content type** with `disabled.content_types` hides it from the admin, the builder, sources and routing. Its columns stay mapped.
+- **Disabling a shipped content type** with `disabled.content_types` hides it from the admin, the builder, sources and routing. Its columns stay mapped. A collection is switched off as a whole: its entries' content type with the category content type it names, or the build fails.
 
 ### Shipped content types
 
@@ -270,7 +258,8 @@ Every field attribute extends `Setono\SyliusCMSPlugin\Field\Field`, which has th
 - **List fields.** `sources: true` offers every source of the right kind, a list offers only those codes, and `false` allows only hand-picking. `limit` is the default number of items shown when a source fills the list. A source's own parameter fields are always hand-picked.
 - **Dynamic choices.** A `Choice` field whose choices come from the store, such as the association types of the Associations source, names a service implementing `Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface`, whose `getChoices(string $localeCode): array` returns value to label. It's used instead of `choices`.
 - **`ItemList`** (`Setono\SyliusCMSPlugin\Value\ItemList`) is iterable and countable over the items that show, resolved lazily on first read. `adapter()` returns the Pagerfanta adapter, and `pager(int $page)` returns a `Pagerfanta` for the paginated Entries block.
-- **`Entries(indexed: true)`** writes the field's UUIDs to the (entry, field, UUID) reference table on publish ([Collections](collections.md#categories)).
+- **`contentType`** on `Entry` and `Entries` names a content type by its model, or by a class or interface its model extends, so it still names a shipped content type whose model a project overrides, such as `BlogCategory::class`. The builder's picker searches only that content type's entries, and a picked entry of another content type isn't shown.
+- **`Entries(indexed: true)`** writes the field's UUIDs to the (entry, field, UUID) reference table on publish ([Collections](collections.md#categories)). Only a content type's own shared field is indexed: `indexed: true` on a block type's, a layout's or a translatable field, or among a source's parameters, fails the container build, since the table holds a UUID by its entry and field.
 - **No colour, spacing or icon fields** ([ADR 0017](../adr/0017-shipped-blocks-are-theme-agnostic.md)), and no repeater ([ADR 0020](../adr/0020-extension-points-are-classes-whose-typed-properties-are-their-fields.md)).
 
 The stored value of each type is in [Content model](content-model.md#values-per-field-type).
@@ -375,7 +364,7 @@ interface SourceInterface
 | `needs` | The context keys it needs. It's offered only where they're available. |
 | `params` | Its parameters class. |
 
-A source that needs `entry` and fits only some content types also implements `EntryContextAwareInterface::supportsEntryContentType(string $code): bool`. The builder offers it only for those types. "In this category" and "Related" do this.
+A source that needs `entry` and fits only some content types also implements `EntryContextAwareInterface::supportsEntryContentType(string $code): bool`. The builder offers it only for those types, publish refuses it in an entry of another, and a preset holding it is offered only in entries of them. A snippet's entry can be of any content type, so a snippet may hold it. "In this category" and "Related" do this.
 
 An entry source whose `of` is `EntryInterface::class` can say which content type it lists, so the Entries block can offer that type's [card displays](collections.md#the-entries-block):
 
@@ -389,7 +378,7 @@ interface ListedContentTypeAwareInterface
 }
 ```
 
-Without it, or when it returns `null`, the listed type is the one `of` names. When that's `EntryInterface::class` too, the block offers the displays that every content type with cards has. All three shipped entry sources implement it.
+Without it, or when it returns `null`, the listed type is the one `of` names. When that's `EntryInterface::class` too, the block can't tell, and offers every display any content type has cards for. All three shipped entry sources implement it.
 
 **A field that depends on another.** Field options are fixed in code, with one exception: `Entries(categoriesOf: 'contentType')` lists the categories of the content type that the named property of the same object holds. From a collection's `categories` parameter uses it. The builder clears the field when that property changes.
 
@@ -671,6 +660,8 @@ Every event that changes shopper output implements `StorefrontChangedInterface`,
 | --- | --- | --- |
 | `cms_field(subject, name)` | safe HTML | Prints a field of a block, a layout or an entry: hydrated, with fallback and bindings resolved, and rich text rendered. In preview mode it adds the marker that lets the builder type it in place. |
 | `cms_value(subject, name)` | the hydrated value | Reads a field without printing it, such as an `ItemList` to loop over. |
+| `cms_card(entry, display)` | safe HTML | Renders an entry through the card its content type declares for the display, as the Entries block does ([Cards](collections.md#cards)). The card template gets `entry` and `display`, and nothing else of the calling template's. Nothing for an entry whose content type has no card for the display. |
+| `cms_pagination(view)` | `?Pagination` | The page of the entry's [paginated Entries block](collections.md#pagination) that shows, when `view` is that block: `entries()` (that page's entries), `links` (a `PageLink` per linked page, with `page`, `url` and `current`, and a gap with a `page` of `null`), `previous` and `next` (`null` on the first and last page), and `pager` (the `Pagerfanta`). Each link leads to the entry's URL with `?page=N`, page 1 without it. `null` for an Entries block that doesn't paginate or is a snippet's. The Entries block's template prints the links through `@SetonoSyliusCMSPlugin/block/_pagination.html.twig`. |
 | `cms_block(view)` | safe HTML | Renders one `BlockView`, with its markers in preview mode. |
 | `cms_blocks(views)` | safe HTML | Renders `BlockView`s in order. |
 | `cms_slot(id, context = {})` | safe HTML | Renders a slot from a template, passing host-page context by key ([Slots](slots.md#rendering-a-slot)). A slot the code doesn't declare throws in dev, and in production prints nothing and is logged at `error` with its identifier ([Rendering](rendering.md#failures)). |
@@ -720,6 +711,7 @@ The `_locale` requirement is the one `sylius_shop` uses. The admin prefix is Syl
 | `setono_sylius_cms_admin_overview` | GET | `/{admin}/cms` | [Admin](admin.md#overview) |
 | `setono_sylius_cms_admin_entry_index_all` | GET | `/{admin}/cms/entries` (All entries) | [Admin](admin.md#entry-lists) |
 | `setono_sylius_cms_admin_entry_index` | GET | `/{admin}/cms/entries/{contentType}`, where `{contentType}` is a content type code | [Admin](admin.md#entry-lists) |
+| `setono_sylius_cms_admin_collection_index` | GET | `/{admin}/cms/collections/{contentType}`, a collection with categories, such as the blog: its entries and its categories, where `{contentType}` is its entries' content type code, such as `blog_post` | [Admin](admin.md#entry-lists) |
 | `setono_sylius_cms_admin_entry_create` | GET, POST | `/{admin}/cms/entries/{contentType}/new` | [Admin](admin.md#create-dialog) |
 | `setono_sylius_cms_admin_entry_show` | GET | `/{admin}/cms/entry/{uuid}` | [Admin](admin.md#entry-overview-page) |
 | `setono_sylius_cms_admin_builder` | GET | `/{admin}/cms/entry/{uuid}/builder` | [Builder](builder.md) |
@@ -741,7 +733,7 @@ setono_sylius_cms:
         sources: []          # source codes
         presets: []          # code preset codes
         layouts: []          # "<content type code>.<layout code>", such as page.standard
-        content_types: []    # blog_post, blog_category, faq_item, faq_category
+        content_types: []    # a collection as a whole: blog_post with blog_category, faq_item with faq_category
 
     embed_code: false        # true enables the Embed code block (ADR 0018)
     assets: true             # false stops loading the shipped stylesheet and carousel script
@@ -774,7 +766,10 @@ setono_sylius_cms:
         scripts: []          # field control scripts, as asset paths, such as build/app/cms/controls.js, public paths or absolute http(s) URLs, each resolved through asset(), loaded as ES modules in this order
 
     presets:
-        paths: []            # directories of code preset files; bundles prepend theirs
+        paths: []            # directories of code preset files; bundles prepend theirs, and the plugin its shipped presets' src/Resources/presets
+
+    transfer:
+        storage: 'setono_sylius_cms.transfer_storage'  # a Flysystem storage service uploaded export zips wait in for the worker; the default writes to %kernel.project_dir%/private/cms, outside the web root, so a worker on another server needs a storage both share
 
     media:
         storage: 'setono_sylius_cms.storage'     # a Flysystem storage service; the default writes to %kernel.project_dir%/public/media/cms, served at /media/cms; another needs MediaUrlGeneratorInterface aliased (Images)
@@ -785,7 +780,7 @@ setono_sylius_cms:
             image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml']
             video: ['video/mp4', 'video/webm']
             document: ['application/pdf']
-        max_upload_size: null  # null means PHP's effective limit; a value above it is lowered to it
+        max_upload_size: null  # null means PHP's effective limit; a value above it is lowered to it. Imports check against this value alone, and take any size when it's null
         widths: [320, 640, 960, 1280, 1600, 1920, 2560]
         grace_period: 'P1D'  # ISO 8601 duration before a replaced file is deleted
 
@@ -833,7 +828,7 @@ A project caps a stock slot by setting `slots.<id>.cap`, moves a shipped content
 
 ## Fixture
 
-The Sylius fixture `setono_cms_import` imports an export folder and publishes everything in it, for demo and test data:
+The Sylius fixture `setono_cms_import` imports an export folder, or zip, and publishes everything it imported, for demo and test data. An import that refuses, such as for a conflict or a URL clash, fails the load with its reasons:
 
 ```yaml
 sylius_fixtures:

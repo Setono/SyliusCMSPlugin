@@ -11,6 +11,9 @@ use Doctrine\Common\Collections\Collection;
  */
 interface PageInterface extends EntryInterface
 {
+    /** The code of its content type */
+    public const CONTENT_TYPE = 'page';
+
     /**
      * "Homepage of": the rows of the channels it's the homepage of, shown at their root URL in place of the store's
      * own homepage. An on-save setting. Change them through HomepageModifierInterface, which creates rows through the

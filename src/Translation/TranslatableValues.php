@@ -13,14 +13,17 @@ use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\EntryFields;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
  * The translatable values of a working copy in a locale, with their translation state: its translations' own fields,
+ * the content type's included,
  * its layout's fields and its blocks' fields, at any depth, but those of a block a locale condition hides in the locale,
  * which nobody reads there. The one place the rules are, which TranslationState gives
  * a translator, and the completeness counts and outdated flags of the admin read. The builder has the same rules
@@ -36,6 +39,7 @@ final readonly class TranslatableValues
         private LayoutRegistryInterface $layouts,
         private FallbackValues $fallbackValues,
         private FallbackChainInterface $fallbackChain,
+        private ContentTypeFields $contentTypeFields = new ContentTypeFields(new FieldReader()),
     ) {
     }
 
@@ -59,6 +63,18 @@ final readonly class TranslatableValues
                 null,
                 array_map(static fn (EntryTranslationInterface $translation): ?string => EntryFields::read($translation, $field), $translations),
                 array_map(static fn (EntryTranslationInterface $translation): ?array => $translation->getTranslated()[$field] ?? null, $translations),
+                $localeCode,
+            );
+        }
+
+        // The content type's own translatable fields, on its translations
+        foreach ($this->contentTypeFields->translatable($contentType) as $name => $field) {
+            $this->addField(
+                $values,
+                sprintf('entry.%s', $name),
+                $field,
+                array_map(fn (EntryTranslationInterface $translation): mixed => $this->contentTypeFields->read($translation, $name), $translations),
+                array_map(static fn (EntryTranslationInterface $translation): ?array => $translation->getTranslated()[$name] ?? null, $translations),
                 $localeCode,
             );
         }

@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
+use Setono\SyliusCMSPlugin\Repository\HiddenContentTypes;
 
 /**
  * DQL on the entries' complete locales column, which MySQL and PostgreSQL both run. The column holds the locale codes
@@ -53,7 +54,7 @@ final readonly class CompletenessQuery implements CompletenessQueryInterface
         }
     }
 
-    public function count(array $localesByChannel): array
+    public function count(array $localesByChannel, array $hiddenContentTypes = []): array
     {
         if ([] === $localesByChannel) {
             return [];
@@ -62,7 +63,8 @@ final readonly class CompletenessQuery implements CompletenessQueryInterface
         $channelCodes = array_map(strval(...), array_keys($localesByChannel));
         $localeCodes = array_values(array_unique(array_merge(...array_values($localesByChannel))));
 
-        $query = $this->manager()->createQueryBuilder()
+        $manager = $this->manager();
+        $query = $manager->createQueryBuilder()
             ->select('channel.code AS channel_code', 'COUNT(entry.id) AS entries')
             ->from(EntryChannelInterface::class, 'channel')
             ->innerJoin('channel.entry', 'entry')
@@ -70,6 +72,7 @@ final readonly class CompletenessQuery implements CompletenessQueryInterface
             ->setParameter('channels', $channelCodes)
             ->groupBy('channel.code')
         ;
+        HiddenContentTypes::exclude($query, 'entry', $manager->getClassMetadata(Entry::class), $hiddenContentTypes);
         foreach ($localeCodes as $index => $localeCode) {
             $query
                 ->addSelect(sprintf('SUM(CASE WHEN entry.completeLocales LIKE :complete_%1$d %2$s THEN 1 ELSE 0 END) AS complete_%1$d', $index, SearchPattern::ESCAPE))

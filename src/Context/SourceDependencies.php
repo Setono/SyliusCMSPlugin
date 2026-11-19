@@ -16,7 +16,8 @@ use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
- * The list fields, in a block or in the tree's layout, filled by a source that needs context keys, such as Same taxon.
+ * The list fields, in a block or in the tree's layout, filled by a source that needs context keys, such as Same taxon,
+ * with the content types a source that fits only some as the entry fits, such as In this category.
  * A disabled source keeps resolving, so it counts. One the code no longer has, or of another kind than the list,
  * yields nothing, so it needs nothing. A list filled per locale counts once. See "The contract" in
  * docs/spec/sources.md
@@ -35,13 +36,14 @@ final readonly class SourceDependencies implements ContextDependencyFinderInterf
     public function findIn(EntryInterface $workingCopy): iterable
     {
         try {
-            $contentType = $this->contentTypes->getByEntry($workingCopy)->code;
+            $contentType = $this->contentTypes->getByEntry($workingCopy);
         } catch (UnknownContentTypeException) {
             return;
         }
 
         $found = [];
-        foreach ($this->treeValues->inTree($workingCopy->getBlockTree(), $contentType) as $value) {
+        // The content type's own fields too, which are fields like any other
+        foreach ($this->treeValues->inEntry($workingCopy, $contentType) as $value) {
             $source = $this->needingSource($value);
             if (null === $source) {
                 continue;
@@ -54,7 +56,7 @@ final readonly class SourceDependencies implements ContextDependencyFinderInterf
             }
             $found[$where] = true;
 
-            yield new ContextDependency($this->name($value, $source), $source->needs, block: $block);
+            yield new ContextDependency($this->name($value, $source), $source->needs, block: $block, entryContentTypes: $source->entryContentTypes($this->contentTypes->all()));
         }
     }
 
@@ -80,6 +82,13 @@ final readonly class SourceDependencies implements ContextDependencyFinderInterf
 
     private function name(StoredValue $value, SourceMetadata $source): TranslatableMessage
     {
+        if ($value->inEntry) {
+            return new TranslatableMessage('setono_sylius_cms.context.entry_source', [
+                '%source%' => new TranslatableMessage($source->label),
+                '%field%' => new TranslatableMessage($value->field->field->label),
+            ], 'validators');
+        }
+
         if (null === $value->blockType) {
             return new TranslatableMessage('setono_sylius_cms.context.layout_source', [
                 '%source%' => new TranslatableMessage($source->label),

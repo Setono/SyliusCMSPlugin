@@ -80,6 +80,20 @@
             <tag name="setono_sylius_cms.field_handler"/>
         </service>
 
+        <!-- Entry and Entries hydrate their UUIDs from the references loaded before rendering, which the visible-entries query loads, and name their content type's code to the builder -->
+        <service id="Setono\SyliusCMSPlugin\Field\EntryHandler" class="Setono\SyliusCMSPlugin\Field\EntryHandler">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Field\EntriesHandler" class="Setono\SyliusCMSPlugin\Field\EntriesHandler">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\ListFieldHandler"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
         <!-- Link resolves its link through its link target, a link to a record from the references loaded before rendering -->
         <service id="Setono\SyliusCMSPlugin\Field\LinkHandler" class="Setono\SyliusCMSPlugin\Field\LinkHandler">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface"/>

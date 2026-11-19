@@ -40,6 +40,7 @@ const ICONS = {
     moveUp: '<path d="M8 13V3M4 7l4-4 4 4"/>',
     moveDown: '<path d="M8 3v10M4 9l4 4 4-4"/>',
     duplicate: '<path d="M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3"/>',
+    savePreset: '<path d="m8 1.75 1.9 3.9 4.3.6-3.1 3 .75 4.25L8 11.5l-3.85 2 .75-4.25-3.1-3 4.3-.6z"/>',
     settings: '<path d="M2.5 4.5h11M2.5 11.5h11"/><circle cx="6" cy="4.5" r="1.75" fill="#1f5fd6"/><circle cx="10" cy="11.5" r="1.75" fill="#1f5fd6"/>',
     delete: '<path d="M2.5 4h11M6.5 4V2.5h3V4M4 4l.7 9.5h6.6L12 4"/>',
     add: '<path d="M8 3v10M3 8h10"/>',
@@ -287,7 +288,7 @@ function rendered(block: BlockRange): void {
     root?.dispatchEvent(new CustomEventClass('cms:render', { bubbles: true, detail: { key: block.key, type: block.type } }));
 }
 
-type Action = 'select_parent' | 'settings' | 'delete' | 'duplicate' | { direction: 'up' | 'down' } | { position: 'before' | 'after'; x: number; y: number };
+type Action = 'select_parent' | 'settings' | 'delete' | 'duplicate' | 'save_preset' | { direction: 'up' | 'down' } | { position: 'before' | 'after'; x: number; y: number };
 
 /** What the builder is asked to do with the selected block. */
 function request(action: Action, key: string): FromBridge {
@@ -336,6 +337,7 @@ function createControls(document: Document, strings: BridgeStrings, act: (action
         button(document, strings.moveUp, ICONS.moveUp, () => act({ direction: 'up' }, 'selected')),
         button(document, strings.moveDown, ICONS.moveDown, () => act({ direction: 'down' }, 'selected')),
         button(document, strings.duplicate, ICONS.duplicate, () => act('duplicate', 'selected')),
+        ...(strings.savePreset === undefined ? [] : [button(document, strings.savePreset, ICONS.savePreset, () => act('save_preset', 'selected'))]),
         button(document, strings.settings, ICONS.settings, () => act('settings', 'selected')),
         button(document, strings.delete, ICONS.delete, () => act('delete', 'selected')),
     );

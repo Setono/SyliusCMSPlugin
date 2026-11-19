@@ -11,6 +11,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
 use Setono\SyliusCMSPlugin\Admin\ComingUp;
+use Setono\SyliusCMSPlugin\Admin\EntryCategories;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
@@ -24,6 +25,10 @@ use Setono\SyliusCMSPlugin\Admin\WhereItShows;
 use Setono\SyliusCMSPlugin\Block\Snippet as SnippetBlock;
 use Setono\SyliusCMSPlugin\Builder\RegistryExporter;
 use Setono\SyliusCMSPlugin\Builder\UiStrings;
+use Setono\SyliusCMSPlugin\Collection\CollectionMetadata;
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
+use Setono\SyliusCMSPlugin\Collection\Collections;
+use Setono\SyliusCMSPlugin\Collection\IndexedFields;
 use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\SnippetHandler;
@@ -37,6 +42,10 @@ use Setono\SyliusCMSPlugin\Media\MediaLimits;
 use Setono\SyliusCMSPlugin\Media\MediaLocales;
 use Setono\SyliusCMSPlugin\Media\MediaTypes;
 use Setono\SyliusCMSPlugin\Media\UploadLimit;
+use Setono\SyliusCMSPlugin\Model\BlogCategory;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogPost;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
@@ -47,12 +56,19 @@ use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Model\ShareLink;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\TranslationKey;
+use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType;
+use Setono\SyliusCMSPlugin\Problem\PresetProblem;
+use Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
+use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -111,6 +127,7 @@ use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Translation\IdentityTranslator;
 use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Translation\Translator;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
@@ -147,6 +164,9 @@ final class AdminExtensionTest extends IntegrationTestCase
     /** How many images miss alt text */
     private int $missingAltText = 0;
 
+    /** @var list<PresetProblem> */
+    private array $presetProblems = [];
+
     /** @var array<string, array{entries: int, complete: array<string, int>}> the completeness query's counts, by channel */
     private array $completeness = [];
 
@@ -175,6 +195,16 @@ final class AdminExtensionTest extends IntegrationTestCase
         self::assertSame(['wholesale' => 'Wholesale'], $runtime->customerGroupNames());
         $runtime->reset();
         self::assertSame(['wholesale' => 'Wholesale'], $runtime->customerGroupNames());
+    }
+
+    /**
+     * A collection without categories, which cms_admin_collection() gives none of
+     *
+     * @return array{collection: CollectionMetadata}
+     */
+    public function theCollectionOf(string $contentType): array
+    {
+        return ['collection' => new CollectionMetadata(self::contentTypes()->get($contentType))];
     }
 
     /**
@@ -300,6 +330,21 @@ final class AdminExtensionTest extends IntegrationTestCase
     }
 
     /**
+     * A code preset with blocks of a removed type, and an editor preset with a problem fixed somewhere
+     *
+     * @return array{}
+     */
+    public function presetsWithProblems(): array
+    {
+        $this->presetProblems = [
+            new PresetProblem('preset_removed_block_type', Severity::Warning, new Preset(new TranslationKey('app.preset.retired'), [], code: 'retired'), new TranslatableMessage('setono_sylius_cms.problem.preset_removed_block_type', ['%types%' => '"gallery"'])),
+            new PresetProblem('preset_removed_block_type', Severity::Warning, new Preset('Promo', [], uuid: '0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b', changedAt: new \DateTimeImmutable()), new TranslatableMessage('setono_sylius_cms.problem.preset_removed_block_type', ['%types%' => '"slideshow"']), new Fix('setono_sylius_cms.ui.fix_in_builder', 'setono_sylius_cms_admin_overview')),
+        ];
+
+        return [];
+    }
+
+    /**
      * @return array{}
      */
     public function imagesMissingAltText(int $count): array
@@ -384,7 +429,7 @@ final class AdminExtensionTest extends IntegrationTestCase
         $entryShareLinks = $this->entryShareLinks();
         $translationChips = $this->translationChips();
         $whereItShows = $this->whereItShows();
-        $runtime = new AdminRuntime(self::contentTypes(), $this->customerGroups->reveal(), $entryRows, $translationChips);
+        $runtime = new AdminRuntime(self::contentTypes(), $this->customerGroups->reveal(), $entryRows, $translationChips, new Collections(self::contentTypes()), self::collectionNames());
         $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
         $workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
         $problemFinder = $this->problemFinder();
@@ -479,6 +524,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             $scheduledPublishes->reveal(),
             new MockClock(),
             $problemCounts->reveal(),
+            new EntryCategories(new IndexedFields(self::contentTypes(), new ContentTypeFields(new FieldReader())), self::contentTypes(), $this->prophesize(EntryRepositoryInterface::class)->reveal()),
         );
     }
 
@@ -515,11 +561,11 @@ final class AdminExtensionTest extends IntegrationTestCase
     {
         // Prophecy binds a closure to the double, so a static one reads what a --DATA-- section sets through a reference
         $needingAttention = &$this->needingAttention;
-        $entries->createNeedingAttentionPaginator(Argument::any())->will(static function () use (&$needingAttention): Pagerfanta {
+        $entries->createNeedingAttentionPaginator(Argument::cetera())->will(static function () use (&$needingAttention): Pagerfanta {
             return self::paginator($needingAttention);
         });
         $withDraft = &$this->withDraft;
-        $entries->findDraftsInProgress(OverviewRuntime::DRAFTS_IN_PROGRESS)->will(static function () use (&$withDraft): array {
+        $entries->findDraftsInProgress(OverviewRuntime::DRAFTS_IN_PROGRESS, [])->will(static function () use (&$withDraft): array {
             return $withDraft;
         });
         $dated = &$this->dated;
@@ -563,18 +609,28 @@ final class AdminExtensionTest extends IntegrationTestCase
 
         $completeness = &$this->completeness;
         $completenessQuery = $this->prophesize(CompletenessQueryInterface::class);
-        $completenessQuery->count(['WEB' => ['en_US', 'da_DK'], 'B2B' => ['en_US']])->will(static function () use (&$completeness): array {
+        $completenessQuery->count(['WEB' => ['en_US', 'da_DK'], 'B2B' => ['en_US']], [])->will(static function () use (&$completeness): array {
             return $completeness;
         });
 
+        $presetProblems = &$this->presetProblems;
+        $presetProblemFinder = $this->prophesize(PresetProblemFinderInterface::class);
+        $presetProblemFinder->findAll()->will(static function () use (&$presetProblems): array {
+            return $presetProblems;
+        });
+
+        $contentTypes = new ContentTypeRegistry([]);
+
         return new OverviewRuntime(
-            new ComingUp($scheduledPublishes->reveal(), $entries->reveal(), new MockClock('2026-11-17 12:00:00 UTC')),
+            new ComingUp($scheduledPublishes->reveal(), $entries->reveal(), $contentTypes, new MockClock('2026-11-17 12:00:00 UTC')),
             $entryRows,
             $entries->reveal(),
-            new NeedsAttention($entries->reveal(), $problemCounts->reveal(), $problemFinder),
+            new NeedsAttention($entries->reveal(), $problemCounts->reveal(), $problemFinder, $contentTypes),
             $mediaItems->reveal(),
             new MediaLocales(new ChannelLocales($channels->reveal()), $translationLocaleProvider->reveal(), $this->prophesize(RepositoryInterface::class)->reveal()),
-            new TranslationCompleteness($channels->reveal(), $completenessQuery->reveal()),
+            new TranslationCompleteness($channels->reveal(), $completenessQuery->reveal(), $contentTypes),
+            $presetProblemFinder->reveal(),
+            $contentTypes,
         );
     }
 
@@ -737,9 +793,29 @@ final class AdminExtensionTest extends IntegrationTestCase
                 $this->prophesize(ScheduledPublishRepositoryInterface::class)->reveal(),
                 new MockClock(),
                 $this->prophesize(ProblemCountProviderInterface::class)->reveal(),
+                new EntryCategories(new IndexedFields(self::contentTypes(), new ContentTypeFields(new FieldReader())), self::contentTypes(), $this->prophesize(EntryRepositoryInterface::class)->reveal()),
             ),
             $this->translationChips(),
+            new Collections(self::contentTypes()),
+            self::collectionNames(),
         );
+    }
+
+    /**
+     * Names the Blog by its name, and blog categories and recipes by their plurals, while a page has only its label
+     */
+    private static function collectionNames(): CollectionNames
+    {
+        $translator = new Translator('en_US');
+        $translator->addLoader('array', new ArrayLoader());
+        $translator->addResource('array', [
+            'setono_sylius_cms.collection.blog_post' => 'Blog',
+            'setono_sylius_cms.content_type_plural.blog_category' => 'Categories',
+            'setono_sylius_cms.content_type_plural.recipe' => 'Recipes',
+            'setono_sylius_cms.content_type.page' => 'Page',
+        ], 'en_US');
+
+        return new CollectionNames($translator);
     }
 
     private static function contentTypes(): ContentTypeRegistry
@@ -747,6 +823,8 @@ final class AdminExtensionTest extends IntegrationTestCase
         return new ContentTypeRegistry([
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'recipe' => ['model' => Recipe::class, 'translation' => EntryTranslation::class, 'resource' => 'app.recipe'],
+            'blog_post' => ['model' => BlogPost::class, 'translation' => BlogPostTranslation::class, 'resource' => 'setono_sylius_cms.blog_post'],
+            'blog_category' => ['model' => BlogCategory::class, 'translation' => BlogCategoryTranslation::class, 'resource' => 'setono_sylius_cms.blog_category'],
         ]);
     }
 

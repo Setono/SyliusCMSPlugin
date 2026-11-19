@@ -93,6 +93,6 @@ final class MediaLinksTest extends WebTestCase
         $usage = self::getContainer()->get(MediaUsageRepositoryInterface::class);
 
         self::assertSame([$document->getUuid() => 1], $usage->countByMediaItems([$document->getUuid()]));
-        self::assertSame($page->getUuid(), $usage->findByMediaItem($document->getUuid())[0]->getEntry()->getUuid());
+        self::assertSame($page->getUuid(), $usage->findByMediaItem($document->getUuid())[0]->getEntry()?->getUuid());
     }
 }

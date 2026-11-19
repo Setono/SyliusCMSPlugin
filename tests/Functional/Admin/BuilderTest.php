@@ -74,10 +74,16 @@ final class BuilderTest extends WebTestCase
             'urls' => sprintf('/admin/cms/api/entries/%s/urls', $uuid),
             'search' => '/admin/cms/api/search/__kind__',
             'sourceCount' => '/admin/cms/api/sources/count',
+            'cardDisplays' => '/admin/cms/api/cards/displays',
             'snippetBlocks' => '/admin/cms/api/snippets/00000000-0000-4000-8000-000000000000/blocks',
             'builder' => '/admin/cms/entry/00000000-0000-4000-8000-000000000000/builder',
             'previewSnippet' => '/admin/cms/api/preview/snippet',
             'previewSamples' => '/admin/cms/api/preview/samples',
+            'presets' => sprintf('/admin/cms/api/presets?entry=%s', $uuid),
+            'presetInsert' => '/admin/cms/api/presets/00000000-0000-4000-8000-000000000000/insert',
+            'presetCreate' => '/admin/cms/api/presets',
+            'preset' => '/admin/cms/api/presets/00000000-0000-4000-8000-000000000000',
+            'presetExport' => '/admin/cms/api/presets/00000000-0000-4000-8000-000000000000/export',
         ], $config['endpoints']);
         self::assertSame([['code' => 'WEB', 'name' => 'Setono CMS Test Store', 'locales' => ['en_US']]], $config['channels'], "The store's channels, for the settings' channel picker and the preview's");
         self::assertSame([['code' => 'en_US', 'name' => 'English (United States)', 'fallbackChain' => ['en_US']]], $config['locales']);

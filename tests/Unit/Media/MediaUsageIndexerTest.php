@@ -14,11 +14,15 @@ use Setono\SyliusCMSPlugin\Field\MediaHandler;
 use Setono\SyliusCMSPlugin\Field\MediaListHandler;
 use Setono\SyliusCMSPlugin\Media\MediaUsageIndexer;
 use Setono\SyliusCMSPlugin\Model\Draft;
+use Setono\SyliusCMSPlugin\Model\EditorPreset;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaUsage;
 use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Preset\EditorPresetContent;
+use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
@@ -193,6 +197,73 @@ final class MediaUsageIndexerTest extends TestCase
         $this->workingCopies->getWorkingCopyWithDraft(Argument::that(static fn (EntryInterface $copy): bool => $copy !== $entry && $copy->getUuid() === $entry->getUuid()), null)->willReturn($entry)->shouldBeCalled();
 
         $this->indexer()->index($entry, null, []);
+    }
+
+    /**
+     * @test
+     */
+    public function it_indexes_the_media_items_an_editor_preset_uses_in_its_blocks_as_in_neither_draft_nor_published_content(): void
+    {
+        $preset = self::editorPreset(new Preset('Promo', self::article(cover: self::A, images: [self::B, self::A])->blocks));
+
+        $changes = $this->indexer()->indexPreset($preset, []);
+
+        self::assertSame([[self::A, $preset, false, false], [self::B, $preset, false, false]], array_map(static fn (MediaUsageInterface $row): array => [$row->getMediaItemUuid(), $row->getPreset(), $row->isInDraft(), $row->isInPublished()], $changes->created));
+        self::assertNull($changes->created[0]->getEntry());
+    }
+
+    /**
+     * @test
+     */
+    public function it_indexes_the_media_items_of_a_starting_point_s_layout(): void
+    {
+        $preset = self::editorPreset(new Preset('Landing page', [], startingPoint: new StartingPoint('page', new StoredLayout('hero', 1, ['image' => self::C]))));
+
+        self::assertSame([self::C], array_map(static fn (MediaUsageInterface $row): string => $row->getMediaItemUuid(), $this->indexer()->indexPreset($preset, [])->created));
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_the_rows_of_the_media_items_an_editor_preset_still_uses_and_removes_the_others(): void
+    {
+        $preset = self::editorPreset(new Preset('Promo', self::article(cover: self::A, images: [self::B])->blocks));
+        $kept = self::presetRow($preset, self::A);
+        $gone = self::presetRow($preset, self::D);
+
+        $changes = $this->indexer()->indexPreset($preset, [$kept, $gone]);
+
+        self::assertSame([self::B], array_map(static fn (MediaUsageInterface $row): string => $row->getMediaItemUuid(), $changes->created));
+        self::assertSame([], $changes->updated);
+        self::assertSame([$gone], $changes->removed);
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_the_rows_of_an_editor_preset_it_can_not_read_as_they_are(): void
+    {
+        $preset = new EditorPreset();
+        $preset->setContent('{"format": 1}');
+
+        self::assertTrue($this->indexer()->indexPreset($preset, [self::presetRow($preset, self::A)])->isEmpty());
+    }
+
+    private static function editorPreset(Preset $content): EditorPreset
+    {
+        $preset = new EditorPreset();
+        (new EditorPresetContent())->write($preset, new Preset($content->name, $content->blocks, startingPoint: $content->startingPoint, changedAt: new \DateTimeImmutable('2026-11-10T08:00:00Z')));
+
+        return $preset;
+    }
+
+    private static function presetRow(EditorPreset $preset, string $uuid): MediaUsageInterface
+    {
+        $row = new MediaUsage();
+        $row->setPreset($preset);
+        $row->setMediaItemUuid($uuid);
+
+        return $row;
     }
 
     private function indexer(): MediaUsageIndexer

@@ -13,7 +13,7 @@ use Setono\SyliusCMSPlugin\Value\ItemList;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
- * Handles the list fields, Products and Taxons, hand-picked or filled by a source.
+ * Handles the list fields, Products, Taxons and Entries, hand-picked or filled by a source.
  *
  * A hand-picked list is an array of codes, hydrated as the items from the references loaded before rendering, in the
  * editor's order. Those references were loaded through the visible-products and visible-taxons queries, so an item the
@@ -155,13 +155,11 @@ final readonly class ListFieldHandler implements FitCheckingFieldHandlerInterfac
      */
     private static function handPicked(ListField $field, array $codes, ReferenceMap $references): ItemList
     {
-        $class = $field->itemClass();
-
         /** @var list<mixed> $items */
         $items = [];
         foreach ($codes as $code) {
             $item = $references->get($field->itemType(), $code);
-            if ($item instanceof $class) {
+            if ($field->accepts($item)) {
                 $items[] = $item;
             }
         }

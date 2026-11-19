@@ -10,15 +10,20 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Admin\EntryCategories;
 use Setono\SyliusCMSPlugin\Admin\EntryIndexListener;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
+use Setono\SyliusCMSPlugin\Collection\IndexedFields;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Sylius\Bundle\ResourceBundle\Event\ResourceControllerEvent;
@@ -59,9 +64,10 @@ final class EntryIndexListenerTest extends TestCase
         $problemCounts = $this->prophesize(ProblemCountProviderInterface::class);
         $problemCounts->getCounts(Argument::any())->willReturn([]);
 
+        $contentTypes = new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
         $this->entryRows = new EntryRows(
             $this->drafts->reveal(),
-            new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
+            $contentTypes,
             new StatusLabeler(new MockClock(), new Availability()),
             $this->prophesize(UrlGeneratorInterface::class)->reveal(),
             $translationLocaleProvider->reveal(),
@@ -69,6 +75,7 @@ final class EntryIndexListenerTest extends TestCase
             $scheduledPublishes->reveal(),
             new MockClock(),
             $problemCounts->reveal(),
+            new EntryCategories(new IndexedFields($contentTypes, new ContentTypeFields(new FieldReader())), $contentTypes, $this->prophesize(EntryRepositoryInterface::class)->reveal()),
         );
     }
 

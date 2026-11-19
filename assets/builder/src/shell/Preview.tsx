@@ -3,14 +3,17 @@ import { envelope, openEnvelope, type FromBridge } from '../bridge/protocol';
 import { useBuilder, useBuilderState, usePreviewState, useSettingsState } from '../context';
 import { useTranslator } from '../i18n';
 import { hasTranslation } from '../locales';
+import { stylesheetsOf } from '../presets';
 import { createPreviewSync, type PreviewSync } from '../previewSync';
 import type { BlockSpot } from '../tree';
 import { BlockPickerAt, soleBlockType } from './BlockPicker';
 import styles from './Preview.module.css';
+import { NoticesBanner } from './NoticesBanner';
 import { ScheduleBanner } from './ScheduleBanner';
 import { TranslationBanner } from './TranslationBanner';
 
-type Frame = { state: 'waiting' } | { state: 'loaded'; url: string; version: number } | { state: 'failed' };
+/** A loaded frame shows the page-th page asked for. That keys the iframe, so a new page reloads it even at the same URL. */
+type Frame = { state: 'waiting' } | { state: 'loaded'; url: string; page: number } | { state: 'failed' };
 
 /** The block picker opened by + in the preview, at a point in the builder's viewport. */
 interface Picker {
@@ -23,6 +26,8 @@ export interface PreviewProps {
     className?: string | undefined;
     /** Takes the editor to the selected block's settings, from the toolbar in the preview. */
     onOpenSettings?: (() => void) | undefined;
+    /** ★ in the toolbar: opens Save as preset for the blocks with these keys. Without it, the toolbar has no ★. */
+    onSavePreset?: ((keys: readonly string[]) => void) | undefined;
 }
 
 /**
@@ -30,11 +35,12 @@ export interface PreviewProps {
  * new preview token when the channel, the locale, Shown to or Date changes, or whether the page is the channel's
  * homepage, which moves it to the channel's root, and a snippet's when its placement or sample object changes. Edits are patched into the page by the bridge in it, and the
  * page reloads only for what the bridge can't patch in. In a locale the entry has no translation in, a banner shows
- * instead, because the entry has no page there.
+ * instead, because the entry has no page there. An entry whose content type has no URL of its own, other than a
+ * snippet, such as a FAQ item, has no page at all, so the pane says so and no preview is asked for.
  */
-export function Preview({ className, onOpenSettings }: PreviewProps) {
+export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProps) {
     const t = useTranslator();
-    const { store, preview, createPreviewUrl, renderPreview, leave, placements } = useBuilder();
+    const { store, preview, createPreviewUrl, renderPreview, leave, placements, hasOwnUrl } = useBuilder();
     const channel = usePreviewState((state) => state.channel);
     const width = usePreviewState((state) => state.width);
     const shownTo = usePreviewState((state) => state.shownTo);
@@ -43,17 +49,27 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
     const sample = usePreviewState((state) => state.sample);
     // A snippet shows on the host page of a placement, with a sample object
     const snippet = placements !== null;
+    // Any other entry shows on its own page, which an entry without a URL doesn't have
+    const pageless = !hasOwnUrl && !snippet;
     const locale = useBuilderState((state) => state.locale);
     const translated = useBuilderState((state) => hasTranslation(state.entry, state.locale));
     // A page lives at its channel's root while it's the channel's homepage, so the preview moves when that changes
     const homepage = useSettingsState((state) => channel !== null && state.settings.homepageOf.includes(channel));
     const [frame, setFrame] = useState<Frame>({ state: 'waiting' });
+    // Counts the pages asked for. The page shown stays until the next one is in place, but its bridge is connected
+    // only while it's the last one asked for. The next page renders what the server holds when it's asked for, and
+    // gets the changes made after that patched in once its bridge is ready, so a bridge that gets ready in the old
+    // page meanwhile, such as one slow to load, would take those changes to a page that's going away
+    const asked = useRef(0);
     const [reloads, setReloads] = useState(0);
     const [picker, setPicker] = useState<Picker | null>(null);
     const iframe = useRef<HTMLIFrameElement>(null);
     const sync = useRef<PreviewSync | null>(null);
     const openSettings = useRef(onOpenSettings);
     openSettings.current = onOpenSettings;
+    const savePreset = useRef(onSavePreset);
+    savePreset.current = onSavePreset;
+    const canSavePresets = onSavePreset !== undefined;
 
     useEffect(() => {
         const created = createPreviewSync({
@@ -73,6 +89,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
                 underline: t('setono_sylius_cms.builder.rich_text.underline'),
                 strike: t('setono_sylius_cms.builder.rich_text.strike'),
                 code: t('setono_sylius_cms.builder.rich_text.code'),
+                ...(canSavePresets ? { savePreset: t('setono_sylius_cms.builder.save_as_preset') } : {}),
             },
             render: (token, blocks) => renderPreview(token, blocks),
             reload: () => setReloads((count) => count + 1),
@@ -89,6 +106,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
                 setPicker({ spot, x: (box?.left ?? 0) + at.x, y: (box?.top ?? 0) + at.y });
             },
             openSettings: () => openSettings.current?.(),
+            savePreset: (keys) => savePreset.current?.(keys),
             leave,
             flagUnresolvedLinks: (keys) => preview.getState().setUnresolvedLinks(keys),
         });
@@ -98,14 +116,15 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             created.dispose();
             sync.current = null;
         };
-    }, [store, preview, renderPreview, leave, t]);
+    }, [store, preview, renderPreview, leave, t, canSavePresets]);
 
     useEffect(() => {
-        if (channel === null) {
+        if (channel === null || pageless) {
             return undefined;
         }
 
         sync.current?.disconnect();
+        const page = ++asked.current;
         if (!translated) {
             setFrame({ state: 'waiting' });
 
@@ -117,8 +136,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
         createPreviewUrl({ channel, locale, shownTo, date, ...(snippet ? { placement, sample } : {}) }).then(
             (url) => {
                 if (active) {
-                    // A new version remounts the iframe, so it reloads even when the URL is the same.
-                    setFrame((previous) => ({ state: 'loaded', url, version: (previous.state === 'loaded' ? previous.version : 0) + 1 }));
+                    setFrame({ state: 'loaded', url, page });
                 }
             },
             () => {
@@ -131,7 +149,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
         return () => {
             active = false;
         };
-    }, [createPreviewUrl, channel, locale, shownTo, date, snippet, placement, sample, translated, homepage, reloads]);
+    }, [createPreviewUrl, channel, locale, shownTo, date, snippet, pageless, placement, sample, translated, homepage, reloads]);
 
     // Sources count what they yield under the token of the page shown, so in its channel, locale, Shown to and Date
     useEffect(() => {
@@ -156,7 +174,14 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             }
 
             if (message.type === 'ready') {
+                if (frame.page !== asked.current) {
+                    return;
+                }
+
                 sync.current?.connect((reply) => target.postMessage(envelope(reply), url.origin), token);
+                // The Presets tab renders presets with the page's stylesheets, which it reads here, from the same origin
+                const page = iframe.current?.contentDocument ?? null;
+                preview.getState().setPage(page === null ? null : stylesheetsOf(page));
             } else {
                 sync.current?.receive(message);
             }
@@ -167,18 +192,20 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
         return () => {
             window.removeEventListener('message', onMessage);
         };
-    }, [frame]);
+    }, [preview, frame]);
 
     return (
         <main className={[className, styles.preview].filter(Boolean).join(' ')} data-width={width}>
+            <NoticesBanner />
             <ScheduleBanner />
             <TranslationBanner />
-            {frame.state === 'loaded' && <iframe ref={iframe} key={frame.version} className={styles.frame} title={t('setono_sylius_cms.builder.preview')} src={frame.url} />}
+            {frame.state === 'loaded' && <iframe ref={iframe} key={frame.page} className={styles.frame} title={t('setono_sylius_cms.builder.preview')} src={frame.url} />}
             {frame.state === 'failed' && (
                 <p role="alert" className={styles.failed}>
                     {t('setono_sylius_cms.builder.preview_failed')}
                 </p>
             )}
+            {pageless && <p className={styles.noPreview}>{t('setono_sylius_cms.builder.no_preview')}</p>}
             <BlockPickerAt spot={picker?.spot ?? null} onClose={() => setPicker(null)}>
                 <span className={styles.pickerAnchor} style={{ left: picker?.x ?? 0, top: picker?.y ?? 0 }} />
             </BlockPickerAt>

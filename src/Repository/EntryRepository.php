@@ -5,16 +5,25 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Repository;
 
 use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
+use Setono\SyliusCMSPlugin\Attribute\ContentType;
+use Setono\SyliusCMSPlugin\Collection\ReferenceTable;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
+use Setono\SyliusCMSPlugin\Field\Entry as EntryField;
+use Setono\SyliusCMSPlugin\Field\Snippet as SnippetField;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
+use Setono\SyliusCMSPlugin\Registry\AttributeReader;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeModels;
+use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
@@ -79,6 +88,35 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         return $entries;
     }
 
+    public function findByContentType(string $contentType): array
+    {
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->entries($contentType)->orderBy('o.id')->getQuery()->getResult();
+
+        return $entries;
+    }
+
+    public function search(string $search, int $limit, array $hiddenContentTypes = []): array
+    {
+        $translationClass = $this->getClassMetadata()->getAssociationTargetClass('translations');
+
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->entries(null, $hiddenContentTypes)
+            ->andWhere(sprintf(
+                'EXISTS (SELECT matched.id FROM %1$s matched WHERE matched.translatable = o AND (LOWER(matched.title) LIKE :search %2$s OR LOWER(matched.slug) LIKE :search %2$s))',
+                $translationClass,
+                SearchPattern::ESCAPE,
+            ))
+            ->setParameter('search', SearchPattern::containing($search))
+            ->orderBy('o.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $entries;
+    }
+
     public function findByCustomerGroupCodes(array $codes): array
     {
         if ([] === $codes) {
@@ -111,16 +149,81 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         }
 
         $queryBuilder = $this->createQueryBuilder('o');
+        $conditions = $this->holdingJsonStrings($queryBuilder, $ids);
+        // An indexed field's UUIDs are on the reference table, where the published ones are, such as a post's categories
+        $conditions[] = ReferenceTable::holding($queryBuilder, 'o', null, $ids);
+        // A content type's own Entry or Snippet field holds one UUID in a column of its own
+        $conditions = [...$conditions, ...$this->holdingInOwnColumns($queryBuilder, $ids)];
 
         /** @var list<EntryInterface> $entries */
         $entries = $queryBuilder
-            ->andWhere(implode(' OR ', $this->holdingJsonStrings($queryBuilder, $ids)))
+            ->andWhere(implode(' OR ', $conditions))
             ->orderBy('o.id')
             ->getQuery()
             ->getResult()
         ;
 
         return $entries;
+    }
+
+    /**
+     * The conditions on the entry "o" that a column of one of its content type's own Entry or Snippet fields, on its row
+     * or a translation's, holds one of the UUIDs, lowercase as they're stored. A list field's column, such as a
+     * non-indexed Entries field's, holds JSON, which a portable query can't search: LIKE doesn't apply to PostgreSQL's
+     * json columns, and DQL has no cast
+     *
+     * @param list<string> $ids
+     *
+     * @return list<string> to join with OR
+     */
+    private function holdingInOwnColumns(QueryBuilder $queryBuilder, array $ids): array
+    {
+        $conditions = [];
+        $reader = new FieldReader();
+        foreach (array_values($this->getClassMetadata()->discriminatorMap) as $index => $model) {
+            $metadata = $this->getEntityManager()->getClassMetadata($model);
+            foreach (self::singleReferenceFields($reader->readContentType($model, false), $metadata) as $field) {
+                $alias = sprintf('cms_own_%d', $index);
+                $conditions[] = sprintf('o.id IN (SELECT %1$s.id FROM %2$s %1$s WHERE %1$s.%3$s IN (:cms_own_ids))', $alias, $model, $field);
+            }
+
+            $translation = $metadata->hasAssociation('translations') ? $metadata->getAssociationTargetClass('translations') : null;
+            if (null === $translation) {
+                continue;
+            }
+
+            $translationMetadata = $this->getEntityManager()->getClassMetadata($translation);
+            foreach (self::singleReferenceFields($reader->readContentType($translation, true), $translationMetadata) as $field) {
+                $alias = sprintf('cms_own_translation_%d', $index);
+                $conditions[] = sprintf('EXISTS (SELECT %1$s.id FROM %2$s %1$s WHERE %1$s.translatable = o AND %1$s.%3$s IN (:cms_own_ids))', $alias, $translation, $field);
+            }
+        }
+
+        if ([] !== $conditions) {
+            $queryBuilder->setParameter('cms_own_ids', array_values(array_unique(array_map(strtolower(...), $ids))));
+        }
+
+        return $conditions;
+    }
+
+    /**
+     * The mapped properties of the fields that hold one entry's UUID: Entry and Snippet fields
+     *
+     * @param array<string, FieldMetadata> $fields
+     * @param ClassMetadata<object> $metadata
+     *
+     * @return list<string>
+     */
+    private static function singleReferenceFields(array $fields, ClassMetadata $metadata): array
+    {
+        $properties = [];
+        foreach ($fields as $field) {
+            if (($field->field instanceof EntryField || $field->field instanceof SnippetField) && $metadata->hasField($field->name)) {
+                $properties[] = $field->name;
+            }
+        }
+
+        return $properties;
     }
 
     /**
@@ -146,12 +249,46 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         ];
     }
 
-    public function createListQueryBuilder(?string $contentType = null): QueryBuilder
+    public function createListQueryBuilder(?string $contentType = null, array $hiddenContentTypes = []): QueryBuilder
     {
-        // "translation" is for the filters, and joined apart from the translations fetched, so a filter on it never
-        // leaves an entry with only the translations that matched. It's joined first, because Sylius's grid filters
-        // reach a field of an association through the first join of it
-        return $this->entries($contentType)
+        $queryBuilder = $this->entries($contentType, $hiddenContentTypes);
+
+        // Before the sorting the grid adds, which then sorts entries in the same position
+        if (null !== $contentType && ContentType::ORDER_BY_POSITION === AttributeReader::contentType($this->classOf($contentType))?->order) {
+            $queryBuilder->addOrderBy('o.position', 'ASC');
+        }
+
+        return self::listed($queryBuilder);
+    }
+
+    public function createCollectionListQueryBuilder(string $contentType, array $hiddenContentTypes = []): QueryBuilder
+    {
+        $class = $this->classOf($contentType);
+        $classes = [$class];
+
+        $categoryType = AttributeReader::contentType($class)?->categoryType;
+        if (null !== $categoryType) {
+            /** @var array<string, class-string> $discriminatorMap */
+            $discriminatorMap = array_diff_key($this->getClassMetadata()->discriminatorMap, array_flip($hiddenContentTypes));
+            $categoryClass = ContentTypeModels::namedBy($categoryType, $discriminatorMap);
+            if (null !== $categoryClass) {
+                $classes[] = $categoryClass;
+            }
+        }
+
+        // The classes go in the DQL, as in entries(), from the discriminator map, never from the request
+        return self::listed($this->createQueryBuilder('o')->andWhere(implode(' OR ', array_map(static fn (string $class): string => sprintf('o INSTANCE OF %s', $class), $classes))));
+    }
+
+    /**
+     * An admin list's query, with the translations and audience groups its rows show fetched. "translation" is for the
+     * filters, and joined apart from the translations fetched, so a filter on it never leaves an entry with only the
+     * translations that matched. It's joined first, because Sylius's grid filters reach a field of an association
+     * through the first join of it
+     */
+    private static function listed(QueryBuilder $queryBuilder): QueryBuilder
+    {
+        return $queryBuilder
             ->addSelect('fetched_translation')
             ->addSelect('audience_group')
             ->leftJoin('o.translations', 'translation')
@@ -160,24 +297,24 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         ;
     }
 
-    public function countEntries(?string $contentType = null): int
+    public function countEntries(?string $contentType = null, array $hiddenContentTypes = []): int
     {
-        return (int) $this->entries($contentType)->select('COUNT(o.id)')->getQuery()->getSingleScalarResult();
+        return (int) $this->entries($contentType, $hiddenContentTypes)->select('COUNT(o.id)')->getQuery()->getSingleScalarResult();
     }
 
-    public function findStartingAfter(\DateTimeImmutable $now, int $limit): array
+    public function findStartingAfter(\DateTimeImmutable $now, int $limit, array $hiddenContentTypes = []): array
     {
-        return $this->findByDateWindowBoundaryAfter('showFrom', $now, $limit);
+        return $this->findByDateWindowBoundaryAfter('showFrom', $now, $limit, $hiddenContentTypes);
     }
 
-    public function findEndingAfter(\DateTimeImmutable $now, int $limit): array
+    public function findEndingAfter(\DateTimeImmutable $now, int $limit, array $hiddenContentTypes = []): array
     {
-        return $this->findByDateWindowBoundaryAfter('showUntil', $now, $limit);
+        return $this->findByDateWindowBoundaryAfter('showUntil', $now, $limit, $hiddenContentTypes);
     }
 
-    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts): Pagerfanta
+    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts, array $hiddenContentTypes = []): Pagerfanta
     {
-        $queryBuilder = $this->createListQueryBuilder();
+        $queryBuilder = $this->createListQueryBuilder(null, $hiddenContentTypes);
         $queryBuilder
             ->andWhere($problemCounts->getNeedsAttentionCondition($queryBuilder, 'o'))
             ->addOrderBy('o.lastEditedAt', 'DESC')
@@ -190,10 +327,10 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         return $paginator;
     }
 
-    public function findDraftsInProgress(int $limit): array
+    public function findDraftsInProgress(int $limit, array $hiddenContentTypes = []): array
     {
         /** @var list<EntryInterface> $entries */
-        $entries = $this->createQueryBuilder('o')
+        $entries = $this->entries(null, $hiddenContentTypes)
             ->andWhere(sprintf('o.lastPublishedAt IS NULL OR EXISTS (SELECT cms_draft.id FROM %s cms_draft WHERE cms_draft.entry = o)', DraftInterface::class))
             ->addOrderBy('o.lastEditedAt', 'DESC')
             ->addOrderBy('o.id', 'DESC')
@@ -210,12 +347,14 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
      * boundary changes what shoppers see: enabled, and published, or with a publish scheduled for it or before that
      * hasn't failed. The columns hold UTC
      *
+     * @param list<string> $hiddenContentTypes
+     *
      * @return list<EntryInterface>
      */
-    private function findByDateWindowBoundaryAfter(string $boundary, \DateTimeImmutable $now, int $limit): array
+    private function findByDateWindowBoundaryAfter(string $boundary, \DateTimeImmutable $now, int $limit, array $hiddenContentTypes): array
     {
         /** @var list<EntryInterface> $entries */
-        $entries = $this->createQueryBuilder('o')
+        $entries = $this->entries(null, $hiddenContentTypes)
             ->andWhere(sprintf('o.%s > :now', $boundary))
             ->andWhere('o.enabled = :enabled')
             ->andWhere(sprintf(
@@ -236,20 +375,32 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
     }
 
     /**
-     * The entries of the content type, or of every content type, as "o". A content type code is the value of the
-     * entries' discriminator (ADR 0001), so it names the class that INSTANCE OF filters on, with its subclasses
+     * The entries of the content type, or of every content type but the hidden ones, as "o". A content type code is
+     * the value of the entries' discriminator (ADR 0001), so it names the class that INSTANCE OF filters on, with its
+     * subclasses
+     *
+     * @param list<string> $hiddenContentTypes
      */
-    private function entries(?string $contentType): QueryBuilder
+    private function entries(?string $contentType, array $hiddenContentTypes = []): QueryBuilder
     {
         $queryBuilder = $this->createQueryBuilder('o');
-        if (null === $contentType) {
-            return $queryBuilder;
-        }
-
-        $class = $this->getClassMetadata()->discriminatorMap[$contentType] ?? throw new \InvalidArgumentException(sprintf('There is no content type "%s"', $contentType));
 
         // The class goes in the DQL, not in a parameter, because Doctrine's paginator counts without resolving an
         // INSTANCE OF parameter to the discriminator values. It comes from the discriminator map, never from the request
-        return $queryBuilder->andWhere(sprintf('o INSTANCE OF %s', $class));
+        if (null !== $contentType) {
+            return $queryBuilder->andWhere(sprintf('o INSTANCE OF %s', $this->classOf($contentType)));
+        }
+
+        return HiddenContentTypes::exclude($queryBuilder, 'o', $this->getClassMetadata(), array_values($hiddenContentTypes));
+    }
+
+    /**
+     * The model of the content type, which its code maps to as the entries' discriminator value
+     *
+     * @return class-string
+     */
+    private function classOf(string $contentType): string
+    {
+        return $this->getClassMetadata()->discriminatorMap[$contentType] ?? throw new \InvalidArgumentException(sprintf('There is no content type "%s"', $contentType));
     }
 }

@@ -70,7 +70,7 @@ _Avoid_: CMS page, static page
 
 **Homepage**:
 The page a channel shows at its root URL in place of the store's own homepage. A channel has at most one.
-_Avoid_: front page, start page, landing page
+_Avoid_: front page, start page, landing page (for the homepage: "Landing page" is a shipped starting point for new pages)
 
 **Built-in content type**:
 A content type the plugin itself depends on: Page or Snippet. Collections never use a built-in content type.

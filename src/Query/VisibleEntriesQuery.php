@@ -36,6 +36,11 @@ final readonly class VisibleEntriesQuery implements VisibleEntriesQueryInterface
             $queryBuilder->andWhere($condition);
         }
 
+        // A content type switched off in setono_sylius_cms.disabled.content_types is hidden from sources and routing
+        if ($this->contentTypes->get($contentType)->disabled) {
+            $queryBuilder->andWhere('1 = 0');
+        }
+
         return $queryBuilder;
     }
 
@@ -45,7 +50,8 @@ final readonly class VisibleEntriesQuery implements VisibleEntriesQueryInterface
             return [];
         }
 
-        $firstFailed = 'CASE';
+        // Every entry of a content type switched off is as hidden as a disabled entry
+        $firstFailed = $this->contentTypes->get($contentType)->disabled ? sprintf("CASE WHEN 1 = 1 THEN '%s'", NotVisibleReason::Disabled->value) : 'CASE';
         foreach (self::rules() as $reason => $condition) {
             $firstFailed .= sprintf(" WHEN NOT (%s) THEN '%s'", $condition, $reason);
         }

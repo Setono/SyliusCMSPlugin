@@ -14,8 +14,10 @@ final readonly class HeadTags
      * @param string|null $title the meta title, or the title. Null when neither has a value
      * @param string|null $description the meta description, left out when null
      * @param bool $noindex whether crawlers are asked not to index the page: "Hide from search engines"
-     * @param string|null $canonicalUrl the entry's absolute URL in the channel and locale, without a query string
-     * @param list<AlternateLink> $alternates a hreflang link per locale the entry shows in, by locale code, then x-default
+     * @param string|null $canonicalUrl the entry's absolute URL in the channel and locale, without a query string, but
+     *                                  with ?page=N on page 2 onwards of its paginated Entries block
+     * @param list<AlternateLink> $alternates a hreflang link per locale the entry shows in, by locale code, then x-default,
+     *                                      and none on page 2 onwards of its paginated Entries block
      */
     public function __construct(
         public ?string $title,

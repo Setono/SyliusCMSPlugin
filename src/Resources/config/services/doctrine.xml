@@ -9,6 +9,27 @@
             <tag name="doctrine.event_listener" event="loadClassMetadata"/>
         </service>
 
+        <!-- A new entry of a content type ordered by position goes last -->
+        <service id="Setono\SyliusCMSPlugin\Doctrine\EntryPositionListener" class="Setono\SyliusCMSPlugin\Doctrine\EntryPositionListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <tag name="doctrine.event_listener" event="prePersist"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Doctrine\RootAssociationsListener" class="Setono\SyliusCMSPlugin\Doctrine\RootAssociationsListener">
+            <!-- Replaced by RegisterContentTypesPass with the registered content types -->
+            <argument type="collection"/>
+
+            <tag name="doctrine.event_listener" event="loadClassMetadata"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener" class="Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener">
+            <!-- Replaced by RegisterContentTypesPass with the registered content types -->
+            <argument type="collection"/>
+
+            <tag name="doctrine.event_listener" event="loadClassMetadata"/>
+        </service>
+
         <!-- The repositories of the shipped resources are registered with them -->
         <service id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface" alias="setono_sylius_cms.repository.entry"/>
         <service id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface" alias="setono_sylius_cms.repository.draft"/>
@@ -19,9 +40,11 @@
         <service id="Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface" alias="setono_sylius_cms.repository.old_slug"/>
         <service id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface" alias="setono_sylius_cms.repository.share_link"/>
         <service id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface" alias="setono_sylius_cms.repository.homepage"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface" alias="setono_sylius_cms.repository.import"/>
         <service id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface" alias="setono_sylius_cms.repository.media_item"/>
         <service id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface" alias="setono_sylius_cms.repository.media_folder"/>
         <service id="Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface" alias="setono_sylius_cms.repository.media_usage"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\EntryReferenceRepositoryInterface" alias="setono_sylius_cms.repository.entry_reference"/>
         <service id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface" alias="setono_sylius_cms.repository.placement"/>
 
         <!-- The factory that creates placements of the configured model -->

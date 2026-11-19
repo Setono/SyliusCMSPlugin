@@ -1,0 +1,100 @@
+{
+    "changedAt": "2026-11-12T09:30:00Z",
+    "settings": {
+        "enabled": true,
+        "showFrom": null,
+        "showUntil": null,
+        "channels": [
+            "WEB"
+        ],
+        "audience": {
+            "mode": "everyone",
+            "groups": []
+        },
+        "homepageOf": [],
+        "position": null
+    },
+    "placements": [
+        {
+            "uuid": "0193a5be-7300-7b1c-8d2e-3f4a5b6c7d8e",
+            "slot": "product.after_price",
+            "scope": [
+                {
+                    "kind": "product_in_taxon",
+                    "negate": false,
+                    "params": {
+                        "includeChildren": true,
+                        "taxons": [
+                            "t_shirts"
+                        ]
+                    }
+                }
+            ],
+            "preceding": [
+                "0193a5be-7301-7c2d-9e3f-4a5b6c7d8e9f"
+            ]
+        }
+    ],
+    "entry": {
+        "uuid": "0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b",
+        "contentType": "snippet",
+        "version": 1,
+        "createdAt": "2026-11-01T08:30:00Z",
+        "fields": {
+            "context": []
+        },
+        "translations": {
+            "en_US": {
+                "shown": true,
+                "fields": {
+                    "title": "Autumn banner"
+                },
+                "translated": {}
+            }
+        },
+        "tree": {
+            "layout": null,
+            "blocks": [
+                {
+                    "key": "0193a5be-0000-7000-8000-000000000002",
+                    "type": "image",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "caption": {
+                            "en_US": "The autumn collection"
+                        },
+                        "image": "0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60"
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                },
+                {
+                    "key": "0193a5be-0000-7000-8000-000000000003",
+                    "type": "video",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "video": "0193a5be-70ab-7c12-8e2d-1b2c3d4e5f61"
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                },
+                {
+                    "key": "0193a5be-0000-7000-8000-000000000004",
+                    "type": "snippet",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "snippet": "0193a5be-7256-7a01-8b2c-3d4e5f6a7b8c"
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                }
+            ]
+        }
+    }
+}

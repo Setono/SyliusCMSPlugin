@@ -28,9 +28,19 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function getUuid(): string;
 
     /**
+     * For an entry an import creates, which keeps the UUID it has in the export (docs/spec/transfer.md)
+     */
+    public function setUuid(string $uuid): void;
+
+    /**
      * When it was created, in UTC. Set once
      */
     public function getCreatedAt(): \DateTimeImmutable;
+
+    /**
+     * For an entry an import creates, which keeps the time it was created in the export (docs/spec/transfer.md)
+     */
+    public function setCreatedAt(\DateTimeImmutable $createdAt): void;
 
     /**
      * When its published content or an on-save setting last changed
@@ -149,6 +159,14 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function isNoindex(): bool;
 
     public function setNoindex(bool $noindex): void;
+
+    /**
+     * Where it sits among the entries of its content type, for a content type ordered by position, which editors drag
+     * entries into in the admin list. An on-save setting. Null for an entry of a content type ordered otherwise
+     */
+    public function getPosition(): ?int;
+
+    public function setPosition(?int $position): void;
 
     /**
      * The title in the current locale

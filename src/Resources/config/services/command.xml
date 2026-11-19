@@ -6,8 +6,40 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\EntryRewriterInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
-            <!-- The manager of entries, which is also the manager of drafts and revisions, which it rewrites too -->
+            <!-- The manager of entries, which is also the manager of drafts, revisions and editor presets, which it rewrites too -->
             <argument type="service" id="setono_sylius_cms.manager.entry"/>
+            <argument type="service" id="setono_sylius_cms.repository.editor_preset"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\PresetRewriter"/>
+
+            <tag name="console.command"/>
+        </service>
+
+        <!-- Validates the code preset files, every one registered or those given, for CI -->
+        <service id="Setono\SyliusCMSPlugin\Command\ValidatePresetsCommand" class="Setono\SyliusCMSPlugin\Command\ValidatePresetsCommand">
+            <argument>%setono_sylius_cms.presets.files%</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetCheck"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="console.command"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Command\ExportPresetCommand" class="Setono\SyliusCMSPlugin\Command\ExportPresetCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\CodePresetExporter"/>
+
+            <tag name="console.command"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Command\ExportCommand" class="Setono\SyliusCMSPlugin\Command\ExportCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\ExportPlannerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\ExporterInterface"/>
+
+            <tag name="console.command"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Command\ImportCommand" class="Setono\SyliusCMSPlugin\Command\ImportCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface"/>
+            <argument type="service" id="translator"/>
 
             <tag name="console.command"/>
         </service>

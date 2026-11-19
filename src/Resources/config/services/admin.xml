@@ -5,6 +5,7 @@
         <!-- The Content item in the Sylius admin menu -->
         <service id="Setono\SyliusCMSPlugin\Admin\MainMenuListener" class="Setono\SyliusCMSPlugin\Admin\MainMenuListener">
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface"/>
             <argument type="service" id="translator"/>
 
             <tag name="kernel.event_listener" event="sylius.menu.admin.main"/>
@@ -15,6 +16,9 @@
             <argument type="service" id="knp_menu.factory"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\Collections"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\CollectionNames"/>
 
             <tag name="knp_menu.menu_builder" method="createMenu" alias="setono_sylius_cms.admin.hub"/>
         </service>
@@ -25,7 +29,38 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Admin\StatusLabelerInterface" alias="Setono\SyliusCMSPlugin\Admin\StatusLabeler"/>
 
+        <!-- What the Presets screen lists: the starting points or the block presets, and the categories in use -->
+        <service id="Setono\SyliusCMSPlugin\Admin\StartingPointChoices" class="Setono\SyliusCMSPlugin\Admin\StartingPointChoices">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetCheck"/>
+            <argument type="service" id="translator"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Admin\PresetRows" class="Setono\SyliusCMSPlugin\Admin\PresetRows">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetCheck"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="translator"/>
+        </service>
+
+        <!-- What the Transfer screen's export offers to pick, and how it names what's picked and what comes along -->
+        <service id="Setono\SyliusCMSPlugin\Admin\ExportChoices" class="Setono\SyliusCMSPlugin\Admin\ExportChoices">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.repository.editor_preset"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="translator"/>
+        </service>
+
         <!-- The rows of the entry lists, which their grids' field templates get through cms_admin_entry_row() -->
+        <!-- The categories the entry lists show below an entry's title -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryCategories" class="Setono\SyliusCMSPlugin\Admin\EntryCategories">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\IndexedFields"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Admin\EntryRows" class="Setono\SyliusCMSPlugin\Admin\EntryRows">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
@@ -37,6 +72,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
             <argument type="service" id="clock"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryCategories"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>
@@ -52,6 +88,7 @@
         <!-- Checks the admin user on the entry overview page, which the entry resource's controller shows -->
         <service id="Setono\SyliusCMSPlugin\Admin\EntryShowListener" class="Setono\SyliusCMSPlugin\Admin\EntryShowListener">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
 
             <tag name="kernel.event_listener" event="setono_sylius_cms.entry.show"/>
         </service>
@@ -123,12 +160,14 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
         <!-- The Overview's Coming up, which its panel gets through cms_admin_coming_up() -->
         <service id="Setono\SyliusCMSPlugin\Admin\ComingUp" class="Setono\SyliusCMSPlugin\Admin\ComingUp">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="clock"/>
         </service>
 
@@ -136,6 +175,7 @@
         <service id="Setono\SyliusCMSPlugin\Admin\TranslationCompleteness" class="Setono\SyliusCMSPlugin\Admin\TranslationCompleteness">
             <argument type="service" id="sylius.repository.channel"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
         <!-- The locale a new entry's title and slug go into -->

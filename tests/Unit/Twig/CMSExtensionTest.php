@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Twig;
 
+use Pagerfanta\Adapter\ArrayAdapter;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Button;
+use Setono\SyliusCMSPlugin\Block\Entries;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Builder\Search\SearchInterface;
+use Setono\SyliusCMSPlugin\Collection\CardDisplays;
+use Setono\SyliusCMSPlugin\Field\DateHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Link\ResolvedLink;
 use Setono\SyliusCMSPlugin\Link\Target\EntryLinkTarget;
 use Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget;
@@ -18,6 +23,7 @@ use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -27,10 +33,13 @@ use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
+use Setono\SyliusCMSPlugin\Rendering\EntryFieldValues;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
@@ -40,14 +49,20 @@ use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGenerator;
 use Setono\SyliusCMSPlugin\Seo\MetaValues;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Location;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Faq;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\NotABlock;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Quote;
+use Setono\SyliusCMSPlugin\Twig\CardRuntime;
 use Setono\SyliusCMSPlugin\Twig\CMSExtension;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime;
 use Setono\SyliusCMSPlugin\Twig\LinkRuntime;
+use Setono\SyliusCMSPlugin\Twig\PaginationRuntime;
 use Setono\SyliusCMSPlugin\Twig\RenderContexts;
 use Setono\SyliusCMSPlugin\Twig\SlotRuntime;
 use Setono\SyliusCMSPlugin\Value\ItemList;
@@ -143,8 +158,16 @@ final class CMSExtensionTest extends IntegrationTestCase
 
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'button' => Button::class, 'quote' => Quote::class, 'faq' => Faq::class], new FieldReader());
         // de_CH falls back to de_DE, and then to en_US
-        $fallbackValues = new FallbackValues(new FieldHandlerLocator(new ServiceLocator([])), new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'), ['de_CH' => ['de_DE']]));
-        $contentTypes = new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
+        $fieldHandlers = new FieldHandlerLocator(new ServiceLocator([
+            TextHandler::class => static fn (): TextHandler => new TextHandler(),
+            DateHandler::class => static fn (): DateHandler => new DateHandler(),
+        ]));
+        $fallbackValues = new FallbackValues($fieldHandlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'), ['de_CH' => ['de_DE']]));
+        $contentTypes = new ContentTypeRegistry([
+            'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+            'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
+            'location' => ['model' => Location::class, 'translation' => null, 'resource' => 'app.location'],
+        ]);
         $shopRoutes = new RouteCollection();
         $shopRoutes->add('setono_sylius_cms_shop_entry', new Route('/{_locale}/{path}', requirements: ['path' => '.+(?<!/)']));
         $shopRoutes->add('sylius_shop_product_index', new Route('/{_locale}/taxons/{slug}', requirements: ['slug' => '.+(?<!/)']));
@@ -154,14 +177,16 @@ final class CMSExtensionTest extends IntegrationTestCase
             CMSRuntime::class => fn (): CMSRuntime => new CMSRuntime(
                 new TwigBlockRenderer($blockTwig, $blockTypes),
                 new FieldMarker($blockTypes),
-                $fallbackValues,
+                new EntryFieldValues($contentTypes, new ContentTypeFields(new FieldReader()), $fieldHandlers, $fallbackValues, new ReferenceLoader(new ServiceLocator([]))),
                 new PreviewContext($this->requestStack, self::signer(), $this->shareLinks(...)),
             ),
+            CardRuntime::class => fn (): CardRuntime => new CardRuntime($contentTypes, new CardDisplays($contentTypes), new RenderContexts($this->shopRenderContext())),
             HeadTagsRuntime::class => static fn (): HeadTagsRuntime => new HeadTagsRuntime(
                 new MetaValues($contentTypes, $fallbackValues),
                 $canonicalUrls,
                 new Availability(),
             ),
+            PaginationRuntime::class => fn (): PaginationRuntime => new PaginationRuntime($canonicalUrls, new RenderContexts($this->shopRenderContext())),
             SlotRuntime::class => static fn (): SlotRuntime => new SlotRuntime(new class() implements SlotRendererInterface {
                 public function render(string $identifier, array $context = []): string
                 {
@@ -188,13 +213,14 @@ final class CMSExtensionTest extends IntegrationTestCase
      *
      * @param array<string, mixed> $variables
      * @param RenderContext::PREVIEW_MODE_*|null $previewMode
+     * @param int<1, max> $page the page of the paginated Entries block that shows
      *
      * @return array<string, mixed>
      */
-    public function rendering(array $variables, ?string $previewMode = null, string $locale = 'en_US', ?ChannelInterface $channel = null): array
+    public function rendering(array $variables, ?string $previewMode = null, string $locale = 'en_US', ?ChannelInterface $channel = null, int $page = 1): array
     {
         return $variables + [
-            CMSRuntime::RENDER_CONTEXT => Rendering::context(localeCode: $locale, channel: $channel ?? new Channel(), previewMode: $previewMode),
+            CMSRuntime::RENDER_CONTEXT => Rendering::context(localeCode: $locale, channel: $channel ?? new Channel(), previewMode: $previewMode)->withPage($page),
         ];
     }
 
@@ -416,6 +442,46 @@ final class CMSExtensionTest extends IntegrationTestCase
     }
 
     /**
+     * A recipe, an entry of a content type the code no longer has
+     */
+    public function recipe(): Recipe
+    {
+        return new Recipe();
+    }
+
+    /**
+     * A location, an entry of a project's own content type with a grid card, in a city
+     */
+    public function location(string $city): Location
+    {
+        $location = new Location();
+        $location->city = $city;
+
+        return $location;
+    }
+
+    /**
+     * A shop, an entry of a project's own content type, in a city, opened on a date, with directions by locale
+     *
+     * @param array<string, string> $directions by locale
+     */
+    public function shop(?string $city, ?string $openedOn = null, array $directions = []): Shop
+    {
+        $shop = new Shop();
+        $shop->setCity($city);
+        $shop->setOpenedOn(null === $openedOn ? null : new \DateTimeImmutable($openedOn, new \DateTimeZone('UTC')));
+        foreach ($directions as $locale => $text) {
+            $translation = new ShopTranslation();
+            $translation->setLocale($locale);
+            $translation->setTitle('Shop');
+            $translation->setDirections($text);
+            $shop->addTranslation($translation);
+        }
+
+        return $shop;
+    }
+
+    /**
      * A taxon with these names and slugs
      *
      * @param array<string, array{string, string}> $translations name and slug by locale
@@ -431,6 +497,41 @@ final class CMSExtensionTest extends IntegrationTestCase
         }
 
         return $taxon;
+    }
+
+    /**
+     * The variables of the Entries block's template on page $page of the blog, a page at blog whose paginated Entries
+     * block lists $items posts, $limit to a page, or of an Entries block that doesn't paginate, or is in another
+     * entry's tree, such as a snippet's
+     *
+     * @param int<1, max> $page
+     * @param int<1, max> $limit
+     *
+     * @return array<string, mixed>
+     */
+    public function onPageOfTheBlog(int $page, int $items, int $limit, bool $paginate = true, bool $inAnotherTree = false): array
+    {
+        $blog = $this->pageWith(['en_US' => ['title' => 'Blog', 'slug' => 'blog']]);
+        $block = new Entries();
+        $block->entries = ItemList::lazy(fn (): ArrayAdapter => new ArrayAdapter(array_map(fn (int $number): EntryInterface => $this->post('Post ' . $number), range(1, $items))), $limit);
+        $block->paginate = $paginate;
+
+        return [
+            'view' => new BlockView(self::KEY, 'entries', $block, null, [], entry: $inAnotherTree ? '0193a5be-0000-7000-8000-00000000005e' : $blog->getUuid()),
+            'entry' => $blog,
+            CMSRuntime::RENDER_CONTEXT => Rendering::context(channel: new Channel(), hostPageContext: ['entry' => $blog])->withPage($page),
+        ];
+    }
+
+    /**
+     * A page standing in for a blog post, with a title in en_US
+     */
+    private function post(string $title): EntryInterface
+    {
+        $post = $this->pageWith(['en_US' => ['title' => $title]]);
+        $post->setCurrentLocale('en_US');
+
+        return $post;
     }
 
     public function notABlock(): NotABlock

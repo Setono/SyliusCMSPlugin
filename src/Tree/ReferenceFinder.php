@@ -6,14 +6,17 @@ namespace Setono\SyliusCMSPlugin\Tree;
 
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\Reference;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 
 /**
  * Finds the references a stored block tree holds, through the field type handlers' references(): in each field of each
- * block and of the layout, in every locale of a translatable field. Reference loading before rendering reads them, and
- * so does the admin's broken references. A block of a type the code no longer has isn't rendered, so neither it nor
- * what's inside it is read, and nor is a layout the code no longer has or has disabled. See "References" in
- * docs/spec/content-model.md
+ * block and of the layout, and of the entry itself, in every locale of a translatable field. Reference loading before
+ * rendering reads them, and so does the admin's broken references. A block of a type the code no longer has isn't
+ * rendered, so neither it nor what's inside it is read, and nor is a layout the code no longer has or has disabled.
+ * See "References" in docs/spec/content-model.md
  *
  * @internal
  */
@@ -35,6 +38,34 @@ final readonly class ReferenceFinder
     public function inTree(StoredTree $tree, string $contentType): \Generator
     {
         yield from $this->in($this->treeValues->inTree($tree, $contentType));
+    }
+
+    /**
+     * The references in the entry's own fields, the content type's, then in its tree's layout and blocks
+     *
+     * @return \Generator<FoundReference>
+     */
+    public function inEntry(EntryInterface $entry, ContentTypeMetadata $contentType): \Generator
+    {
+        yield from $this->in($this->treeValues->inEntry($entry, $contentType));
+    }
+
+    /**
+     * The references in a preset's blocks, and for a starting point in its layout's values too, which are those of its
+     * content type's layout
+     *
+     * @return \Generator<FoundReference>
+     */
+    public function inPreset(Preset $preset): \Generator
+    {
+        $startingPoint = $preset->startingPoint;
+        if (null === $startingPoint) {
+            yield from $this->inBlocks($preset->blocks);
+
+            return;
+        }
+
+        yield from $this->inTree(new StoredTree($startingPoint->layout, $preset->blocks), $startingPoint->contentType);
     }
 
     /**
@@ -92,7 +123,7 @@ final readonly class ReferenceFinder
             }
 
             foreach ($this->fieldHandlers->get($value->field->field)->references($value->field->field, $value->value) as $reference) {
-                yield new FoundReference($reference, $value->block?->key, $value->field->name, $value->locale);
+                yield new FoundReference($reference, $value->block?->key, $value->field->name, $value->locale, $value->inEntry);
             }
         }
     }

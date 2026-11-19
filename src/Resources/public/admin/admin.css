@@ -12,6 +12,8 @@
     border-radius: 0.28571429rem;
     background: #fff;
     box-shadow: 1px 3px 3px 0 rgba(0, 0, 0, 0.2), 1px 3px 15px 2px rgba(0, 0, 0, 0.2);
+    /* Whatever aligns the text of the place it's opened from, such as a table's actions cell */
+    text-align: start;
 }
 
 .cms-dialog::backdrop {
@@ -52,6 +54,11 @@
     margin: 0 0 1em;
     padding: 0;
     border: 0;
+}
+
+/* Hidden while a starting point, which brings its own layout, is picked */
+.cms-layout-cards[hidden] {
+    display: none;
 }
 
 .cms-layout-cards__legend {
@@ -102,6 +109,35 @@
 .cms-layout-card__label {
     font-weight: 700;
     text-align: center;
+}
+
+/* The create dialog's starting point step: Blank and a card per starting point, in the layout cards' style, with its
+   description and what's wrong with it. One that can't be picked is greyed out */
+.cms-starting-point-card__description,
+.cms-starting-point-card__issue {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.92857143em;
+}
+
+.cms-starting-point-card__issues {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.cms-starting-point-card--disabled {
+    cursor: not-allowed;
+}
+
+.cms-starting-point-card--disabled .cms-layout-card__thumbnail,
+.cms-starting-point-card--disabled .cms-layout-card__label {
+    opacity: 0.45;
+}
+
+.cms-starting-point-cards__help {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.92857143em;
 }
 
 /* The overview page's Where it shows grid scrolls sideways when a store has more locales than fit */
@@ -165,4 +201,42 @@
 .cms-slot-order__details {
     color: rgba(0, 0, 0, 0.6);
     font-size: 0.92857143em;
+}
+
+/* The list of a content type ordered by position, whose rows editors drag into order (admin/entry-order.js) */
+.cms-entry-order__row {
+    cursor: grab;
+}
+
+.cms-entry-order__row--dragged {
+    opacity: 0.5;
+}
+
+.cms-entry-order__arrows {
+    float: right;
+}
+
+.cms-entry-order__status:empty {
+    display: none;
+}
+
+/* The Presets screen's actions of an editor preset: its buttons, then Delete below them */
+.cms-preset-delete {
+    margin-top: 0.5rem;
+}
+
+/* The Transfer screen's export form */
+.cms-export__fieldset {
+    border: 0;
+    margin: 2em 0 0;
+    padding: 0;
+    min-width: 0;
+}
+
+.cms-export__muted {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.cms-export__folder {
+    margin-left: calc(var(--cms-export-depth, 0) * 1.5em) !important;
 }

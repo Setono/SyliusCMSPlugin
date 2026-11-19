@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { translatedValues } from '../../bindings';
-import { useBuilder, useBuilderState, useSettingsState } from '../../context';
+import { useBuilder, useBuilderState, useSettingsState, useValidationState } from '../../context';
 import { FieldRow } from '../../form/FieldRow';
 import formStyles from '../../form/Form.module.css';
 import { LocalDateTimeInput } from '../../form/LocalDateTimeInput';
@@ -11,6 +11,7 @@ import { fieldFallback, localeOf, outdatedValue } from '../../locales';
 import { locks } from '../../store';
 import { entryTranslated, entryValues } from '../../translationState';
 import type { AudienceMode, FieldSchema } from '../../types';
+import { entryFieldMessages } from '../../validation';
 import { readFieldValue } from '../../values';
 import { saveStateText } from '../saveStateText';
 import styles from '../SettingsPane.module.css';
@@ -24,6 +25,7 @@ export function SettingsTab() {
             <fieldset className={styles.locked} disabled={locked}>
                 <Title />
                 <Shown />
+                <EntryFields />
                 <Layout />
                 <HostPageContext />
             </fieldset>
@@ -71,6 +73,58 @@ function Title() {
             outdated={outdatedValue(locales, titles, entryTranslated({ translations }, 'title'), locale, () => store.getState().markEntryValueUpToDate('title'))}
         />
     );
+}
+
+/**
+ * The content type's own fields, rendered from their schemas: a shared one with the value all translations share, and
+ * a translatable one with the edited locale's, which shows the value it falls back to while it's empty. They're drafted,
+ * and say so when the layout doesn't show them. See "Content types" in docs/spec/extending.md
+ */
+function EntryFields() {
+    const t = useTranslator();
+    const { store, locales, entryFields } = useBuilder();
+    const locale = useBuilderState((state) => state.locale);
+    const entry = useBuilderState((state) => state.entry);
+    const errors = useValidationState((state) => state.errors);
+    const layouts = useBuilderState((state) => state.layouts);
+    const rendered = renderedLayout(layouts, entry.tree.layout);
+
+    return entryFields.map(({ name, schema }) => {
+        const shown = rendered === undefined || rendered.shows.includes(name);
+        const withHelp: FieldSchema = shown ? schema : { ...schema, 'x-cms-help': t('setono_sylius_cms.builder.not_shown_in_layout') };
+        const id = `cms-entry-field-${name}`;
+        const fieldErrors = entryFieldMessages(errors, name, locale);
+
+        if (!schema['x-cms-translatable']) {
+            return (
+                <FieldRow
+                    key={name}
+                    id={id}
+                    schema={withHelp}
+                    locale={locale}
+                    value={entry.fields[name]}
+                    onChange={(value) => store.getState().setSharedEntryValue(name, value)}
+                    errors={fieldErrors}
+                />
+            );
+        }
+
+        const values = entryValues(entry, name);
+
+        return (
+            <FieldRow
+                key={name}
+                id={id}
+                schema={withHelp}
+                locale={locale}
+                value={values[locale] ?? undefined}
+                onChange={(value) => store.getState().setEntryValue(name, value)}
+                errors={fieldErrors}
+                fallback={fieldFallback(locales, values, locale)}
+                outdated={outdatedValue(locales, values, entryTranslated(entry, name), locale, () => store.getState().markEntryValueUpToDate(name))}
+            />
+        );
+    });
 }
 
 /**

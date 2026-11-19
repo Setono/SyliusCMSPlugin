@@ -1,0 +1,107 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.campaign_with_fallback.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.banners"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.campaign_with_fallback.description"
+    },
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "01a1f161-50ac-7af0-83e8-28ffa6324112",
+            "type": "first_match",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": [
+                {
+                    "key": "01a1f161-50ac-7af0-83e8-28ffa40a71df",
+                    "type": "banner",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "heading": {
+                            "$trans": "setono_sylius_cms.preset.campaign_with_fallback.campaign.heading"
+                        },
+                        "text": {
+                            "$trans": "setono_sylius_cms.preset.campaign_with_fallback.campaign.text"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [
+                        {
+                            "kind": "date_window",
+                            "negate": false,
+                            "params": {}
+                        }
+                    ],
+                    "children": [
+                        {
+                            "key": "01a1f161-50ac-7af0-83e8-28ffa334109a",
+                            "type": "button",
+                            "version": 1,
+                            "style": "primary",
+                            "fields": {
+                                "link": {
+                                    "anchor": null,
+                                    "label": {
+                                        "$trans": "setono_sylius_cms.preset.campaign_with_fallback.campaign.button"
+                                    },
+                                    "ref": "/",
+                                    "target": "url"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "key": "01a1f161-50ac-7af0-83e8-28ffa571171c",
+                    "type": "banner",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "heading": {
+                            "$trans": "setono_sylius_cms.preset.campaign_with_fallback.fallback.heading"
+                        },
+                        "text": {
+                            "$trans": "setono_sylius_cms.preset.campaign_with_fallback.fallback.text"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-50ac-7af0-83e8-28ffa498d70a",
+                            "type": "button",
+                            "version": 1,
+                            "style": "primary",
+                            "fields": {
+                                "link": {
+                                    "anchor": null,
+                                    "label": {
+                                        "$trans": "setono_sylius_cms.preset.campaign_with_fallback.fallback.button"
+                                    },
+                                    "ref": "/",
+                                    "target": "url"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

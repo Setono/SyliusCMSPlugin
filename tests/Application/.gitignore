@@ -9,6 +9,9 @@
 /public/media/image/*
 !/public/media/image/.gitignore
 
+# The plugin's transfer storage, where uploaded export zips wait for the worker
+/private/
+
 /node_modules
 
 ###> symfony/framework-bundle ###

@@ -8,6 +8,7 @@ use Knp\Menu\ItemInterface;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Admin\MainMenuListener;
+use Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
@@ -96,9 +97,26 @@ final class MainMenuListenerTest extends TestCase
     }
 
     /**
+     * A preset with blocks of removed types is a warning too, and presets aren't entries, so theirs are counted apart
+     *
+     * @test
+     */
+    public function it_adds_the_problems_of_presets_to_the_badge(): void
+    {
+        $content = $this->syliusMenu(['configuration'], new ProblemCount(1, 0), new ProblemCount(0, 2))->getChild('setono_sylius_cms')?->getChild('content');
+        self::assertNotNull($content);
+
+        self::assertSame([
+            'data-cms-problems' => 'error',
+            'data-cms-problem-count' => '3',
+            'title' => '1 error, 2 warnings',
+        ], $content->getLinkAttributes());
+    }
+
+    /**
      * @param list<string> $sections
      */
-    private function syliusMenu(array $sections, ProblemCount $problems = new ProblemCount()): ItemInterface
+    private function syliusMenu(array $sections, ProblemCount $problems = new ProblemCount(), ProblemCount $presetProblems = new ProblemCount()): ItemInterface
     {
         $factory = MenuFactory::create();
         $menu = $factory->createItem('root');
@@ -113,7 +131,10 @@ final class MainMenuListenerTest extends TestCase
         $translator->addLoader('yaml', new YamlFileLoader());
         $translator->addResource('yaml', dirname(__DIR__, 3) . '/src/Resources/translations/messages.en.yaml', 'en');
 
-        (new MainMenuListener($problemCounts->reveal(), $translator))(new MenuBuilderEvent($factory, $menu));
+        $presets = $this->prophesize(PresetProblemFinderInterface::class);
+        $presets->count()->willReturn($presetProblems);
+
+        (new MainMenuListener($problemCounts->reveal(), $presets->reveal(), $translator))(new MenuBuilderEvent($factory, $menu));
 
         return $menu;
     }

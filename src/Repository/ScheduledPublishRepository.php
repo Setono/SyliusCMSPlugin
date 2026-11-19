@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Repository;
 
 use Doctrine\DBAL\Types\Types;
+use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
@@ -38,15 +39,18 @@ class ScheduledPublishRepository extends EntityRepository implements ScheduledPu
         return $scheduledPublishes;
     }
 
-    public function findComingUp(\DateTimeImmutable $now, int $limit): array
+    public function findComingUp(\DateTimeImmutable $now, int $limit, array $hiddenContentTypes = []): array
     {
         // Overdue at OVERDUE_AFTER past its time. The column holds UTC
         $overdueAfter = (new \DateTimeImmutable('@0'))->modify(ScheduledPublishInterface::OVERDUE_AFTER)->getTimestamp();
 
-        /** @var list<ScheduledPublishInterface> $scheduledPublishes */
-        $scheduledPublishes = $this->createQueryBuilder('scheduled_publish')
+        $queryBuilder = $this->createQueryBuilder('scheduled_publish')
             ->addSelect('entry')
             ->innerJoin('scheduled_publish.entry', 'entry')
+        ;
+
+        /** @var list<ScheduledPublishInterface> $scheduledPublishes */
+        $scheduledPublishes = HiddenContentTypes::exclude($queryBuilder, 'entry', $this->getEntityManager()->getClassMetadata(Entry::class), $hiddenContentTypes)
             ->andWhere('scheduled_publish.failureReason IS NULL')
             ->andWhere('scheduled_publish.publishAt > :overdue_before')
             ->setParameter('overdue_before', $now->setTimezone(new \DateTimeZone('UTC'))->modify(sprintf('-%d seconds', $overdueAfter)), Types::DATETIME_IMMUTABLE)

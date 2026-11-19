@@ -83,12 +83,7 @@ final readonly class MediaFileReplacer implements MediaFileReplacerInterface
             $manager->refresh($mediaItem);
             $oldPath = $mediaItem->getPath();
 
-            $mediaItem->setOriginalFilename($originalFilename);
-            $mediaItem->setPath($path);
-            $mediaItem->setMimeType($checked->mimeType);
-            $mediaItem->setSize($checked->size);
-            $mediaItem->setDimensions($checked->width, $checked->height);
-            $mediaItem->setChecksum($checked->checksum);
+            $checked->applyTo($mediaItem, $originalFilename, $path);
             $mediaItem->setChangedAt($this->clock->now());
 
             $manager->flush();

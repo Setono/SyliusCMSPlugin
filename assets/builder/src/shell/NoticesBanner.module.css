@@ -1,0 +1,30 @@
+/* Spans the preview pane, above the page, as the translation banner does */
+.banner {
+    display: flex;
+    flex: none;
+    align-self: stretch;
+    flex-wrap: wrap;
+    gap: var(--builder-space-3);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--builder-space-3) var(--builder-space-4);
+    border-bottom: 1px solid var(--builder-color-border);
+    background: var(--builder-color-warning-subtle);
+    color: var(--builder-color-warning);
+}
+
+.message {
+    margin: 0;
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.dismiss {
+    min-height: var(--builder-control-height);
+    padding: 0 var(--builder-space-3);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-sm);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}

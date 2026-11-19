@@ -1,0 +1,8 @@
+--TEST--
+cms_field() prints a field of an entry's content type that its model declares, shared by all translations
+--TEMPLATE--
+{{ cms_field(entry, "city") }}
+--DATA--
+return $this->rendering(['entry' => $this->shop('Aarhus <C>')], locale: 'de_CH')
+--EXPECT--
+Aarhus &lt;C&gt;

@@ -28,6 +28,7 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\Lookbook;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\SnippetUses;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -80,6 +81,25 @@ final class SnippetReferenceDependenciesTest extends TestCase
         self::assertEquals([
             new ContextDependency($snippet('Product note'), ['product'], block: self::SHOWS_NOTE),
         ], [...$this->shownSnippets($entries->reveal())->findIn($promo)]);
+    }
+
+    /**
+     * A content type's own Snippet field shows it as a Snippet block does
+     *
+     * @test
+     */
+    public function it_finds_a_snippet_that_the_content_types_own_snippet_field_shows_needing_what_it_declares(): void
+    {
+        $note = self::snippet('Product note', ['product']);
+        $lookbook = new Lookbook();
+        $lookbook->banner = $note->getUuid();
+
+        $entries = $this->prophesize(EntryRepositoryInterface::class);
+        $entries->findByUuids([$note->getUuid()])->willReturn([$note]);
+
+        self::assertEquals([
+            new ContextDependency(new TranslatableMessage('setono_sylius_cms.context.snippet', ['%snippet%' => 'Product note'], 'validators'), ['product']),
+        ], [...$this->shownSnippets($entries->reveal())->findIn($lookbook)]);
     }
 
     /**
@@ -217,6 +237,7 @@ final class SnippetReferenceDependenciesTest extends TestCase
         return new ContentTypeRegistry([
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'snippet' => ['model' => Snippet::class, 'translation' => EntryTranslation::class, 'resource' => 'setono_sylius_cms.snippet'],
+            'lookbook' => ['model' => Lookbook::class, 'translation' => EntryTranslation::class, 'resource' => 'app.lookbook'],
         ]);
     }
 }

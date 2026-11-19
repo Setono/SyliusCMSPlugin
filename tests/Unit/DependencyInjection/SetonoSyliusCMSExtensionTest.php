@@ -43,6 +43,8 @@ use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Preset\CodePresetProvider;
+use Setono\SyliusCMSPlugin\Problem\PresetProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Profiler\CMSDataCollector;
 use Setono\SyliusCMSPlugin\Profiler\TraceableSlotRenderer;
@@ -68,12 +70,16 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
+use Setono\SyliusCMSPlugin\Transfer\Import\AbandonImport;
+use Setono\SyliusCMSPlugin\Transfer\Import\RunImport;
+use Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+use Symfony\Component\Config\Resource\DirectoryResource;
 use Symfony\Component\Config\Resource\ResourceInterface;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -184,6 +190,18 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_autoconfigures_preset_problem_kinds(): void
+    {
+        $this->load();
+
+        $instanceof = $this->container->getAutoconfiguredInstanceof();
+        self::assertArrayHasKey(PresetProblemKindInterface::class, $instanceof);
+        self::assertSame(['setono_sylius_cms.preset_problem_kind' => [[]]], $instanceof[PresetProblemKindInterface::class]->getTags());
+    }
+
+    /**
+     * @test
+     */
     public function it_autoconfigures_choices_providers(): void
     {
         $this->load();
@@ -284,6 +302,16 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->assertContainerBuilderHasServiceDefinitionWithTag(ProductContextResolver::class, 'setono_sylius_cms.context_resolver', ['priority' => -100]);
         $this->assertContainerBuilderHasServiceDefinitionWithTag(TaxonContextResolver::class, 'setono_sylius_cms.context_resolver', ['priority' => -100]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_disabled_content_types_to_the_pass_that_registers_the_content_types(): void
+    {
+        $this->load(['disabled' => ['content_types' => ['blog_post']]]);
+
+        $this->assertContainerBuilderHasParameter(RegisterContentTypesPass::DISABLED_PARAMETER, ['blog_post']);
     }
 
     /**
@@ -540,7 +568,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
                 'visibility' => 'public',
                 'directory_visibility' => 'public',
             ],
-        ]]], $this->container->getExtensionConfig('flysystem'));
+        ]], self::transferStorage()], $this->container->getExtensionConfig('flysystem'));
         self::assertFalse($this->container->has('setono_sylius_cms.storage'), 'The plugin defines no storage of its own');
         self::assertFalse($this->container->hasDefinition('setono_sylius_cms.media.storage') || $this->container->hasAlias('setono_sylius_cms.media.storage'), 'The storage goes by one name');
     }
@@ -555,7 +583,49 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['media' => ['storage' => 'app.s3_storage']]);
 
         $this->assertContainerBuilderHasAlias('setono_sylius_cms.storage', 'app.s3_storage');
-        self::assertSame([], $this->container->getExtensionConfig('flysystem'), 'No local storage is defined');
+        self::assertSame([self::transferStorage()], $this->container->getExtensionConfig('flysystem'), 'No local media storage is defined');
+    }
+
+    /**
+     * The web server serves the media storage's directory, so the export zips uploaded on the Transfer screen wait for
+     * the worker in a private directory outside it
+     *
+     * @test
+     */
+    public function it_keeps_uploaded_export_zips_in_a_private_local_storage_of_their_own_by_default(): void
+    {
+        $this->load();
+
+        self::assertContains(self::transferStorage(), $this->container->getExtensionConfig('flysystem'));
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(UploadedExports::class, 0, new Reference('setono_sylius_cms.transfer_storage'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_uploaded_export_zips_in_the_storage_a_project_configures_under_the_one_name(): void
+    {
+        $this->container->loadFromExtension('setono_sylius_cms', ['transfer' => ['storage' => 'app.shared_storage']]);
+
+        $this->load(['transfer' => ['storage' => 'app.shared_storage']]);
+
+        $this->assertContainerBuilderHasAlias('setono_sylius_cms.transfer_storage', 'app.shared_storage');
+        self::assertNotContains(self::transferStorage(), $this->container->getExtensionConfig('flysystem'));
+    }
+
+    /**
+     * @return array{storages: array<string, array<string, mixed>>}
+     */
+    private static function transferStorage(): array
+    {
+        return ['storages' => [
+            'setono_sylius_cms.transfer_storage' => [
+                'adapter' => 'local',
+                'options' => ['directory' => '%kernel.project_dir%/private/cms'],
+                'visibility' => 'private',
+                'directory_visibility' => 'private',
+            ],
+        ]];
     }
 
     /**
@@ -725,12 +795,17 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
-    public function it_routes_the_messages_that_run_a_scheduled_publish_and_delete_a_replaced_file_to_sylius_main_transport(): void
+    public function it_routes_the_messages_that_run_a_scheduled_publish_delete_a_replaced_file_and_run_or_abandon_an_admin_import_to_sylius_main_transport(): void
     {
         $this->load();
 
         $framework = $this->container->getExtensionConfig('framework');
-        self::assertSame([['messenger' => ['routing' => [ScheduledPublishDue::class => 'main', DeleteReplacedFile::class => 'main']]]], $framework);
+        self::assertSame([['messenger' => ['routing' => [
+            ScheduledPublishDue::class => 'main',
+            DeleteReplacedFile::class => 'main',
+            RunImport::class => 'main',
+            AbandonImport::class => 'main',
+        ]]]], $framework);
     }
 
     /**
@@ -751,7 +826,45 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['builder' => ['scripts' => ['/build/app/cms/controls.js']]]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.builder.scripts', ['/build/app/cms/controls.js']);
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 13, '%setono_sylius_cms.builder.scripts%');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 14, '%setono_sylius_cms.builder.scripts%');
+    }
+
+    /**
+     * See "Code presets" in docs/spec/layouts-and-presets.md
+     *
+     * @test
+     */
+    public function it_hands_the_code_preset_files_it_finds_in_the_registered_directories_by_code_and_the_disabled_codes_to_the_code_preset_provider(): void
+    {
+        $directory = (string) realpath(dirname(__DIR__) . '/Preset/Fixture/presets');
+        $this->setParameter('kernel.project_dir', dirname($directory));
+
+        $this->load(['presets' => ['paths' => ['%kernel.project_dir%/presets']], 'disabled' => ['presets' => ['faq']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.presets.files', ['faq' => $directory . '/faq.json', 'hero' => $directory . '/hero.json']);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.presets', ['faq']);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(CodePresetProvider::class, 0, '%setono_sylius_cms.presets.files%');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(CodePresetProvider::class, 1, '%setono_sylius_cms.disabled.presets%');
+        $this->assertContainerBuilderHasServiceDefinitionWithTag(CodePresetProvider::class, 'setono_sylius_cms.preset_provider', ['priority' => 100]);
+        // A file added to a directory rebuilds the container
+        self::assertContains((string) new DirectoryResource($directory, '/\.json$/'), array_map(static fn (ResourceInterface $resource): string => (string) $resource, $this->container->getResources()));
+    }
+
+    /**
+     * See "Shipped code presets" in docs/spec/layouts-and-presets.md
+     *
+     * @test
+     */
+    public function it_prepends_its_own_presets_directory_to_the_presets_paths_as_a_bundle_does(): void
+    {
+        $this->load();
+
+        $presets = $this->container->getExtensionConfig('setono_sylius_cms')[0]['presets'] ?? null;
+        self::assertIsArray($presets);
+        self::assertIsArray($presets['paths'] ?? null);
+        self::assertCount(1, $presets['paths']);
+        self::assertIsString($presets['paths'][0] ?? null);
+        self::assertSame(dirname(__DIR__, 3) . '/src/Resources/presets', realpath($presets['paths'][0]));
     }
 
     /**
@@ -971,13 +1084,13 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         self::assertCount(1, $configs);
         [$config] = $configs;
 
-        self::assertSame(['setono_sylius_cms_admin_entry', 'setono_sylius_cms_admin_entry_all'], array_keys($config['grids']));
+        self::assertSame(['setono_sylius_cms_admin_entry', 'setono_sylius_cms_admin_entry_all', 'setono_sylius_cms_admin_entry_collection'], array_keys($config['grids']));
         $grid = $config['grids']['setono_sylius_cms_admin_entry'];
         self::assertSame([
             'name' => 'doctrine/orm',
             'options' => [
                 'class' => '%setono_sylius_cms.model.entry.class%',
-                'repository' => ['method' => 'createListQueryBuilder', 'arguments' => ['$contentType']],
+                'repository' => ['method' => 'createListQueryBuilder', 'arguments' => ['$contentType', '%setono_sylius_cms.disabled.content_types%']],
             ],
         ], $grid['driver']);
         self::assertSame(['lastEdited' => 'desc'], $grid['sorting']);
@@ -1015,6 +1128,16 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
             'limits' => [25, 50, 100],
             'fields' => ['type' => self::twigField('setono_sylius_cms.ui.type', 'type', 20)],
         ], $config['grids']['setono_sylius_cms_admin_entry_all']);
+
+        // A collection with categories lists both, by type, and its create dialog asks which of the two
+        self::assertSame([
+            'extends' => 'setono_sylius_cms_admin_entry',
+            'driver' => ['options' => ['repository' => ['method' => 'createCollectionListQueryBuilder', 'arguments' => ['$contentType', '%setono_sylius_cms.disabled.content_types%']]]],
+            'sorting' => ['lastEdited' => 'desc'],
+            'limits' => [25, 50, 100],
+            'fields' => ['type' => self::twigField('setono_sylius_cms.ui.type', 'type', 20)],
+            'actions' => ['main' => ['create' => ['type' => 'setono_sylius_cms_create_entry', 'options' => ['contentType' => null, 'collection' => '$contentType']]]],
+        ], $config['grids']['setono_sylius_cms_admin_entry_collection']);
 
         self::assertSame(['setono_sylius_cms_create_entry' => '@SetonoSyliusCMSPlugin/admin/entry/grid/action/create.html.twig'], $config['templates']['action']);
 

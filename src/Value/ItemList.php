@@ -26,6 +26,9 @@ final class ItemList implements \IteratorAggregate, \Countable
     /** @var list<T>|null the items that show, once read */
     private ?array $items = null;
 
+    /** @var array<int, Pagerfanta<T>> the pages asked for, by page */
+    private array $pagers = [];
+
     /**
      * @param \Closure(): AdapterInterface<T> $resolve
      * @param int<1, max>|null $limit how many items show, or null for all of them
@@ -85,7 +88,8 @@ final class ItemList implements \IteratorAggregate, \Countable
 
     /**
      * A page of its adapter's items, $limit to a page, or every item on one page for a list without a limit, such as
-     * for the paginated Entries block
+     * for the paginated Entries block. The same page is the same Pagerfanta, so the pass before rendering counts the list
+     * and its template shows the page without counting it again
      *
      * @param int<1, max> $page
      *
@@ -93,11 +97,15 @@ final class ItemList implements \IteratorAggregate, \Countable
      */
     public function pager(int $page): Pagerfanta
     {
+        if (isset($this->pagers[$page])) {
+            return $this->pagers[$page];
+        }
+
         $pager = new Pagerfanta($this->adapter());
         $pager->setMaxPerPage($this->limit ?? max(1, $pager->getNbResults()));
         $pager->setCurrentPage($page);
 
-        return $pager;
+        return $this->pagers[$page] = $pager;
     }
 
     /**

@@ -5,7 +5,7 @@ import { createAutosave, type Autosave } from './autosave';
 import type { BindablePropertyDefinition } from './bindings';
 import { BuilderBindingsProvider } from './bindingsContext';
 import { withUuid, type BuilderConfig } from './config';
-import { BuilderProvider, type BuilderSession } from './context';
+import { BuilderProvider, type BuilderSession, type PresetEditing } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import type { LinkTargetDefinition } from './links';
 import { LinkTargetsProvider } from './linkTargets';
@@ -20,6 +20,7 @@ import { SearchProvider } from './search/context';
 import { createSourcesApi, type SourcesApi } from './sources/api';
 import { PreviewSourcesProvider } from './sources/context';
 import type { SourceDefinition } from './sources/sources';
+import type { ContentTypeDefinition } from './types';
 import { createCancelSchedule, createDiscard, createPublish, createReload, createSchedule } from './publishing';
 import { createSettingsStore } from './settings';
 import { createSlugFollower, type SlugFollower } from './slugs';
@@ -66,7 +67,7 @@ function backHere(block: string, locale: string): string {
 type Phase =
     | { name: 'loading' }
     | { name: 'failed' }
-    | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[]; sources: SourceDefinition[]; bindableProperties: BindablePropertyDefinition[] };
+    | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[]; sources: SourceDefinition[]; contentTypes: ContentTypeDefinition[]; bindableProperties: BindablePropertyDefinition[] };
 
 /** Loads the registry and the entry, then opens the entry in the builder. */
 export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, mediaApi, searchApi, sourcesApi, snippetPreviewApi }: AppProps) {
@@ -82,7 +83,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
         [config, searchApi],
     );
     const sourcesEndpoint = useMemo(
-        () => sourcesApi ?? (config.endpoints.sourceCount === undefined ? null : createSourcesApi(config.endpoints.sourceCount)),
+        () => sourcesApi ?? (config.endpoints.sourceCount === undefined ? null : createSourcesApi(config.endpoints.sourceCount, undefined, config.endpoints.cardDisplays)),
         [config, sourcesApi],
     );
     const snippetPreviewEndpoints = useMemo(() => {
@@ -161,6 +162,9 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                 const leaving = createLeaving(store, autosave, (to) => navigate(to ?? config.backUrl));
                 const builderEndpoint = config.endpoints.builder;
                 const snippetBlocks = api.snippetBlocks?.bind(api);
+                const listPresets = api.presets?.bind(api);
+                const insertPreset = api.insertPreset?.bind(api);
+                const editing = presetEditing(api, () => autosave?.flush() ?? Promise.resolve());
 
                 // A save refused because a colleague scheduled a publish loads the working copy again, read-only
                 const reload = createReload(store, () => api.fetchEntry());
@@ -176,6 +180,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                     media: registry.media ?? null,
                     linkTargets: registry.linkTargets ?? [],
                     sources: registry.sources ?? [],
+                    contentTypes: registry.contentTypes,
                     bindableProperties: registry.bindableProperties ?? [],
                     session: {
                         store,
@@ -185,12 +190,26 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                         leaving,
                         overviewUrl: config.overviewUrl,
                         placements: config.placements ?? null,
+                        notices: config.notices ?? [],
                         snippetPreview: snippetPreviewEndpoints,
                         editSnippet:
                             builderEndpoint === undefined
                                 ? null
                                 : (snippet, block) => void leaving.getState().leave(`${withUuid(builderEndpoint, snippet)}?${new URLSearchParams({ back: backHere(block, store.getState().locale) }).toString()}`),
                         snippetBlocks: snippetBlocks === undefined ? null : (snippet) => snippetBlocks(snippet),
+                        // The server reads the spot in the working copy as it has it, so the unsaved changes go first
+                        presets:
+                            listPresets === undefined || insertPreset === undefined
+                                ? null
+                                : {
+                                      list: async (parent) => {
+                                          await autosave?.flush();
+
+                                          return listPresets(parent);
+                                      },
+                                      insert: (id) => insertPreset(id),
+                                      editing,
+                                  },
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
                         schedule: createSchedule(store, autosave, (at) => api.schedule(at), validationStore),
@@ -213,6 +232,9 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                         customerGroups: config.customerGroups,
                         urlPrefix,
                         homepage: contentType?.homepage ?? false,
+                        hasBlockTree: contentType?.blocks !== null,
+                        hasOwnUrl: contentType?.prefix !== null,
+                        entryFields: contentType?.fields ?? [],
                         urls: urlsStore,
                         titleChanged: (locale, before) => follower?.titleChanged(locale, before),
                     },
@@ -254,7 +276,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
     const shell = (
         <LinkTargetsProvider value={phase.linkTargets}>
             {/* List fields offer the sources, and count what they yield in the preview */}
-            <PreviewSourcesProvider sources={phase.sources} api={sourcesEndpoint}>
+            <PreviewSourcesProvider sources={phase.sources} api={sourcesEndpoint} contentTypes={phase.contentTypes}>
                 {/* Bindable fields offer the properties that fit the context the entry provides or the snippet declares */}
                 <BuilderBindingsProvider properties={phase.bindableProperties}>
                     <Shell />
@@ -278,4 +300,35 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
             </BuilderProvider>
         </TranslatorProvider>
     );
+}
+
+/**
+ * What ★ and the Presets tab do with editor presets, with all of their endpoints or none. Saving blocks reads the working
+ * copy as the server has it, so the unsaved changes go first.
+ */
+function presetEditing(api: BuilderApi, flush: () => Promise<unknown>): PresetEditing | null {
+    const create = api.createPreset?.bind(api);
+    const replace = api.replacePreset?.bind(api);
+    const update = api.updatePreset?.bind(api);
+    const remove = api.deletePreset?.bind(api);
+    const exportUrl = api.presetExportUrl?.bind(api);
+    if (create === undefined || replace === undefined || update === undefined || remove === undefined || exportUrl === undefined) {
+        return null;
+    }
+
+    return {
+        create: async (content, details) => {
+            await flush();
+
+            return create(content, details);
+        },
+        replace: async (id, content) => {
+            await flush();
+
+            return replace(id, content);
+        },
+        update: (id, details) => update(id, details),
+        remove: (id) => remove(id),
+        exportUrl: (id) => exportUrl(id),
+    };
 }

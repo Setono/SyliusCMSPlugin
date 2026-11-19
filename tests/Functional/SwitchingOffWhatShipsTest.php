@@ -6,16 +6,38 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\SwitchedOffKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
- * What a project switches off in its config: setono_sylius_cms.assets and setono_sylius_cms.disabled.block_types
+ * What a project switches off in its config: setono_sylius_cms.assets and setono_sylius_cms.disabled.block_types, and a
+ * stock slot's block on its template event in sylius_ui
  */
 final class SwitchingOffWhatShipsTest extends WebTestCase
 {
     use Entries;
+    use Placements;
+
+    /**
+     * A stock slot renders through a block of its own on its template event, which a project switches off in its own
+     * sylius_ui config, as it does any block of Sylius's
+     *
+     * @test
+     */
+    public function it_renders_nothing_in_a_stock_slot_whose_template_event_block_is_switched_off(): void
+    {
+        $client = self::createClient();
+        self::place(self::createSnippet('Top', [self::heading('0193a5be-0000-7000-8000-000000000001', 'Top')], published: true), 'shop.top');
+        self::place(self::createSnippet('Footer', [self::heading('0193a5be-0000-7000-8000-000000000002', 'Footer')], published: true), 'shop.footer');
+
+        $client->request('GET', '/en_US/');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('.cms-slot--shop-top');
+        self::assertSelectorNotExists('.cms-slot--shop-footer');
+    }
 
     /**
      * @test

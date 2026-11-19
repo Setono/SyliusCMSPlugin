@@ -75,6 +75,8 @@ export interface BuilderConfig {
         search?: string;
         /** How many items a source yields for a list field's parameters, under a preview token. Without it, no count shows. */
         sourceCount?: string;
+        /** The displays the Entries block offers for what its entries field holds, under a preview token. */
+        cardDisplays?: string;
         /** The blocks a snippet shows, with UUID_PLACEHOLDER for its UUID, which Detach to edit here copies. Without it, there's no Detach. */
         snippetBlocks?: string;
         /** Another entry's builder, with UUID_PLACEHOLDER for its UUID, which Edit snippet opens. Without it, there's no Edit snippet. */
@@ -83,6 +85,16 @@ export interface BuilderConfig {
         previewSnippet?: string;
         /** The sample objects a snippet's preview can show it with, under a preview token. Without it, the sample object can't be picked. */
         previewSamples?: string;
+        /** The block presets at a spot in the entry's tree, which takes &parent=<key> for a block's children. Without it, there's no Presets tab. */
+        presets?: string;
+        /** A preset's blocks ready to insert, with UUID_PLACEHOLDER for its id. Without it, there's no Presets tab. */
+        presetInsert?: string;
+        /** Saves blocks as a new editor preset. Without it, or the next two, blocks can't be saved as presets, nor presets changed. */
+        presetCreate?: string;
+        /** An editor preset, with UUID_PLACEHOLDER for its UUID: PUT replaces its blocks, PATCH renames it and DELETE deletes it. */
+        preset?: string;
+        /** An editor preset as a code preset file to download, with UUID_PLACEHOLDER for its UUID. */
+        presetExport?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];
@@ -94,6 +106,8 @@ export interface BuilderConfig {
     preview?: ShownToAndDate;
     /** A snippet's placements, by slot, which the More tab lists. Null or absent for an entry that isn't a snippet. */
     placements?: SnippetPlacement[] | null;
+    /** What the server tells the editor once the builder opens, such as what creating from a starting point left out. Optional. */
+    notices?: string[];
     /** UI strings needed before the registry arrives, such as the loading text. Optional. */
     strings?: Record<string, string>;
     /**

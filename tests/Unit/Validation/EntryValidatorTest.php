@@ -18,6 +18,7 @@ use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
@@ -36,6 +37,7 @@ use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidator;
 use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 use Setono\SyliusCMSPlugin\Validation\FieldValidator;
+use Setono\SyliusCMSPlugin\Validation\PaginationValidator;
 use Setono\SyliusCMSPlugin\Validation\SnippetCycleValidator;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\DependencyInjection\ServiceLocator;
@@ -298,7 +300,7 @@ final class EntryValidatorTest extends TestCase
         return new EntryValidator(
             new BlockTreeValidator($blockTypes, new NestingRules($blockTypes, $contentTypes), $fieldValidator, $translator),
             $fieldValidator,
-            new FieldReader(),
+            new ContentTypeFields(new FieldReader()),
             $contentTypes,
             $validator,
             $this->urlValidator->reveal(),
@@ -306,6 +308,7 @@ final class EntryValidatorTest extends TestCase
             new EmbedCodeValidator(false, $translator),
             $this->contextCheck->reveal(),
             new SnippetCycleValidator(SnippetCyclesTest::snippetCycles($this->prophesize(EntryRepositoryInterface::class)->reveal()), $translator),
+            new PaginationValidator($translator),
         );
     }
 }

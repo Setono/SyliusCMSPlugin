@@ -33,6 +33,7 @@ A slot with nothing to show prints nothing, not even a wrapper. A placement whos
    - If the block's visibility conditions hide it from the shopper, the entry has only page 1.
    - Otherwise it counts the block's source and answers 404 for a `?page=N` past the last page, before any output. Page 1 always exists, even when the list is empty.
    - A `?page` that isn't a whole number of 1 or more answers 404, and `?page=1` redirects with a `301` to the URL without it.
+   - The page travels in the `RenderContext` (`page`), which the Entries block's template and the head tags read.
 4. **The layout.** The entry renders in its layout's template, resolved through Symfony bundle overrides and Sylius themes ([Extending](extending.md#twig)). An entry whose layout was removed from code renders in its content type's default layout, and the admin flags it.
 
 The homepage renders the same way through the decorated homepage controller, without the URL lookup in step 1 ([URLs and SEO](urls-and-seo.md#homepage)).
@@ -45,7 +46,7 @@ The same steps render an entry's tree, a snippet in a slot, a referenced snippet
 2. **Load references.** One pass over the tree collects every reference its fields and its blocks' visibility conditions' parameters hold, through the field type handlers, and loads every media item, entry, product and taxon with one query per kind, through `ReferenceLoaderInterface` ([Extending](extending.md#rendering-services)). Referenced snippets' trees are included in the same pass. So a project's condition kind can take a product, a taxon or a media item as a parameter, hydrated as a field's value is.
 3. **Visibility conditions run before a block's template.** A block whose conditions don't match isn't rendered, and neither are its children. The template gets only the visible children, so a carousel's slide count and its dots are always right.
 4. **Context flows down.** Each block template gets the host-page context of the entry or slot it renders in ([Extending](extending.md#block-templates)).
-5. **Render.** Each block renders through its block type's renderer ([Extending](extending.md#block-renderers)).
+5. **Render.** Each block renders through its block type's template ([Extending](extending.md#block-templates)).
 
 - **Sources resolve lazily**, when a template first reads the list field. A list that doesn't paginate takes the first slice and never counts ([Sources](sources.md)).
 - **A snippet that would render inside itself**, directly or through other snippets, is skipped the second time, and the admin flags the reference.
@@ -90,7 +91,7 @@ What stays in place for a cache added later:
 - **Condition kinds declare what they read**, and kinds that read the time report their next change ([Extending](extending.md#condition-kinds)). A later HTML cache adds declarations that block types and sources opt into, and treats any that haven't declared themselves cacheable as uncacheable, so nothing written for v2.0 breaks.
 - **Listings and sources report no next date boundary** in v2.0.
 - **Change events** implement `StorefrontChangedInterface` and carry the affected UUIDs ([Extending](extending.md#events)). Nothing in v2.0 listens to them for caching.
-- **Three services can be decorated:** `PlacementProviderInterface`, `EntryUrlLookupInterface` and `ReferenceLoaderInterface` ([Extending](extending.md#rendering-services)). A project that needs to cache placements, URL lookups or references decorates one with a tag-aware cache and invalidates it on `StorefrontChangedInterface` events. The plugin's docs include a cookbook page that shows how.
+- **Three services can be decorated:** `PlacementProviderInterface`, `EntryUrlLookupInterface` and `ReferenceLoaderInterface` ([Extending](extending.md#rendering-services)). A project that needs to cache placements, URL lookups or references decorates one with a tag-aware cache and invalidates it on `StorefrontChangedInterface` events. The [caching cookbook](../cookbook/caching.md) shows how for placements and URL lookups, and why it leaves references to the database.
 
 ## Stylesheet and script
 

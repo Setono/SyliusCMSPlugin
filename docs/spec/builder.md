@@ -11,6 +11,7 @@ The full-screen [builder](../../GLOSSARY.md#editing) where every entry is edited
 - Its back button returns to where it was opened from, and Esc does the same.
 - Both send the unsaved changes first. When they can't be saved, the builder stays open and says why, and the editor stays or chooses **Leave anyway**, which leaves without them.
 - Every entry is edited here, including entries whose content type has no block tree. For those, the tree pane is hidden, and the preview shows the entry's page when it has its own URL.
+- An entry without a URL of its own, other than a snippet, such as a FAQ item, has no page to preview, so the preview pane says so. It's edited in its settings.
 
 ## The shell
 
@@ -43,7 +44,7 @@ From left to right:
 
 ### Centre: the preview
 
-- The preview is the real shop page in an iframe ([Preview mode](#preview-mode)). For an entry with its own URL that's its page, and for a snippet the host page of one of its placements.
+- The preview is the real shop page in an iframe ([Preview mode](#preview-mode)). For an entry with its own URL that's its page, and for a snippet the host page of one of its placements. Any other entry has no page, so there's no preview ([Opening and leaving](#opening-and-leaving)).
 - **Selection is linked both ways.** Clicking a block in the preview selects it in the tree and the right pane, and selecting it in the tree scrolls the preview to it.
 
 ### Right pane: the selection
@@ -57,7 +58,7 @@ With a block selected, the right pane shows:
 - its **children**, with + to add one
 - its **visibility conditions** ([Targeting](targeting.md#condition-kinds))
 
-With nothing selected, or the entry's settings selected, it shows the settings in three tabs:
+With nothing selected, or the entry's settings selected, it shows **Save as starting point**, which saves the whole tree, with its layout and the layout's field values, as a starting point for the entry's content type, or replaces an editor starting point of that content type ([Layouts and presets](layouts-and-presets.md#starting-points)). It's there when the content type has a block tree, and disabled while the tree has no blocks. Under it are the settings, in three tabs:
 
 - **Settings:** title, layout (with a warning when its layout was removed from code), categories (deleted ones flagged), channels, enabled, date window, audience, "Homepage of" for pages, and the host-page context for snippets.
 - **URL & SEO** for a content type with its own URL: slug (with its conflict errors), a warning when a Sylius route takes the URL, old slugs, meta title, meta description and "Hide from search engines".
@@ -97,6 +98,9 @@ A list field ([Content model](content-model.md#fields)) has a **Filled by** sele
 - A source's parameter fields are configured inline, under the select.
 - The number of items to show is set beside it, and becomes the page size when the list paginates.
 - The field shows how many items the source yields right now, in the preview's channel, locale, Shown to and Date.
+- A source that fits only some content types as the entry, such as In this category, is offered only in entries of them, and in any snippet ([Extending](extending.md#sources)).
+- A parameter that lists the categories of the collection another parameter holds, such as From a collection's `categories`, shows once a collection with categories is chosen, searches that collection's categories, and is cleared when the collection changes.
+- The Entries block's display select offers the displays the server answers for what the block lists (`card_displays`), and keeps showing the display the block holds when it isn't one of them, until the editor picks another.
 
 ## Bindings
 
@@ -197,16 +201,18 @@ The builder talks to plain JSON controllers under the admin firewall, not to API
 | `preview_render` | POST | `/preview/render` | Renders the given blocks of the working copy under a preview token, and answers with their HTML by key. A snippet's render with the preview's sample object. |
 | `preview_snippet` | GET | `/preview/snippet` | Under a snippet's preview token, what the top bar shows: the sample object, with whether it's inside the placement's page scope, and the snippets shoppers see where the placement loses its capped slot. |
 | `preview_samples` | GET | `/preview/samples?q=` | Under a snippet's preview token, the sample objects the picker finds, each with whether it's inside the placement's page scope. |
-| `search` | GET | `/search/{kind}?q=` | Search for pickers. `{kind}` is `product`, `taxon`, `entry`, `snippet`, `media`, `customer_group`, `product_attribute` or a link target's code. With `?refs=a,b` instead of `q`, it looks those refs up, so a picker names the values it holds. A snippet search takes `provides`, the context keys the edited entry provides, and `entry`, the edited entry's UUID, and leaves out the snippets that need more and the entry itself. |
+| `search` | GET | `/search/{kind}?q=` | Search for pickers. `{kind}` is `product`, `taxon`, `entry`, `snippet`, `media`, `customer_group`, `product_attribute` or a link target's code. With `?refs=a,b` instead of `q`, it looks those refs up, so a picker names the values it holds. A snippet search takes `provides`, the context keys the edited entry provides, and `entry`, the edited entry's UUID, and leaves out the snippets that need more and the entry itself. An entry search finds entries with their own URL, which links lead to, or with `contentType`, a content type's code, only that content type's entries, as the picker of an Entry or Entries field that names one searches, such as a blog post's categories. Its refs are looked up whatever their content type. |
 | `snippet_blocks` | GET | `/snippets/{uuid}/blocks` | The blocks a Snippet block shows: the snippet's published content, upgraded, without blocks of removed types. "Detach to edit here" copies them, with new keys. |
 | `source_count` | POST | `/sources/count` | How many items a source yields for given parameters under a preview token. |
+| `card_displays` | POST | `/cards/displays` | The displays the Entries block offers for what its `entries` field holds, under a preview token: those of the content type a source lists on the previewed page, those every picked entry's content type has, or every display when it can't tell ([Collections](collections.md#the-entries-block)). |
 | `media_upload` | POST | `/media` | Uploads files into a folder, answering with the new media items or the duplicates found ([Media](media.md)). |
-| `preset_index` | GET | `/presets` | The code and editor presets, with their metadata and whether each fits. |
-| `preset_create` | POST | `/presets` | Saves the selected blocks, or the whole tree as a starting point, as an editor preset. |
-| `preset_replace` | PUT | `/presets/{uuid}` | Replaces an editor preset's blocks ("Replace <name>"). |
+| `preset_index` | GET | `/presets?entry=&parent=` | The block presets, code and editor, with their metadata, why each is marked invalid, whether each fits the spot (the entry's top level, or the children of the block `parent`) and why not, and the blocks each would insert, for the live render. Also the starting points of the entry's content type, which saving the whole tree can replace, and the categories in use, of every preset, which saving a preset suggests. |
+| `preset_create` | POST | `/presets` | Saves the selected blocks, or the whole tree as a starting point, as an editor preset. The blocks are named by their keys, or `"startingPoint": true` asks for the whole tree, with its layout and the layout's field values, for the entry's content type. Both are read from the entry's working copy as the server has it, so the builder sends its unsaved changes first. |
+| `preset_replace` | PUT | `/presets/{uuid}` | Replaces an editor preset's blocks ("Replace <name>"), or an editor starting point's tree and layout with the whole tree of an entry of its content type. A block preset stays a block preset, and a starting point a starting point. |
 | `preset_update` | PATCH | `/presets/{uuid}` | Renames or recategorises an editor preset. |
 | `preset_delete` | DELETE | `/presets/{uuid}` | Deletes an editor preset. |
-| `preset_insert` | POST | `/presets/{uuid}/insert` | Returns a preset's blocks ready to insert into an entry: upgraded, with new keys, translation keys resolved for the entry's locales, and the blocks of removed types left out. |
+| `preset_export` | GET | `/presets/{uuid}/export` | Downloads an editor preset as a code preset file, the one `setono:cms:preset:export` writes ([Layouts and presets](layouts-and-presets.md#code-presets)). |
+| `preset_insert` | POST | `/presets/{preset}/insert` | Returns a preset's blocks ready to insert into an entry: upgraded, with new keys, translation keys resolved for the entry's locales, and the blocks of removed or disabled types left out, with notices. `{preset}` is a code preset's code or an editor preset's UUID. |
 | `revision_index` | GET | `/entries/{uuid}/revisions` | The entry's revisions, with who published each and when. |
 | `revision_preview` | POST | `/revisions/{id}/preview` | Creates a read-only preview token for a revision. |
 | `revision_restore` | POST | `/revisions/{id}/restore` | Copies a revision into the draft. |

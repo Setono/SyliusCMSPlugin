@@ -56,6 +56,7 @@ When a layout is removed from code, or disabled with `disabled.layouts`, its ent
 | Blog category | `standard` | Standard | none | `title`, `description` | The title and the description above the tree. |
 
 - Each is its content type's default. Their templates are `@SetonoSyliusCMSPlugin/layout/<content type code>/<layout code>.html.twig`, such as `layout/page/standard.html.twig`.
+- **Markup.** Article is a `cms-article`, contained to `--cms-article-width` and centred, with a `cms-article__header` holding `cms-article__title`, `cms-article__date` (a `<time>`), `cms-article__categories` (a list of links, each a `cms-article__category`) and `cms-article__image`, then the `cms-tree`. Blog category's Standard is a `cms-category-header` with `cms-category-header__title` and `cms-category-header__description`, then the `cms-tree`.
 - **Contained and full width on Page's standard layout.** The tree sits in `cms-tree`, inside the shop layout's own container, which keeps each top-level block to the shop's content width. A Group or a Banner with `fullWidth` on breaks out of that container to the edges of the viewport, so a page can mix full-width and contained blocks without a second layout ([Blocks](blocks.md#class-names)). In a slot on a Sylius page, a full-width block only reaches the edges of its surroundings.
 - The shipped layouts have no slots of their own. Agencies add layouts with slots.
 
@@ -70,6 +71,8 @@ The builder's block picker has a Presets tab, and + between blocks offers preset
 - every one of its top-level blocks is allowed there
 - inserting it keeps the spot within its min and max
 - the context its blocks, sources and bindings need is available there
+- every source in it fits the entry's content type, as Related fits only entries of a collection with categories, so `related_posts` is offered only on blog posts ([Extending](extending.md#sources))
+- a paginated Entries block in it keeps to the rules publish holds it to: the entry has its own URL, its tree holds no other paginated Entries block, and a source fills the list ([Collections](collections.md#pagination))
 
 Presets left out are named with the reason, the same way block types are, such as "needs a product page".
 
@@ -98,7 +101,8 @@ A preset can be a **starting point** for one content type. It then also remember
 - **Creating an entry** offers Blank plus the content type's starting points, shipped and saved by editors ([Admin](admin.md#create-dialog)).
 - **The default.** A developer can mark one code preset as the content type's default starting point (`"default": true`), which the create dialog preselects. Without one, Blank is preselected. Editors can't change the default in v2.0, and editor presets are never the default.
 - **Entry fields start empty**, such as the title, the slug and the SEO fields. The entry's channels, audience and other settings start as for any new entry.
-- **The layout** from the starting point is used, with its field values. When that layout no longer exists or is disabled, the content type's default layout is used and the layout field values are dropped.
+- **The blocks are copied as inserting copies them** ([What inserting copies](#what-inserting-copies)). The entry's locales are those of the channels it's created in, so their values are kept and translation keys resolve in each of them. What inserting would leave out with a notice, such as blocks of a disabled type, is left out, and the builder shows the notices when it opens the new entry.
+- **The layout** from the starting point is used, with its field values, which are copied like a block's. When that layout no longer exists or is disabled, the content type's default layout is used and the layout field values are dropped. The create dialog's layout cards only apply to Blank.
 
 A starting point is a role a preset plays, not a term of its own.
 
@@ -174,7 +178,7 @@ Code presets are JSON files in the [preset file format](#preset-file-format), in
 - **Composing one.** Developers don't write presets by hand. They compose one in the builder, save it as an editor preset, and export it: from the Presets tab, which downloads the file, or with `setono:cms:preset:export <preset> <dir>`, which writes `<dir>/<code>.json`, where the code is the preset's name in snake case ([Console commands](extending.md#console-commands)).
 - **Media is left out on export.** Media and Media list fields are left empty, because media items exist only in one environment's library. The block's placeholder shows in their place ([Blocks](blocks.md#empty-images)). Editor presets, which stay in the store, keep their media references.
 - **Translation keys.** An exported file holds text as locale maps. A plugin that doesn't know a store's locales replaces those values, and the name, category and description, with translation keys, `{"$trans": "…"}`, and ships the translations in its translation files.
-- **Validating.** `setono:cms:preset:validate` checks every file in every registered directory, or the paths given, and exits non-zero on any error, for CI. It checks the format, that every block type exists, that no block-type version is newer than the code's, the nesting rules, that field values fit their field types, and that a starting point's content type and layout exist.
+- **Validating.** `setono:cms:preset:validate` checks every file in every registered directory, or the paths given, and exits non-zero on any error, for CI. It checks the format, that every block type exists, that no block-type version is newer than the code's, the nesting rules, that field values fit their field types, that a starting point's content type and layout exist, that a block preset holds at least one block, and that no two of the files it checks are the default starting point of one content type.
 - **Read-only.** Code presets are read-only in the admin and marked as coming from code. To change one, a developer inserts it, edits it, saves it as an editor preset and exports it again.
 - **Old files keep working.** Each block records its block-type version, so upgraders bring old preset files up to date when they're inserted.
 
@@ -197,7 +201,7 @@ Editors save their own presets from the builder ([Builder](builder.md)).
 
 A preset can hold blocks that are no longer valid, such as after a block type was removed from code or a field changed.
 
-- **The Presets tab, the Presets screen and the create dialog mark the preset** and say why. A starting point with blocks of removed types is disabled in the create dialog.
+- **The Presets tab, the Presets screen and the create dialog mark the preset** and say why. A starting point with blocks of removed types is disabled in the create dialog, and so is one saved with a newer block-type or layout version than the code's, which inserting would refuse.
 - **On insert, blocks of a type the code no longer has are left out**, with a notice. So is a disabled block type's block, which can't be added.
 - **Other problems are inserted and flagged** like any invalid block, and publish refuses until they're fixed ([Publishing](publishing.md)).
 
@@ -225,3 +229,9 @@ All text in the shipped presets is translation keys. No starting point for Page 
 | `related_posts` | block preset | Blog | see [Collections](collections.md#shipped-layouts-starting-points-and-presets) |
 
 The images in shipped presets are empty and show the placeholder until an editor picks one ([Blocks](blocks.md#empty-images)).
+
+- **Where they are.** The files are in the plugin's `src/Resources/presets`, which it prepends to `presets.paths`, so a project's own presets come after them. A project switches one off with `disabled.presets`. The starting points' thumbnails are `/bundles/setonosyliuscmsplugin/thumbnail/preset/<code>.svg`.
+- **Their translation keys** are in the `messages` domain: `setono_sylius_cms.preset.<code>.name` and `.description`, `setono_sylius_cms.preset.<code>.<part>` for the text in its blocks, and `setono_sylius_cms.preset_category.<category>`. The landing page uses the keys of the presets it's made of.
+- **Their links** lead to the shop's homepage, `/`, one URL for every locale, so each button and link works in any store until an editor points it elsewhere.
+- **`campaign_with_fallback`'s date window is left open**, as any date in a shipped file would one day be past, so the campaign banner shows until an editor sets its dates.
+- **`landing_page` hides the title** (`showTitle` off), as it opens with its banner carousel. `content_page` shows it, with its Heading below.

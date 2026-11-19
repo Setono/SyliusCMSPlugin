@@ -9,13 +9,29 @@ app:
         condition_kind:
             product_available: Product is available
         greeting: Hello
+        # The test application's code preset sale_hero.json, as a plugin ships its presets' texts
+        preset:
+            sale_hero:
+                heading: Winter sale
+                name: Sale hero
+                text: '<p>Up to <strong>50%</strong> off.</p>'
+        preset_category:
+            banners: Banners
         content_type:
             announcement: Announcement
+            recipe: Recipe
+            store_location: Store location
         field:
+            intro: Introduction
+            open: Open now
+            picks: Picks
+            city: City
+            directions: Directions
             image: Image
             opening_hours: Opening hours
             opening_hours_help: Days without hours are closed.
             product_note: Note
+            store_banner: Banner
             product_available:
                 product: Product
             subtitle: Subtitle
@@ -24,6 +40,7 @@ app:
         layout:
             landing: Landing
             promo: Promo
+            store: Store
         opening_hours:
             monday: Monday
             tuesday: Tuesday
@@ -41,3 +58,9 @@ app:
             announcements: Announcements, above the header
             promo_after_blocks: 'Promo pages: after the blocks'
             store_locator_top: Store locator, at the top
+
+# The plurals the lists and the Content hub's side menu name the test application's own content types by
+setono_sylius_cms:
+    content_type_plural:
+        announcement: Announcements
+        store_location: Store locations

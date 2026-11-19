@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The collections the admin lists, each with its categories -->
+        <service id="Setono\SyliusCMSPlugin\Collection\Collections" class="Setono\SyliusCMSPlugin\Collection\Collections">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <!-- The condition of the setono_sylius_cms_admin_collection_index route calls it as service('setono_sylius_cms_collections') -->
+            <tag name="routing.condition_service" alias="setono_sylius_cms_collections"/>
+        </service>
+
+        <!-- The indexed Entries fields of the content types, and the one that holds a collection's categories -->
+        <service id="Setono\SyliusCMSPlugin\Collection\IndexedFields" class="Setono\SyliusCMSPlugin\Collection\IndexedFields">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
+        </service>
+
+        <!-- Writes the reference table on publish (step 5), and when an import rebuilds it -->
+        <service id="Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexer" class="Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\IndexedFields"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryReferenceRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.entry_reference"/>
+            <argument type="service" id="setono_sylius_cms.manager.entry_reference"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexerInterface" alias="Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexer"/>
+
+        <!-- The displays content types have cards for, which the Entries block offers and renders its entries through -->
+        <service id="Setono\SyliusCMSPlugin\Collection\CardDisplays" class="Setono\SyliusCMSPlugin\Collection\CardDisplays">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+
+        <!-- Which content types an Entries list holds, which the card_displays endpoint offers the displays of -->
+        <service id="Setono\SyliusCMSPlugin\Collection\ListedContentTypes" class="Setono\SyliusCMSPlugin\Collection\ListedContentTypes">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+
+        <!-- Names a collection, a content type's list and an Entries display, for the admin and the builder -->
+        <service id="Setono\SyliusCMSPlugin\Collection\CollectionNames" class="Setono\SyliusCMSPlugin\Collection\CollectionNames">
+            <argument type="service" id="translator"/>
+        </service>
+
+        <!-- What the Entries block's display is picked from, as a Choice field's choices provider -->
+        <service id="Setono\SyliusCMSPlugin\Collection\CardDisplayChoicesProvider" class="Setono\SyliusCMSPlugin\Collection\CardDisplayChoicesProvider">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\CardDisplays"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\CollectionNames"/>
+
+            <tag name="setono_sylius_cms.choices_provider"/>
+        </service>
+    </services>
+</container>

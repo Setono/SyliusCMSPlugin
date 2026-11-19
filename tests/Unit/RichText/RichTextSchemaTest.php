@@ -31,6 +31,49 @@ final class RichTextSchemaTest extends TestCase
     }
 
     /**
+     * A translation of a translation key in a code preset's rich text field is HTML, or plain text
+     *
+     * @test
+     */
+    public function it_reads_html_into_a_sanitised_document_and_plain_text_into_a_paragraph(): void
+    {
+        $schema = new RichTextSchema();
+
+        self::assertSame(['type' => 'doc', 'content' => [
+            ['type' => 'paragraph', 'content' => [
+                ['type' => 'text', 'text' => 'Up to '],
+                ['type' => 'text', 'text' => '50%', 'marks' => [['type' => 'bold']]],
+                ['type' => 'text', 'text' => ' off.'],
+            ]],
+            ['type' => 'heading', 'attrs' => ['level' => 3], 'content' => [['type' => 'text', 'text' => 'Terms']]],
+        ]], $schema->fromHtml('<p>Up to <strong>50%</strong> off.</p><h3>Terms</h3><script>alert(1)</script>'));
+        self::assertSame(['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Fish & chips']]]]], $schema->fromHtml('Fish & chips'));
+    }
+
+    /**
+     * libxml's HTML parser leaves text after an element outside a block, and only older versions of it put the text
+     * before the first element in an implied <p>, so the trailing runs here are bare whichever version parses them
+     *
+     * @test
+     */
+    public function it_puts_each_run_of_text_outside_a_block_in_a_paragraph_when_reading_html(): void
+    {
+        $document = (new RichTextSchema())->fromHtml(
+            'Leading <strong>bold</strong><p>Middle</p>Trailing<br>text<!-- a note --><ul><li>One</li></ul>'
+            . '<p>Last</p> <!-- a gap --><blockquote>Quoted</blockquote>',
+        );
+
+        self::assertSame(self::doc(
+            ['type' => 'paragraph', 'content' => [self::text('Leading '), self::text('bold', [['type' => 'bold']])]],
+            ['type' => 'paragraph', 'content' => [self::text('Middle')]],
+            ['type' => 'paragraph', 'content' => [self::text('Trailing'), ['type' => 'hardBreak'], self::text('text')]],
+            ['type' => 'bulletList', 'content' => [['type' => 'listItem', 'content' => [['type' => 'paragraph', 'content' => [self::text('One')]]]]]],
+            ['type' => 'paragraph', 'content' => [self::text('Last')]],
+            ['type' => 'blockquote', 'content' => [['type' => 'paragraph', 'content' => [self::text('Quoted')]]]],
+        ), $document);
+    }
+
+    /**
      * @test
      */
     public function it_drops_an_unknown_node_with_everything_in_it_when_sanitising(): void

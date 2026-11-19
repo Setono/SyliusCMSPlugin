@@ -8,11 +8,13 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Admin\EntryCategories;
 use Setono\SyliusCMSPlugin\Admin\EntryRow;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\StatusLabel;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Builder\EntryStatus;
+use Setono\SyliusCMSPlugin\Collection\IndexedFields;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\Draft;
@@ -24,8 +26,11 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
@@ -385,12 +390,14 @@ final class EntryRowsTest extends TestCase
         $localeContext = $this->prophesize(LocaleContextInterface::class);
         $localeContext->getLocaleCode()->willReturn($localeCode);
 
+        $contentTypes = new ContentTypeRegistry([
+            'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+            'recipe' => ['model' => Recipe::class, 'translation' => EntryTranslation::class, 'resource' => 'app.recipe'],
+        ]);
+
         return new EntryRows(
             $this->drafts->reveal(),
-            new ContentTypeRegistry([
-                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
-                'recipe' => ['model' => Recipe::class, 'translation' => EntryTranslation::class, 'resource' => 'app.recipe'],
-            ]),
+            $contentTypes,
             new StatusLabeler(new MockClock('2026-11-16 12:00:00', 'UTC'), new Availability()),
             $this->urlGenerator->reveal(),
             $translationLocaleProvider->reveal(),
@@ -398,6 +405,7 @@ final class EntryRowsTest extends TestCase
             $this->scheduledPublishes->reveal(),
             new MockClock('2026-11-16 12:00:00', 'UTC'),
             $this->problemCounts->reveal(),
+            new EntryCategories(new IndexedFields($contentTypes, new ContentTypeFields(new FieldReader())), $contentTypes, $this->prophesize(EntryRepositoryInterface::class)->reveal()),
         );
     }
 

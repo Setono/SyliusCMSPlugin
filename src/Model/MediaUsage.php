@@ -9,9 +9,14 @@ class MediaUsage implements MediaUsageInterface
     protected ?int $id = null;
 
     /**
-     * Set as soon as the row is created
+     * The entry that uses the media item, or null for a row of an editor preset
      */
-    protected EntryInterface $entry;
+    protected ?EntryInterface $entry = null;
+
+    /**
+     * The editor preset that uses the media item, or null for a row of an entry
+     */
+    protected ?EditorPresetInterface $preset = null;
 
     protected string $mediaItemUuid = '';
 
@@ -24,14 +29,24 @@ class MediaUsage implements MediaUsageInterface
         return $this->id;
     }
 
-    public function getEntry(): EntryInterface
+    public function getEntry(): ?EntryInterface
     {
         return $this->entry;
     }
 
-    public function setEntry(EntryInterface $entry): void
+    public function setEntry(?EntryInterface $entry): void
     {
         $this->entry = $entry;
+    }
+
+    public function getPreset(): ?EditorPresetInterface
+    {
+        return $this->preset;
+    }
+
+    public function setPreset(?EditorPresetInterface $preset): void
+    {
+        $this->preset = $preset;
     }
 
     public function getMediaItemUuid(): string

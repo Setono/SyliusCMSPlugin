@@ -10,5 +10,7 @@ return (new Configuration())
     // The enum case Reads::Locale (named in the spec) reads to older analysers (1.8.0, CI's lowest) as PHP's Locale
     // class from ext-intl. Newer ones read it right, and would then report this ignore as unmatched
     ->ignoreErrorsOnExtensionAndPath('ext-intl', __DIR__ . '/src/Condition/Reads.php', [ErrorType::SHADOW_DEPENDENCY])
+    // In the same way, 1.8.0 reads the constant UnresolvedReference::LOCALE as a class named LOCALE it can't find
+    ->ignoreUnknownClasses(['LOCALE'])
     ->disableReportingUnmatchedIgnores()
 ;

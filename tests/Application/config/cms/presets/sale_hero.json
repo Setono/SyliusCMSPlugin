@@ -1,0 +1,43 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "app.cms.preset.sale_hero.name"
+    },
+    "category": {
+        "$trans": "app.cms.preset_category.banners"
+    },
+    "description": "A heading and an introduction",
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "0193a5be-0000-7000-8000-00000000a001",
+            "type": "heading",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "level": "h2",
+                "text": {
+                    "$trans": "app.cms.preset.sale_hero.heading"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        },
+        {
+            "key": "0193a5be-0000-7000-8000-00000000a002",
+            "type": "rich_text",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "content": {
+                    "$trans": "app.cms.preset.sale_hero.text"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

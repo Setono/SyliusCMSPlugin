@@ -14,7 +14,7 @@ The routes are in [Extending](extending.md#routes). Every admin user can do ever
   - **Overview**, the hub's home.
   - **Entries:** All entries, Pages, Snippets, then one item per collection, each with a count. The shipped Blog and FAQ come first, then a project's own, such as Store locations. A disabled content type has no item.
   - **Library:** Media, Presets and Transfer.
-- **A collection's item** lists its entries and its categories, switched by buttons such as All, Posts and Categories.
+- **A collection's item** lists its entries and its categories, switched by buttons such as All, Posts and Categories. The item and its lists are named by the collection's name, `setono_sylius_cms.collection.<code>` such as Blog, or else by its plural, and the buttons by the content types' plurals.
 - **There's no Slots screen.** Slots are reached through a snippet's placements.
 
 ## Overview
@@ -25,6 +25,8 @@ The hub's home page has four panels:
 - **Coming up:** scheduled publishes that wait, and the starts and ends of date windows, in time order, the first 10. A start or end is listed only for an entry that's enabled, and published or scheduled to publish by then (a scheduled publish that hasn't failed, at the start or end or before it), as only those change what shoppers see.
 - **Translations:** completeness per channel and locale, with a link to the entries that aren't complete ([Localization](localization.md#completeness-and-outdated-flags)).
 - **Drafts in progress:** the 10 entries edited last, of those with unpublished changes and those never published, each labelled "Unpublished changes" or "Never published", with a link to all of them in All entries, filtered on both states.
+
+The panels and the Content badge leave out the entries of content types switched off in `disabled.content_types`, whose overview pages answer 404, as the lists do ([Collections](collections.md#what-ships)).
 
 ## Entry lists
 
@@ -100,7 +102,7 @@ Creating an entry from the Overview, All entries or a list:
 1. **Content type**, when creating from the Overview or All entries.
 2. **Title** and, for a content type with its own URL, **slug**, generated from the title until the editor changes it ([URLs and SEO](urls-and-seo.md)).
 3. **Layout**, from wireframe cards, when the content type has more than one ([Layouts and presets](layouts-and-presets.md)).
-4. **Starting point:** Blank, or one of the content type's starting points, shipped or saved by an editor. The default starting point is preselected, otherwise Blank. A starting point with blocks of types that no longer exist is disabled and shows why.
+4. **Starting point:** Blank, or one of the content type's starting points, shipped or saved by an editor, as cards with their thumbnails. The default starting point is preselected, otherwise Blank. A starting point with blocks of types that no longer exist, or saved with a newer version than the code's, is disabled and shows why. A starting point brings its own layout, so the layout cards are hidden while one is picked and only apply to Blank. A content type without a block tree, or without starting points, has no step.
 5. **Channels**, all preselected. The picker is hidden in a store with one channel.
 6. **Create and open the builder.** The entry starts never published.
 
@@ -119,7 +121,7 @@ Creating an entry from the Overview, All entries or a list:
 
 - **Two tabs:** starting points and block presets.
 - **Code presets** are read-only and marked as coming from code.
-- **Editor presets** can be renamed, recategorised and deleted. Their blocks are changed by saving over them in the builder ([Layouts and presets](layouts-and-presets.md)).
+- **Editor presets** can be renamed, recategorised, deleted and downloaded as code preset files. Their blocks are changed by saving over them in the builder ([Layouts and presets](layouts-and-presets.md)).
 - **A preset with blocks of types that no longer exist** is flagged.
 
 ## Transfer
@@ -129,6 +131,7 @@ Creating an entry from the Overview, All entries or a list:
   - Records with a draft or a scheduled publish here, or changed here since the export, are conflicts and block the import. A checkbox overwrites them, which discards their drafts.
   - An option publishes everything imported.
   - **Import** confirms, runs on the Messenger worker and shows its progress. The uploaded zip is kept in the plugin's storage, so a worker on another server can read it ([Transfer](transfer.md#who-runs-it)). The result links to the imported drafts to review and publish, or lists why the import refused.
+  - **Each import has a page**, which shows its progress while the worker checks or runs it and updates itself when that's done, then the plan, then the result. **Cancel** abandons an import before it's confirmed and deletes its zip. An import the worker kept failing on shows the error it failed with. The Transfer screen lists the latest imports, each linked to its page.
 
 ## Problems
 

@@ -14,8 +14,18 @@ use Setono\SyliusCMSPlugin\Factory\PlacementFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Model\BestsellerScore;
 use Setono\SyliusCMSPlugin\Model\BestsellerScoreInterface;
+use Setono\SyliusCMSPlugin\Model\BlogCategory;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryInterface;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\BlogPost;
+use Setono\SyliusCMSPlugin\Model\BlogPostInterface;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EditorPreset;
+use Setono\SyliusCMSPlugin\Model\EditorPresetInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
@@ -24,10 +34,20 @@ use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
+use Setono\SyliusCMSPlugin\Model\EntryReference;
+use Setono\SyliusCMSPlugin\Model\EntryReferenceInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\FaqCategory;
+use Setono\SyliusCMSPlugin\Model\FaqCategoryInterface;
+use Setono\SyliusCMSPlugin\Model\FaqItem;
+use Setono\SyliusCMSPlugin\Model\FaqItemInterface;
+use Setono\SyliusCMSPlugin\Model\FaqItemTranslation;
+use Setono\SyliusCMSPlugin\Model\FaqItemTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
+use Setono\SyliusCMSPlugin\Model\Import;
+use Setono\SyliusCMSPlugin\Model\ImportInterface;
 use Setono\SyliusCMSPlugin\Model\MediaFolder;
 use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
@@ -55,9 +75,12 @@ use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
+use Setono\SyliusCMSPlugin\Repository\EditorPresetRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
+use Setono\SyliusCMSPlugin\Repository\EntryReferenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
+use Setono\SyliusCMSPlugin\Repository\ImportRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
@@ -92,7 +115,7 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             [],
         ], [
-            'disabled' => ['block_types' => [], 'layouts' => [], 'sources' => []],
+            'disabled' => ['block_types' => [], 'layouts' => [], 'sources' => [], 'presets' => [], 'content_types' => []],
             'embed_code' => false,
             'assets' => true,
             'content_types' => [],
@@ -116,6 +139,8 @@ final class ConfigurationTest extends TestCase
             ],
             'bestsellers' => ['window' => 'P30D'],
             'builder' => ['scripts' => []],
+            'presets' => ['paths' => []],
+            'transfer' => ['storage' => 'setono_sylius_cms.transfer_storage'],
             'resources' => [
                 'entry' => [
                     'classes' => [
@@ -237,6 +262,22 @@ final class ConfigurationTest extends TestCase
                         'factory' => Factory::class,
                     ],
                 ],
+                'entry_reference' => [
+                    'classes' => [
+                        'model' => EntryReference::class,
+                        'interface' => EntryReferenceInterface::class,
+                        'repository' => EntryReferenceRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'editor_preset' => [
+                    'classes' => [
+                        'model' => EditorPreset::class,
+                        'interface' => EditorPresetInterface::class,
+                        'repository' => EditorPresetRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
                 'bestseller_score' => [
                     'classes' => [
                         'model' => BestsellerScore::class,
@@ -251,6 +292,14 @@ final class ConfigurationTest extends TestCase
                         'interface' => PlacementInterface::class,
                         'repository' => PlacementRepository::class,
                         'factory' => PlacementFactory::class,
+                    ],
+                ],
+                'import' => [
+                    'classes' => [
+                        'model' => Import::class,
+                        'interface' => ImportInterface::class,
+                        'repository' => ImportRepository::class,
+                        'factory' => Factory::class,
                     ],
                 ],
                 'page' => [
@@ -285,8 +334,82 @@ final class ConfigurationTest extends TestCase
                         ],
                     ],
                 ],
+                'blog_post' => [
+                    'classes' => [
+                        'model' => BlogPost::class,
+                        'interface' => BlogPostInterface::class,
+                        'controller' => ResourceController::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => BlogPostTranslation::class,
+                            'interface' => BlogPostTranslationInterface::class,
+                            'controller' => ResourceController::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'blog_category' => [
+                    'classes' => [
+                        'model' => BlogCategory::class,
+                        'interface' => BlogCategoryInterface::class,
+                        'controller' => ResourceController::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => BlogCategoryTranslation::class,
+                            'interface' => BlogCategoryTranslationInterface::class,
+                            'controller' => ResourceController::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'faq_item' => [
+                    'classes' => [
+                        'model' => FaqItem::class,
+                        'interface' => FaqItemInterface::class,
+                        'controller' => ResourceController::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => FaqItemTranslation::class,
+                            'interface' => FaqItemTranslationInterface::class,
+                            'controller' => ResourceController::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'faq_category' => [
+                    'classes' => [
+                        'model' => FaqCategory::class,
+                        'interface' => FaqCategoryInterface::class,
+                        'controller' => ResourceController::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => EntryTranslation::class,
+                            'interface' => EntryTranslationInterface::class,
+                            'controller' => ResourceController::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
             ],
         ]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_keep_uploaded_export_zips_in_a_storage_of_its_own(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['transfer' => ['storage' => 'app.shared_storage']],
+        ], ['transfer' => ['storage' => 'app.shared_storage']], 'transfer');
     }
 
     /**
@@ -409,7 +532,7 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['block_types' => ['spacer']]],
             ['disabled' => ['block_types' => ['group']]],
-        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => [], 'sources' => []]], 'disabled');
+        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => [], 'sources' => [], 'presets' => [], 'content_types' => []]], 'disabled');
     }
 
     /**
@@ -420,7 +543,18 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['layouts' => ['page.landing']]],
             ['disabled' => ['layouts' => ['blog_post.wide']]],
-        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide'], 'sources' => []]], 'disabled');
+        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide'], 'sources' => [], 'presets' => [], 'content_types' => []]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_switch_off_content_types_by_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['disabled' => ['content_types' => ['blog_post']]],
+            ['disabled' => ['content_types' => ['faq_item']]],
+        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => [], 'presets' => [], 'content_types' => ['blog_post', 'faq_item']]], 'disabled');
     }
 
     /**
@@ -431,7 +565,37 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['sources' => ['newest_products']]],
             ['disabled' => ['sources' => ['taxon_children']]],
-        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => ['newest_products', 'taxon_children']]], 'disabled');
+        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => ['newest_products', 'taxon_children'], 'presets' => [], 'content_types' => []]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_switch_off_code_presets_by_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['disabled' => ['presets' => ['hero']]],
+            ['disabled' => ['presets' => ['faq']]],
+        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => [], 'presets' => ['hero', 'faq'], 'content_types' => []]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_the_directories_of_code_preset_files_that_bundles_prepend_and_a_project_adds(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['presets' => ['paths' => ['%kernel.project_dir%/vendor/acme/cms-presets/presets']]],
+            ['presets' => ['paths' => ['%kernel.project_dir%/config/cms/presets']]],
+        ], ['presets' => ['paths' => ['%kernel.project_dir%/vendor/acme/cms-presets/presets', '%kernel.project_dir%/config/cms/presets']]], 'presets');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_empty_directory_of_code_preset_files(): void
+    {
+        $this->assertConfigurationIsInvalid([['presets' => ['paths' => ['']]]], 'cannot contain an empty value');
     }
 
     /**

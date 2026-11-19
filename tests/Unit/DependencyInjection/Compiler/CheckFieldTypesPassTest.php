@@ -15,9 +15,11 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistry;
 use Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture\ConditionKindWithTextAgain;
 use Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture\EntryWithTextAgain;
+use Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture\SourceWithIndexedEntries;
 use Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture\SourceWithTextAgain;
 use Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture\WithFieldWithoutControl;
 use Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture\WithFieldWithoutFieldType;
+use Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture\WithIndexedEntries;
 use Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture\WithInvalidControl;
 use Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture\WithInvalidFieldTypeCode;
 use Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture\WithStars;
@@ -91,6 +93,49 @@ final class CheckFieldTypesPassTest extends AbstractCompilerPassTestCase
         yield 'a condition kind\'s parameters' => [ConditionKindRegistry::class, ['text_again' => ConditionKindWithTextAgain::class]];
         yield 'a source\'s parameters' => [SourceRegistry::class, ['text_again' => SourceWithTextAgain::class]];
         yield 'a bindable property\'s parameters' => [BindablePropertyRegistry::class, ['product.text_again' => ['context_key' => 'product', 'code' => 'text_again', 'label' => 'app.text', 'type' => 'text', 'params' => WithTextAgain::class]]];
+    }
+
+    /**
+     * The reference table keys a UUID by its entry and field, so only a field of the entry itself, shared by its
+     * translations, has one
+     *
+     * @test
+     */
+    public function it_accepts_an_indexed_entries_field_of_a_content_types_own_model(): void
+    {
+        $this->container->getDefinition(ContentTypeRegistry::class)->replaceArgument(0, ['post' => ['model' => WithIndexedEntries::class, 'translation' => null, 'resource' => 'app.post']]);
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasService(ContentTypeRegistry::class);
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideWhereIndexedFieldsAreNot
+     *
+     * @param array<string, mixed> $classes what the registry was handed, by code
+     */
+    public function it_refuses_an_entries_field_declared_indexed_anywhere_else(string $registry, array $classes, string $where): void
+    {
+        $this->container->getDefinition($registry)->replaceArgument(0, $classes);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('The Entries field $related of %s, %s, is declared indexed: true, but only a content type\'s own shared field is indexed, as the reference table holds a UUID by its entry and field. Remove indexed, or declare the field on the content type\'s model', WithIndexedEntries::class, $where));
+
+        $this->compile();
+    }
+
+    /**
+     * @return iterable<string, array{class-string, array<string, mixed>, string}>
+     */
+    public static function provideWhereIndexedFieldsAreNot(): iterable
+    {
+        yield 'a block type' => [BlockTypeRegistry::class, ['heading' => Heading::class, 'related' => WithIndexedEntries::class], 'a block type'];
+        yield 'a layout' => [LayoutRegistry::class, ['page' => ['related' => WithIndexedEntries::class]], 'a layout'];
+        yield 'a content type\'s translation' => [ContentTypeRegistry::class, ['post' => ['model' => Heading::class, 'translation' => WithIndexedEntries::class, 'resource' => 'app.post']], 'a content type\'s translation, whose fields are translatable'];
+        yield 'a source\'s parameters' => [SourceRegistry::class, ['related' => SourceWithIndexedEntries::class], 'the parameters of a source or condition kind'];
     }
 
     /**

@@ -37,7 +37,7 @@ final class SourcesInTheRegistryTest extends BuilderApiTestCase
         /** @var array<string, array{code: string, label: string, needs: list<string>, fields: list<array{name: string, schema: array<string, mixed>}>}> $sources */
         $sources = array_column($registry['sources'], null, 'code');
 
-        self::assertSame(['products_in_taxon', 'bestsellers', 'product_associations', 'same_taxon_products', 'taxon_children', 'featured'], array_keys($sources));
+        self::assertSame(['products_in_taxon', 'bestsellers', 'product_associations', 'same_taxon_products', 'taxon_children', 'entries_from_collection', 'entries_in_this_category', 'related_entries', 'featured'], array_keys($sources));
         self::assertSame('In taxon', $sources['products_in_taxon']['label']);
         self::assertSame('Bestsellers', $sources['bestsellers']['label']);
         self::assertSame('Children of a taxon', $sources['taxon_children']['label']);
@@ -58,6 +58,35 @@ final class SourcesInTheRegistryTest extends BuilderApiTestCase
         self::assertSame(['taxon', 'includeChildren'], array_column($sources['bestsellers']['fields'], 'name'));
         self::assertSame(['taxon', 'Taxon', false], [$taxon['x-cms-type'], $taxon['x-cms-label'], $taxon['x-cms-required']]);
         self::assertSame(['toggle', 'Include the taxons below it', false], [$includeChildren['x-cms-type'], $includeChildren['x-cms-label'], $includeChildren['default'] ?? null]);
+    }
+
+    /**
+     * In this category and Related fit only some content types as the entry, which the builder reads, and From a
+     * collection's categories are those of the collection chosen (docs/spec/sources.md#entry-sources)
+     *
+     * @test
+     */
+    public function it_answers_the_entry_sources_with_the_content_types_they_fit_and_from_a_collection_s_collections(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+        self::assertIsArray($registry['sources'] ?? null);
+        /** @var array<string, array{code: string, label: string, needs: list<string>, entryContentTypes: list<string>|null, fields: list<array{name: string, schema: array<string, mixed>}>}> $sources */
+        $sources = array_column($registry['sources'], null, 'code');
+
+        self::assertSame(['From a collection', [], null], [$sources['entries_from_collection']['label'], $sources['entries_from_collection']['needs'], $sources['entries_from_collection']['entryContentTypes']]);
+        self::assertSame(['In this category', ['entry'], ['blog_category', 'faq_category']], [$sources['entries_in_this_category']['label'], $sources['entries_in_this_category']['needs'], $sources['entries_in_this_category']['entryContentTypes']]);
+        self::assertSame(['Related', ['entry'], ['blog_post', 'faq_item']], [$sources['related_entries']['label'], $sources['related_entries']['needs'], $sources['related_entries']['entryContentTypes']]);
+        self::assertNull($sources['products_in_taxon']['entryContentTypes']);
+
+        [$contentType, $categories] = array_column($sources['entries_from_collection']['fields'], 'schema');
+        self::assertSame(['choice', 'Collection', true], [$contentType['x-cms-type'], $contentType['x-cms-label'], $contentType['x-cms-required']]);
+        self::assertSame(['blog_post' => 'Blog', 'faq_item' => 'FAQ'], array_slice(is_array($contentType['x-cms-options'] ?? null) && is_array($contentType['x-cms-options']['choices'] ?? null) ? $contentType['x-cms-options']['choices'] : [], 0, 2));
+        self::assertSame(['entries', 'Categories'], [$categories['x-cms-type'], $categories['x-cms-label']]);
+        self::assertSame(['max' => null, 'sources' => [], 'limit' => 8, 'contentType' => null, 'categoriesOf' => 'contentType'], $categories['x-cms-options'] ?? null);
     }
 
     /**

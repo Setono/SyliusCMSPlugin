@@ -9,7 +9,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
  * Associations and Same taxon need the host page's product: a page doesn't provide it, so publish refuses them there,
- * and a snippet that lists them must declare it. See "The contract" in docs/spec/sources.md and "Snippets and their
+ * and a snippet that lists them must declare it. In this category and Related need the entry, and fit only some content
+ * types as it. See "The contract" in docs/spec/sources.md and "Snippets and their
  * context" in docs/spec/slots.md
  */
 final class HostPageSourcesTest extends BuilderApiTestCase
@@ -75,6 +76,29 @@ final class HostPageSourcesTest extends BuilderApiTestCase
         self::assertSame([
             ['block' => null, 'field' => 'context', 'locale' => null, 'message' => 'The source "Same taxon" in the block "Products" needs the host-page context "Product page".'],
         ], $response['refused'] ?? null);
+    }
+
+    /**
+     * In this category fits only a category as the entry, and Related only an entry of a collection with categories, so
+     * a page provides the entry they need but isn't one they fit (docs/spec/extending.md#sources)
+     *
+     * @test
+     */
+    public function it_refuses_to_publish_a_page_with_lists_filled_by_in_this_category_or_related_and_says_why(): void
+    {
+        $client = self::signedIn();
+        $page = self::createPageWithBlocks('About us', 'about-us', [
+            new StoredBlock(self::ASSOCIATIONS, 'entries', 1, fields: ['entries' => ['$source' => 'entries_in_this_category', '$params' => [], '$limit' => 9]]),
+            new StoredBlock(self::SAME_TAXON, 'entries', 1, fields: ['entries' => ['$source' => 'related_entries', '$params' => [], '$limit' => 3]]),
+        ]);
+
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/validate', $page->getUuid()));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['errors' => [
+            ['block' => self::ASSOCIATIONS, 'field' => null, 'locale' => null, 'message' => 'The source "In this category" in the block "Entries" only works in an entry of the type "Blog category", "FAQ category".'],
+            ['block' => self::SAME_TAXON, 'field' => null, 'locale' => null, 'message' => 'The source "Related" in the block "Entries" only works in an entry of the type "Blog post", "FAQ item".'],
+        ]], $response);
     }
 
     private static function products(string $key, string $source): StoredBlock

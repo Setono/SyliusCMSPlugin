@@ -45,6 +45,79 @@ export interface StoredBlock {
     children: StoredBlock[];
 }
 
+/**
+ * A block preset as the Presets tab lists it at a spot in the entry's tree. See "Presets" in docs/spec/layouts-and-presets.md
+ */
+export interface PresetListing {
+    /** A code preset's code, or an editor preset's UUID. */
+    id: string;
+    /** Whether it's a code preset, which is read-only and marked as coming from code. */
+    fromCode: boolean;
+    name: string;
+    category: string | null;
+    description: string | null;
+    thumbnail: string | null;
+    /** Whether it's offered at the spot. */
+    fits: boolean;
+    /** Why it isn't offered at the spot, such as what context it needs. */
+    reasons: string[];
+    /** Why it's marked as invalid, such as blocks of a removed type. */
+    issues: string[];
+    /** The blocks it would insert into the entry, which the tab renders live. */
+    blocks: StoredBlock[];
+}
+
+/**
+ * A starting point of the entry's content type, which saving the entry's whole tree can replace when it's an editor
+ * preset. See "Starting points" in docs/spec/layouts-and-presets.md
+ */
+export interface StartingPointListing {
+    /** A code preset's code, or an editor preset's UUID. */
+    id: string;
+    /** Whether it's a code preset, which is read-only. */
+    fromCode: boolean;
+    name: string;
+    category: string | null;
+    description: string | null;
+}
+
+/**
+ * The block presets at a spot, the starting points of the entry's content type, and the categories in use, of every
+ * preset, which editors are suggested when they save one.
+ */
+export interface PresetIndex {
+    presets: PresetListing[];
+    startingPoints: StartingPointListing[];
+    categories: string[];
+}
+
+/**
+ * What's saved as a preset: the blocks with these keys, or 'tree', the entry's whole tree, as a starting point for its
+ * content type with its layout and the layout's field values. See "Editor presets" in docs/spec/layouts-and-presets.md
+ */
+export type PresetContent = readonly string[] | 'tree';
+
+/** What editors organise a preset by. An empty category or description is none. */
+export interface PresetDetails {
+    name: string;
+    category: string | null;
+    description: string | null;
+}
+
+/** An editor preset as the server saved it. */
+export interface SavedPreset extends PresetDetails {
+    /** Its UUID. */
+    id: string;
+    /** When it last changed, in UTC. */
+    changedAt: string;
+}
+
+/** A preset's blocks ready to insert, and what the editor is told, such as the blocks of removed types left out. */
+export interface InsertedPreset {
+    blocks: StoredBlock[];
+    notices: string[];
+}
+
 export interface StoredLayout {
     code: string;
     version: number;
@@ -111,6 +184,11 @@ export interface EntrySettings {
     audience: { mode: AudienceMode; groups: string[] };
     /** "Homepage of": the codes of the channels a page is the homepage of. Empty for every content type but Page. */
     homepageOf: string[];
+    /**
+     * Where the entry sits among the entries of a content type ordered by position, which editors drag into order in
+     * the admin list, or null for a content type ordered otherwise. The builder leaves it as it is.
+     */
+    position?: number | null;
 }
 
 /** Someone else who has the entry open in the builder. */
@@ -290,6 +368,8 @@ export interface ContentTypeDefinition {
     blocks: AllowedBlockType[] | null;
     /** Its URL prefix, '' for URLs at the root, or null when it has no URL of its own, so no slug. */
     prefix?: string | null;
+    /** The code of its collection's category content type, such as blog_category for blog posts, or null when it has none. */
+    categoryType?: string | null;
     /** Whether its entries can be a channel's homepage, which only pages can. Without it, they can't. */
     homepage?: boolean;
     /**
@@ -299,6 +379,11 @@ export interface ContentTypeDefinition {
     provides?: string[] | null;
     /** Its layouts, the default first, or none for a content type without its own URL. */
     layouts: LayoutDefinition[];
+    /**
+     * Its own fields, in display order: those its model declares, shared by all translations, then those its
+     * translations declare, translatable. None without it.
+     */
+    fields?: FieldDefinition[];
 }
 
 /** A key of host-page context, such as product, named by the pages that provide it, such as "Product page". */

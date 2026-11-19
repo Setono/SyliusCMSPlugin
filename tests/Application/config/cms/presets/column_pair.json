@@ -1,0 +1,46 @@
+{
+    "format": 1,
+    "name": "Column pair",
+    "category": "Layout",
+    "description": null,
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "0193a5be-0000-7000-8000-00000000b001",
+            "type": "column",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": [
+                {
+                    "key": "0193a5be-0000-7000-8000-00000000b002",
+                    "type": "heading",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "text": {
+                            "da_DK": "Venstre",
+                            "en_US": "Left"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                }
+            ]
+        },
+        {
+            "key": "0193a5be-0000-7000-8000-00000000b003",
+            "type": "column",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

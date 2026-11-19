@@ -19,21 +19,22 @@ final readonly class MediaFileChecker implements MediaFileCheckerInterface
     ) {
     }
 
-    public function check(\SplFileInfo $file, string $filename): CheckedFile
+    public function check(\SplFileInfo $file, string $filename, ?UploadLimit $limit = null): CheckedFile
     {
         $size = $file->isFile() ? $file->getSize() : false;
         if (false === $size) {
             throw RefusedFileException::notUploaded($filename);
         }
 
-        if (!$this->uploadLimit->allows($size)) {
-            throw RefusedFileException::tooBig($filename, $size, $this->uploadLimit->bytes());
+        $limit ??= $this->uploadLimit;
+        if (!$limit->allows($size)) {
+            throw RefusedFileException::tooBig($filename, $size, $limit->bytes());
         }
 
         $path = $file->getPathname();
         $mimeType = $this->mimeTypeDetector->detect($path);
         $extension = $this->mimeTypeDetector->extension($mimeType);
-        $kind = $this->types->kindOf($mimeType) ?? throw RefusedFileException::notAllowed($filename, MediaTypes::name($mimeType, $extension), $this->allowed(), $this->uploadLimit->bytes());
+        $kind = $this->types->kindOf($mimeType) ?? throw RefusedFileException::notAllowed($filename, MediaTypes::name($mimeType, $extension), $this->allowed(), $limit->bytes());
 
         try {
             if (MediaKind::Image === $kind) {

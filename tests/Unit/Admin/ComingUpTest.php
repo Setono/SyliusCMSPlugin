@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
@@ -121,14 +122,18 @@ final class ComingUpTest extends TestCase
     private function given(array $scheduled, array $starting, array $ending, int $limit = 10): void
     {
         $now = new \DateTimeImmutable(self::NOW);
-        $this->scheduledPublishes->findComingUp($now, $limit)->willReturn($scheduled);
-        $this->entries->findStartingAfter($now, $limit)->willReturn($starting);
-        $this->entries->findEndingAfter($now, $limit)->willReturn($ending);
+        // Without the entries of the content types switched off, whose overview pages answer 404
+        $this->scheduledPublishes->findComingUp($now, $limit, ['store_location'])->willReturn($scheduled);
+        $this->entries->findStartingAfter($now, $limit, ['store_location'])->willReturn($starting);
+        $this->entries->findEndingAfter($now, $limit, ['store_location'])->willReturn($ending);
     }
 
     private function comingUp(int $limit): ComingUp
     {
-        return new ComingUp($this->scheduledPublishes->reveal(), $this->entries->reveal(), new MockClock(self::NOW), $limit);
+        $contentTypes = $this->prophesize(ContentTypeRegistryInterface::class);
+        $contentTypes->disabledCodes()->willReturn(['store_location']);
+
+        return new ComingUp($this->scheduledPublishes->reveal(), $this->entries->reveal(), $contentTypes->reveal(), new MockClock(self::NOW), $limit);
     }
 
     private static function page(?string $from = null, ?string $until = null): Page

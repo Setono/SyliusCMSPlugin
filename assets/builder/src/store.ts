@@ -8,7 +8,7 @@ import { translatedValues } from './bindings';
 import { applyChanges, changesFromPatches, mergeChanges, type Change, type LayoutTranslatableLookup, type TranslatableLookup } from './changeSet';
 import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type History, type Step } from './history';
 import { providedContext } from './hostPageContext';
-import { canDuplicate, canMoveBlocks, canReplace, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
+import { canDuplicate, canInsert, canMoveBlocks, canReplace, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
 import { holdClashes, reconcile, splitValueClashes, withoutKeysIn, type HeldClash } from './pullIn';
 import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, locateBlock, moveBlocksTo, removeBlockFrom, shiftWithin, topmostBlocks } from './tree';
 import type { Locale } from './config';
@@ -152,6 +152,12 @@ export interface BuilderActions {
      * can't hold them. See "Snippet references" in docs/spec/builder.md
      */
     detachSnippet(key: string, blocks: readonly StoredBlock[]): string[] | null;
+    /**
+     * Inserts blocks, with everything in them, at the top level when parent is null, otherwise into the parent's children,
+     * at index or at the end, in one edit, and selects the first. They keep their keys, which inserting a preset made new.
+     * Returns their keys, or null when the spot can't hold them. See "What inserting copies" in docs/spec/layouts-and-presets.md
+     */
+    insertBlocks(blocks: readonly StoredBlock[], parent?: string | null, index?: number): string[] | null;
     /** Selects only this block, or nothing when the key is null. */
     selectBlock(key: string | null): void;
     /** Adds a block to the selection, or takes it out when it's selected already, as ⌘-click does. */
@@ -554,6 +560,25 @@ export function createBuilderStore({
                 }, only(copied[0] ?? null));
 
                 return copied;
+            },
+
+            insertBlocks(blocks, parent = null, index) {
+                const { schedule: locked, entry: working } = get();
+                if (locks(locked) || !canInsert(rules, working.tree.blocks, blocks, parent)) {
+                    return null;
+                }
+
+                const inserted = blocks.map((original) => structuredClone(original));
+
+                edit(
+                    (draft) => {
+                        const list = listOf(draft.tree.blocks, parent);
+                        list?.splice(index ?? list.length, 0, ...inserted);
+                    },
+                    only(inserted[0]?.key ?? null),
+                );
+
+                return inserted.map(({ key }) => key);
             },
 
             selectBlock(key) {

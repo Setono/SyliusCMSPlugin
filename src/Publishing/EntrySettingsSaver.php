@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Homepage\HomepageModifierInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
@@ -21,7 +22,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  * publishes someone's unfinished changes. See "What takes effect on save" in docs/spec/publishing.md. A change of the
  * channels that would give a published URL of the entry to two entries in a channel is refused, since it would take
  * effect at once (docs/spec/urls-and-seo.md#unique-per-channel-and-locale). Choosing a page as a channel's homepage takes
- * the channel off the page that was its homepage, whose "Homepage of" changes too (docs/spec/urls-and-seo.md#homepage)
+ * the channel off the page that was its homepage, whose "Homepage of" changes too (docs/spec/urls-and-seo.md#homepage).
+ * Only an entry of a content type ordered by position has a position
  */
 final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
 {
@@ -33,6 +35,7 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         private EditRecorder $editRecorder,
         private EntryUrlValidatorInterface $urlValidator,
         private HomepageModifierInterface $homepageModifier,
+        private ContentTypeRegistryInterface $contentTypes,
     ) {
     }
 
@@ -50,6 +53,10 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
             if ([] !== $clashes) {
                 throw new InvalidEntrySettingsException(implode(' ', array_map(static fn (ValidationError $clash): string => $clash->message, $clashes)));
             }
+        }
+
+        if (in_array(EntrySettingsChanged::POSITION, $changed, true) && !$this->contentTypes->getByEntry($entry)->order->byPosition) {
+            throw new InvalidEntrySettingsException('Only an entry of a content type ordered by position has a position');
         }
 
         // The page whose homepages change, if they do
@@ -96,6 +103,7 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
     {
         $entry->setEnabled($settings->enabled);
         $entry->setDateWindow($settings->dateWindow);
+        $entry->setPosition($settings->position);
         $this->channelsAndAudienceModifier->setChannels($entry, $settings->channels);
         $this->channelsAndAudienceModifier->setAudience($entry, $settings->audience);
 

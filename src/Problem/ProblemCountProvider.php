@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Problem;
 use Doctrine\ORM\QueryBuilder;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
 /**
@@ -26,6 +27,7 @@ final class ProblemCountProvider implements ProblemCountProviderInterface, Reset
         private readonly ProblemCountUpdaterInterface $updater,
         private readonly iterable $kinds,
         private readonly ClockInterface $clock,
+        private readonly ContentTypeRegistryInterface $contentTypes,
     ) {
     }
 
@@ -33,7 +35,8 @@ final class ProblemCountProvider implements ProblemCountProviderInterface, Reset
     {
         $this->updateStale();
 
-        return $this->query->total($this->kinds, $this->clock->now());
+        // The entries of a content type switched off have no overview page to fix them on
+        return $this->query->total($this->kinds, $this->clock->now(), $this->contentTypes->disabledCodes());
     }
 
     public function getCounts(iterable $entries): array

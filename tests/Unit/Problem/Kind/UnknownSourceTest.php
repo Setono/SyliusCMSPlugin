@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Block\Group;
 use Setono\SyliusCMSPlugin\Block\Products;
 use Setono\SyliusCMSPlugin\Block\Taxons;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Problem\Fix;
@@ -19,6 +20,7 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Kiosk;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Showcase;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\Clearance;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
@@ -93,6 +95,27 @@ final class UnknownSourceTest extends TestCase
         )], [...self::kind()->findIn($page)]);
     }
 
+    /**
+     * A content type's own list fields are fields like any other, fixed in the builder's settings
+     *
+     * @test
+     */
+    public function it_finds_a_list_of_one_of_the_content_types_own_fields_filled_by_a_source_the_code_no_longer_has(): void
+    {
+        $kiosk = new Kiosk();
+        $kiosk->picks = self::stored('removed');
+
+        self::assertEquals([new Problem(
+            'unknown_source',
+            Severity::Warning,
+            $kiosk,
+            new TranslatableMessage('setono_sylius_cms.problem.unknown_entry_source', ['%field%' => new TranslatableMessage('app.cms.field.picks'), '%source%' => 'removed']),
+            Fix::inBuilder($kiosk),
+            null,
+            'picks',
+        )], [...self::kind()->findIn($kiosk)]);
+    }
+
     private static function problem(Page $page, string $block, string $blockLabel, string $field, string $fieldLabel, string $source): Problem
     {
         return new Problem(
@@ -130,7 +153,10 @@ final class UnknownSourceTest extends TestCase
     {
         return new UnknownSource(
             new TreeValues(new BlockTypeRegistry(['products' => Products::class, 'taxons' => Taxons::class, 'group' => Group::class], new FieldReader()), new LayoutRegistry(['page' => ['showcase' => Showcase::class]], new FieldReader())),
-            new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'kiosk' => ['model' => Kiosk::class, 'translation' => EntryTranslation::class, 'resource' => 'app.kiosk'],
+            ]),
             Sources::registry(['on_sale' => new OnSale(), 'clearance' => new Clearance()], ['clearance']),
         );
     }

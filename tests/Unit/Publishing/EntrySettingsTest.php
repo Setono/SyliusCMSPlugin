@@ -92,10 +92,25 @@ final class EntrySettingsTest extends TestCase
         self::assertSame(['audience'], (new EntrySettings(true, new DateWindow(), ['WEB'], Audience::only('@guest'), ['WEB']))->changesFrom($before));
         self::assertSame(['homepage'], (new EntrySettings(true, new DateWindow(), ['WEB'], Audience::everyone(), ['WEB', 'B2B']))->changesFrom($before));
         self::assertSame(['homepage'], (new EntrySettings(true, new DateWindow(), ['WEB'], Audience::everyone()))->changesFrom($before));
+        self::assertSame(['position'], (new EntrySettings(true, new DateWindow(), ['WEB'], Audience::everyone(), ['WEB'], 3))->changesFrom($before));
         self::assertSame(
-            ['enabled', 'date_window', 'channels', 'audience', 'homepage'],
-            (new EntrySettings(false, self::window(), [], Audience::except('retail')))->changesFrom($before),
+            ['enabled', 'date_window', 'channels', 'audience', 'homepage', 'position'],
+            (new EntrySettings(false, self::window(), [], Audience::except('retail'), position: 0))->changesFrom($before),
         );
+    }
+
+    /**
+     * An entry of a content type ordered by position has one, which editors drag it into in the admin list
+     *
+     * @test
+     */
+    public function it_reads_the_position_of_an_entry(): void
+    {
+        $announcement = new Announcement();
+        self::assertNull(EntrySettings::of($announcement)->position);
+
+        $announcement->setPosition(4);
+        self::assertSame(4, EntrySettings::of($announcement)->position);
     }
 
     private static function window(): DateWindow

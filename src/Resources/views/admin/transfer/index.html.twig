@@ -1,0 +1,198 @@
+{#
+ # The Transfer screen in the hub's library. Its export is a GET form: entries are found by their title or slug and
+ # added, editor presets and media folders are checked, or everything is. Update shows what the export holds, with
+ # the snippets and media items that come along because the picked records use them, and Download gets the export of
+ # what the form picks as a zip. Its import uploads an export zip, which import-upload.js sends, and lists the latest
+ # imports, each linked to its page (import.html.twig). See "Transfer" in docs/spec/admin.md
+ #}
+{% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
+
+{% import '@SyliusUi/Macro/headers.html.twig' as headers %}
+{% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
+
+{% block title %}{{ 'setono_sylius_cms.ui.transfer.title'|trans }} {{ parent() }}{% endblock %}
+
+{% block hub_content %}
+    {{ headers.default('setono_sylius_cms.ui.transfer.title'|trans, 'exchange', 'setono_sylius_cms.ui.transfer.description'|trans) }}
+
+    {{ breadcrumb.crumble([
+        { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
+        { label: 'setono_sylius_cms.ui.content'|trans, url: path('setono_sylius_cms_admin_overview') },
+        { label: 'setono_sylius_cms.ui.transfer.title'|trans },
+    ]) }}
+
+    <section class="ui segment" aria-labelledby="cms-export-heading">
+        <h2 class="ui header" id="cms-export-heading">
+            {{ 'setono_sylius_cms.ui.transfer.export'|trans }}
+            <div class="sub header">{{ 'setono_sylius_cms.ui.transfer.export_help'|trans }}</div>
+        </h2>
+
+        <form class="ui form cms-export" method="get" action="{{ path('setono_sylius_cms_admin_transfer') }}" data-cms-export>
+            {# Search comes first, so Enter in the search field searches #}
+            <h3 class="ui dividing header">{{ 'setono_sylius_cms.ui.transfer.entries'|trans }}</h3>
+            <div class="field">
+                <label for="cms-export-search">{{ 'setono_sylius_cms.ui.transfer.find_entries'|trans }}</label>
+                <div class="ui action input">
+                    <input type="search" id="cms-export-search" name="q" value="{{ search }}" placeholder="{{ 'setono_sylius_cms.ui.transfer.find_entries_placeholder'|trans }}">
+                    <button type="submit" class="ui icon button"><i class="search icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.search'|trans }}</button>
+                </div>
+            </div>
+
+            {% if search is not empty %}
+                {% if found_entries is empty %}
+                    <p class="ui info message" data-cms-export-found>{{ 'setono_sylius_cms.ui.transfer.no_entries_found'|trans }}</p>
+                {% else %}
+                    <table class="ui very basic compact table" data-cms-export-found>
+                        <tbody>
+                            {% for entry in found_entries %}
+                                <tr>
+                                    <td><span data-cms-export-title>{{ entry.title }}</span> <span class="ui mini basic label">{{ entry.detail|trans }}</span></td>
+                                    <td class="right aligned collapsing">
+                                        {% if entry.uuid in selection.entries %}
+                                            <span class="ui mini basic label"><i class="check icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.transfer.picked'|trans }}</span>
+                                        {% else %}
+                                            <button type="submit" class="ui mini labeled icon button" name="entries[]" value="{{ entry.uuid }}" aria-label="{{ 'setono_sylius_cms.ui.transfer.add_entry'|trans({'%title%': entry.title}) }}">
+                                                <i class="plus icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.transfer.add'|trans }}
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            {% endif %}
+
+            <h4 class="ui header">{{ 'setono_sylius_cms.ui.transfer.picked_entries'|trans }}</h4>
+            {% if picked_entries is empty %}
+                <p class="cms-export__muted" data-cms-export-picked>{{ 'setono_sylius_cms.ui.transfer.no_entries_picked'|trans }}</p>
+            {% else %}
+                <table class="ui very basic compact table" data-cms-export-picked>
+                    <tbody>
+                        {% for entry in picked_entries %}
+                            <tr>
+                                <td>
+                                    <input type="hidden" name="entries[]" value="{{ entry.uuid }}">
+                                    <span data-cms-export-title>{{ entry.title }}</span> <span class="ui mini basic label">{{ entry.detail|trans }}</span>
+                                </td>
+                                <td class="right aligned collapsing">
+                                    <button type="submit" class="ui mini labeled icon button" name="remove" value="{{ entry.uuid }}" aria-label="{{ 'setono_sylius_cms.ui.transfer.remove_entry'|trans({'%title%': entry.title}) }}">
+                                        <i class="close icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.remove'|trans }}
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+            <fieldset class="cms-export__fieldset" data-cms-export-presets>
+                <legend class="ui dividing header">{{ 'setono_sylius_cms.ui.transfer.editor_presets'|trans }}</legend>
+                {% for preset in presets %}
+                    <div class="field">
+                        <div class="ui checkbox">
+                            <input type="checkbox" id="cms-export-preset-{{ preset.uuid }}" name="presets[]" value="{{ preset.uuid }}"{% if preset.uuid in selection.presets %} checked{% endif %}>
+                            <label for="cms-export-preset-{{ preset.uuid }}">{{ preset.title }}{% if preset.detail is not null %} <span class="cms-export__muted">{{ preset.detail }}</span>{% endif %}</label>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="cms-export__muted">{{ 'setono_sylius_cms.ui.transfer.no_editor_presets'|trans }}</p>
+                {% endfor %}
+            </fieldset>
+
+            <fieldset class="cms-export__fieldset" data-cms-export-folders>
+                <legend class="ui dividing header">{{ 'setono_sylius_cms.ui.transfer.media_folders'|trans }}</legend>
+                <p class="cms-export__muted">{{ 'setono_sylius_cms.ui.transfer.media_folders_help'|trans }}</p>
+                {% for folder in folders %}
+                    <div class="field cms-export__folder" style="--cms-export-depth: {{ folder.depth }}">
+                        <div class="ui checkbox">
+                            <input type="checkbox" id="cms-export-folder-{{ folder.uuid }}" name="folders[]" value="{{ folder.uuid }}"{% if folder.uuid in selection.mediaFolders %} checked{% endif %}>
+                            <label for="cms-export-folder-{{ folder.uuid }}">{{ folder.name }}</label>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="cms-export__muted">{{ 'setono_sylius_cms.ui.transfer.no_media_folders'|trans }}</p>
+                {% endfor %}
+            </fieldset>
+
+            <div class="ui divider"></div>
+            <div class="field">
+                <div class="ui checkbox">
+                    <input type="checkbox" id="cms-export-everything" name="all" value="1"{% if selection.everything %} checked{% endif %}>
+                    <label for="cms-export-everything">{{ 'setono_sylius_cms.ui.transfer.everything'|trans }}</label>
+                </div>
+            </div>
+
+            <section class="ui secondary segment" aria-labelledby="cms-export-plan-heading" data-cms-export-plan>
+                <h3 class="ui header" id="cms-export-plan-heading">{{ 'setono_sylius_cms.ui.transfer.in_the_export'|trans }}</h3>
+                {% if plan is null %}
+                    <p class="cms-export__muted">{{ 'setono_sylius_cms.ui.transfer.nothing_picked'|trans }}</p>
+                {% else %}
+                    <p data-cms-export-counts>{{ 'setono_sylius_cms.ui.transfer.counts'|trans({
+                        '%entries%': 'setono_sylius_cms.ui.transfer.entry_count'|trans({'%count%': plan.entries|length}),
+                        '%presets%': 'setono_sylius_cms.ui.transfer.preset_count'|trans({'%count%': plan.presets|length}),
+                        '%media_items%': 'setono_sylius_cms.ui.transfer.media_item_count'|trans({'%count%': plan.mediaItems|length}),
+                    }) }}</p>
+                    {% if added_entries is not empty or added_media_items is not empty %}
+                        <h4 class="ui header" id="cms-export-added-heading">{{ 'setono_sylius_cms.ui.transfer.added'|trans }}</h4>
+                        <div class="ui relaxed list" role="list" aria-labelledby="cms-export-added-heading" data-cms-export-added>
+                            {% for entry in added_entries %}
+                                <div class="item" role="listitem">
+                                    <i class="file outline icon" aria-hidden="true"></i>
+                                    <div class="content"><span data-cms-export-title>{{ entry.title }}</span> <span class="ui mini basic label">{{ entry.detail|trans }}</span></div>
+                                </div>
+                            {% endfor %}
+                            {% for media_item in added_media_items %}
+                                <div class="item" role="listitem">
+                                    <i class="image outline icon" aria-hidden="true"></i>
+                                    <div class="content"><span data-cms-export-title>{{ media_item.title }}</span> <span class="cms-export__muted">{{ media_item.detail }}</span></div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </section>
+
+            <button type="submit" class="ui labeled icon button"><i class="sync icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.transfer.update'|trans }}</button>
+            <button type="submit" class="ui primary labeled icon button" formaction="{{ path('setono_sylius_cms_admin_transfer_export') }}"><i class="download icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.transfer.download'|trans }}</button>
+        </form>
+    </section>
+
+    {# The import uploads a zip, which the Messenger worker checks with a dry run on the import's own page #}
+    <section class="ui segment" aria-labelledby="cms-import-heading">
+        <h2 class="ui header" id="cms-import-heading">
+            {{ 'setono_sylius_cms.ui.import.title'|trans }}
+            <div class="sub header">{{ 'setono_sylius_cms.ui.import.help'|trans }}</div>
+        </h2>
+
+        <form class="ui form" method="post" action="{{ path('setono_sylius_cms_admin_import_upload') }}" enctype="multipart/form-data" data-cms-import-upload>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token(import_csrf_token_id) }}">
+            <div class="field">
+                <label for="cms-import-file">{{ 'setono_sylius_cms.ui.import.file'|trans }}</label>
+                <input type="file" id="cms-import-file" name="export" accept=".zip,application/zip" required aria-describedby="cms-import-file-help">
+                <p class="cms-export__muted" id="cms-import-file-help">{{ 'setono_sylius_cms.ui.import.file_help'|trans({'%limit%': upload_limit}) }}</p>
+            </div>
+            <button type="submit" class="ui primary labeled icon button"><i class="upload icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.import.upload'|trans }}</button>
+        </form>
+
+        {% if imports is not empty %}
+            <h3 class="ui header" id="cms-imports-heading">{{ 'setono_sylius_cms.ui.import.latest'|trans }}</h3>
+            <table class="ui very basic compact table" aria-labelledby="cms-imports-heading" data-cms-imports>
+                <tbody>
+                    {% for import in imports %}
+                        <tr>
+                            <td><a href="{{ path('setono_sylius_cms_admin_import_show', {uuid: import.uuid}) }}">{{ import.filename }}</a></td>
+                            <td>{{ ('setono_sylius_cms.ui.import.state.' ~ import.state.value)|trans }}</td>
+                            <td class="right aligned">{{ 'setono_sylius_cms.ui.import.uploaded_at'|trans({'%at%': import.createdAt|date('Y-m-d H:i')}) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/admin/import-upload.js') }}"></script>
+{% endblock %}

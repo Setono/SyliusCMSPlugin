@@ -7,6 +7,7 @@
         <import resource="services/binding.xml"/>
         <import resource="services/block_type.xml"/>
         <import resource="services/builder.xml"/>
+        <import resource="services/collection.xml"/>
         <import resource="services/command.xml"/>
         <import resource="services/condition.xml"/>
         <import resource="services/context.xml"/>
@@ -19,6 +20,7 @@
         <import resource="services/link.xml"/>
         <import resource="services/localization.xml"/>
         <import resource="services/media.xml"/>
+        <import resource="services/preset.xml"/>
         <import resource="services/preview.xml"/>
         <import resource="services/problem.xml"/>
         <import resource="services/publishing.xml"/>
@@ -34,6 +36,7 @@
         <import resource="services/slot.xml"/>
         <import resource="services/source.xml"/>
         <import resource="services/targeting.xml"/>
+        <import resource="services/transfer.xml"/>
         <import resource="services/translation.xml"/>
         <import resource="services/twig.xml"/>
         <import resource="services/upgrade.xml"/>

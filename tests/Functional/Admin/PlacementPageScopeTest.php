@@ -67,8 +67,8 @@ final class PlacementPageScopeTest extends WebTestCase
 
         /** @var array{conditionKinds: list<array{code: string, label: string, needs: list<string>}>, contextKeys: list<array{key: string, label: string}>, endpoints: array{search: string}, locale: string, strings: array<string, string>} $shared */
         $shared = json_decode((string) $crawler->filter('[data-section="placements"]')->attr('data-config'), true, flags: \JSON_THROW_ON_ERROR);
-        self::assertSame(['product', 'product_in_taxon', 'taxon', 'entry'], array_column($shared['conditionKinds'], 'code'));
-        self::assertSame(['Product', 'Product in taxon', 'Taxon', 'Entry'], array_column($shared['conditionKinds'], 'label'));
+        self::assertSame(['product', 'product_in_taxon', 'taxon', 'entry', 'entry_in_category'], array_column($shared['conditionKinds'], 'code'));
+        self::assertSame(['Product', 'Product in taxon', 'Taxon', 'Entry', 'Entry in category'], array_column($shared['conditionKinds'], 'label'));
         self::assertSame('/admin/cms/api/search/__kind__', $shared['endpoints']['search']);
         self::assertSame('Edit page scope', $shared['strings']['setono_sylius_cms.builder.page_scope.edit']);
 

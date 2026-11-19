@@ -15,8 +15,18 @@ use Setono\SyliusCMSPlugin\Media\GracePeriod;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\BestsellerScore;
 use Setono\SyliusCMSPlugin\Model\BestsellerScoreInterface;
+use Setono\SyliusCMSPlugin\Model\BlogCategory;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryInterface;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\BlogPost;
+use Setono\SyliusCMSPlugin\Model\BlogPostInterface;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EditorPreset;
+use Setono\SyliusCMSPlugin\Model\EditorPresetInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
@@ -25,10 +35,20 @@ use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
+use Setono\SyliusCMSPlugin\Model\EntryReference;
+use Setono\SyliusCMSPlugin\Model\EntryReferenceInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\FaqCategory;
+use Setono\SyliusCMSPlugin\Model\FaqCategoryInterface;
+use Setono\SyliusCMSPlugin\Model\FaqItem;
+use Setono\SyliusCMSPlugin\Model\FaqItemInterface;
+use Setono\SyliusCMSPlugin\Model\FaqItemTranslation;
+use Setono\SyliusCMSPlugin\Model\FaqItemTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
+use Setono\SyliusCMSPlugin\Model\Import;
+use Setono\SyliusCMSPlugin\Model\ImportInterface;
 use Setono\SyliusCMSPlugin\Model\MediaFolder;
 use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
@@ -58,9 +78,12 @@ use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
+use Setono\SyliusCMSPlugin\Repository\EditorPresetRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
+use Setono\SyliusCMSPlugin\Repository\EntryReferenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
+use Setono\SyliusCMSPlugin\Repository\ImportRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
@@ -109,6 +132,14 @@ final class Configuration implements ConfigurationInterface
                             ->info('Source codes. Editors aren\'t offered them, and the lists they fill already keep resolving through them')
                             ->scalarPrototype()->end()
                         ->end()
+                        ->arrayNode('presets')
+                            ->info('Code preset codes. Editors aren\'t offered them')
+                            ->scalarPrototype()->end()
+                        ->end()
+                        ->arrayNode('content_types')
+                            ->info('Content type codes, such as blog_post with blog_category, or faq_item with faq_category: a collection is switched off as a whole. They\'re hidden from the admin, the builder, sources and routing, and their columns stay mapped. Page and Snippet can\'t be switched off')
+                            ->scalarPrototype()->end()
+                        ->end()
                     ->end()
                 ->end()
                 ->booleanNode('embed_code')
@@ -132,6 +163,8 @@ final class Configuration implements ConfigurationInterface
         $this->addMediaSection($rootNode);
         $this->addBestsellersSection($rootNode);
         $this->addBuilderSection($rootNode);
+        $this->addPresetsSection($rootNode);
+        $this->addTransferSection($rootNode);
         $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
@@ -390,7 +423,7 @@ final class Configuration implements ConfigurationInterface
                             ->validate()->always(self::assertMimeTypesInOneKind(...))->end()
                         ->end()
                         ->scalarNode('max_upload_size')
-                            ->info('In bytes, or as php.ini writes it, such as 20M. null means PHP\'s effective limit, and a value above it is lowered to it')
+                            ->info('In bytes, or as php.ini writes it, such as 20M. null means PHP\'s effective limit, and a value above it is lowered to it. An import checks its files against this value alone, and takes any size when it\'s null')
                             ->defaultNull()
                             ->validate()
                                 ->ifTrue(static fn (mixed $size): bool => null !== $size)
@@ -465,6 +498,49 @@ final class Configuration implements ConfigurationInterface
                                 ->validate()->always(self::assertScript(...))->end()
                             ->end()
                             ->validate()->always(self::eachOnce(...))->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * Where the export zips uploaded on the Transfer screen wait for the Messenger worker to import them. See "Who runs it"
+     * in docs/spec/transfer.md
+     */
+    private function addTransferSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('transfer')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('storage')
+                            ->info('A Flysystem storage service the uploaded export zips are kept in until their import finishes. The default writes to %kernel.project_dir%/private/cms, outside the web root, which a Messenger worker on another server can\'t read: give such a worker a storage both servers share')
+                            ->defaultValue(SetonoSyliusCMSExtension::TRANSFER_STORAGE)
+                            ->cannotBeEmpty()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * The directories of code preset files, which bundles prepend theirs to. Every *.json file directly in one is a code
+     * preset, whose code is its file name. See "Code presets" in docs/spec/layouts-and-presets.md
+     */
+    private function addPresetsSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('presets')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('paths')
+                            ->info('Directories of code preset files, such as %kernel.project_dir%/config/cms/presets. Bundles prepend theirs')
+                            ->scalarPrototype()->cannotBeEmpty()->end()
                         ->end()
                     ->end()
                 ->end()
@@ -669,8 +745,11 @@ final class Configuration implements ConfigurationInterface
     /**
      * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
      * it open, its saves, its revisions, its old slugs, its scheduled publish, its share links, the channels a
-     * page is the homepage of and a snippet's placements), and the bestseller scores, have no admin screens of their own,
-     * so they have no controller.
+     * page is the homepage of and a snippet's placements), the bestseller scores, the media usage index and the reference
+     * table have no admin screens of their own, so they have no controller. Nor have the editor presets, whose Presets
+     * screen lists code presets too, nor the imports started in the admin, which the Transfer screen's own pages show. The
+     * content types are Page and Snippet, the blog's Blog post and Blog category, and
+     * the FAQ's FAQ item and FAQ category.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
      * The channel and audience group rows always belong to an entry, and the homepage rows to a page, so their
@@ -696,10 +775,17 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::mediaItemResource())
                     ->append(self::resourceWithoutController('media_folder', MediaFolder::class, MediaFolderInterface::class, MediaFolderRepository::class))
                     ->append(self::resourceWithoutController('media_usage', MediaUsage::class, MediaUsageInterface::class, MediaUsageRepository::class))
+                    ->append(self::resourceWithoutController('entry_reference', EntryReference::class, EntryReferenceInterface::class, EntryReferenceRepository::class))
+                    ->append(self::resourceWithoutController('editor_preset', EditorPreset::class, EditorPresetInterface::class, EditorPresetRepository::class))
                     ->append(self::resourceWithoutController('bestseller_score', BestsellerScore::class, BestsellerScoreInterface::class))
                     ->append(self::resourceWithoutController('placement', Placement::class, PlacementInterface::class, PlacementRepository::class, PlacementFactory::class))
+                    ->append(self::resourceWithoutController('import', Import::class, ImportInterface::class, ImportRepository::class))
                     ->append(self::contentTypeResource('page', Page::class, PageInterface::class, PageTranslation::class, PageTranslationInterface::class))
                     ->append(self::contentTypeResource(SnippetInterface::CONTENT_TYPE, Snippet::class, SnippetInterface::class, EntryTranslation::class, EntryTranslationInterface::class))
+                    ->append(self::contentTypeResource(BlogPostInterface::CONTENT_TYPE, BlogPost::class, BlogPostInterface::class, BlogPostTranslation::class, BlogPostTranslationInterface::class))
+                    ->append(self::contentTypeResource(BlogCategoryInterface::CONTENT_TYPE, BlogCategory::class, BlogCategoryInterface::class, BlogCategoryTranslation::class, BlogCategoryTranslationInterface::class))
+                    ->append(self::contentTypeResource(FaqItemInterface::CONTENT_TYPE, FaqItem::class, FaqItemInterface::class, FaqItemTranslation::class, FaqItemTranslationInterface::class))
+                    ->append(self::contentTypeResource(FaqCategoryInterface::CONTENT_TYPE, FaqCategory::class, FaqCategoryInterface::class, EntryTranslation::class, EntryTranslationInterface::class))
                 ->end()
             ->end()
         ;

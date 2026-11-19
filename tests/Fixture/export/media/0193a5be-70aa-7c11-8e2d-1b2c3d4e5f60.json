@@ -1,0 +1,22 @@
+{
+    "uuid": "0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60",
+    "folder": "0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c",
+    "kind": "image",
+    "name": "Autumn banner",
+    "filename": "autumn-banner.png",
+    "mimeType": "image/png",
+    "size": 130,
+    "width": 48,
+    "height": 20,
+    "credit": null,
+    "alt": {
+        "en_US": "A woman in a red coat among autumn leaves"
+    },
+    "focalPoint": {
+        "x": 0.42,
+        "y": 0.35
+    },
+    "poster": null,
+    "checksum": "sha256:430515c3658b5bad70fad73a90fb25d761f2fd988f8ad646f9e21b8d9bcce2f1",
+    "changedAt": "2026-11-11T12:00:00Z"
+}

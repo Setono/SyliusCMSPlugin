@@ -20,14 +20,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * Reports the problems of the kinds tagged for it in the stored content: stored values that don't fit their field type
- * and blocks of unknown types, and broken references once #245 adds them. It checks every entry's published content and
+ * Reports the problems of the kinds tagged for it in the stored content, such as stored values that don't fit their field
+ * type, blocks of unknown types and broken references. It checks every entry's published content and
  * its draft apart, each upgraded as it's read, and exits non-zero on any problem, for CI and deploys. Content that can't
  * be read at all is reported as a problem of its own, and the rest is checked. Revisions are
  * history that nobody edits, so they're left out: one restored brings its content into the draft, which is checked.
- * Editor presets (#270) join with their ticket. See "Console commands" in docs/spec/extending.md
+ * Editor presets aren't linted: the Presets screen and the Presets tab flag their invalid blocks, and Needs attention
+ * lists their problems. See "Console commands" in docs/spec/extending.md
  */
-#[AsCommand(name: 'setono:cms:lint', description: 'Reports stored CMS values that don\'t fit their field type and blocks of unknown types')]
+#[AsCommand(name: 'setono:cms:lint', description: 'Reports stored CMS values that don\'t fit their field type, blocks of unknown types and broken references')]
 final class LintCommand extends Command
 {
     /**

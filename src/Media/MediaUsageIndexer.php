@@ -7,10 +7,15 @@ namespace Setono\SyliusCMSPlugin\Media;
 use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Field\MediaItemReferences;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EditorPresetInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
+use Setono\SyliusCMSPlugin\Preset\EditorPresetContent;
+use Setono\SyliusCMSPlugin\Preset\InvalidPresetException;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Tree\FoundReference;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Sylius\Resource\Factory\FactoryInterface;
@@ -18,8 +23,9 @@ use Sylius\Resource\Factory\FactoryInterface;
 /**
  * Works out how an entry's rows of the media usage index change when the entry is written: which media items its
  * published content uses and which its draft uses, in fields and in rich text, as the field type handlers' references()
- * list them with the type media_item, against the rows the index has. Revisions aren't read. Content that can't be read
- * leaves the rows as they are. See "Usage index" in docs/spec/media.md
+ * list them with the type media_item, against the rows the index has. Revisions aren't read. And the same for an editor
+ * preset, in its blocks and a starting point's layout. Content that can't be read leaves the rows as they are. See
+ * "Usage index" in docs/spec/media.md
  *
  * @internal
  */
@@ -80,6 +86,39 @@ final readonly class MediaUsageIndexer
     }
 
     /**
+     * @param iterable<MediaUsageInterface> $rows the preset's rows of the index as they are
+     */
+    public function indexPreset(EditorPresetInterface $preset, iterable $rows): MediaUsageChanges
+    {
+        try {
+            $content = (new EditorPresetContent())->read($preset);
+        } catch (InvalidPresetException) {
+            return new MediaUsageChanges();
+        }
+
+        $uses = array_fill_keys(self::mediaItems($this->referenceFinder->inPreset($content)), true);
+
+        $removed = [];
+        foreach ($rows as $row) {
+            if (!isset($uses[$row->getMediaItemUuid()])) {
+                $removed[] = $row;
+            }
+
+            unset($uses[$row->getMediaItemUuid()]);
+        }
+
+        $created = [];
+        foreach (array_keys($uses) as $uuid) {
+            $row = $this->usageFactory->createNew();
+            $row->setPreset($preset);
+            $row->setMediaItemUuid((string) $uuid);
+            $created[] = $row;
+        }
+
+        return new MediaUsageChanges($created, [], $removed);
+    }
+
+    /**
      * Where the entry uses each media item. The content is read from copies of the entry, so the entry itself, which
      * Doctrine may be writing, is left as it is
      *
@@ -89,7 +128,7 @@ final readonly class MediaUsageIndexer
      */
     private function uses(EntryInterface $entry, ?DraftInterface $draft): array
     {
-        $contentType = $this->contentTypes->getByEntry($entry)->code;
+        $contentType = $this->contentTypes->getByEntry($entry);
         $workingCopy = $this->workingCopies->getWorkingCopyWithDraft(clone $entry, $draft);
 
         $published = [];
@@ -110,20 +149,31 @@ final readonly class MediaUsageIndexer
     }
 
     /**
-     * The UUIDs of the media items an entry's content refers to, each once, lowercase. Entries' own fields join with
-     * content types' fields
+     * The UUIDs of the media items an entry's content refers to, in its own fields and its tree, each once, lowercase
      *
      * @return list<string>
      */
-    private function mediaItemsIn(EntryInterface $content, string $contentType): array
+    private function mediaItemsIn(EntryInterface $content, ContentTypeMetadata $contentType): array
+    {
+        return self::mediaItems($this->referenceFinder->inEntry($content, $contentType));
+    }
+
+    /**
+     * The UUIDs of the media items among the references found, each once, lowercase
+     *
+     * @param iterable<FoundReference> $found
+     *
+     * @return list<string>
+     */
+    private static function mediaItems(iterable $found): array
     {
         $uuids = [];
-        foreach (ReferenceFinder::references($this->referenceFinder->inTree($content->getBlockTree(), $contentType)) as $reference) {
+        foreach (ReferenceFinder::references($found) as $reference) {
             if (MediaItemReferences::TYPE === $reference->type) {
                 $uuids[strtolower($reference->id)] = true;
             }
         }
 
-        return array_keys($uuids);
+        return array_map(strval(...), array_keys($uuids));
     }
 }

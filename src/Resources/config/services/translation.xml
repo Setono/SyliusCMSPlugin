@@ -9,6 +9,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
         </service>
 
         <!-- The locales an entry's working copy is complete in, which are stored with it whenever its problems are counted -->

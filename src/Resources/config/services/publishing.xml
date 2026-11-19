@@ -2,6 +2,23 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <!--
+        The event dispatcher of the services that dispatch their events once their transaction commits, which an import
+        holds back until its one transaction commits (docs/spec/transfer.md#what-an-import-does)
+        -->
+        <service id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher" class="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher">
+            <argument type="service" id="event_dispatcher"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <!-- The counterpart for messages, such as a replaced file's delayed delete, on Sylius's event bus -->
+        <service id="Setono\SyliusCMSPlugin\Event\AfterCommitMessageBus" class="Setono\SyliusCMSPlugin\Event\AfterCommitMessageBus">
+            <argument type="service" id="sylius.event_bus"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager" class="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
             <argument type="service" id="setono_sylius_cms.factory.draft"/>
@@ -48,13 +65,14 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryLock"/>
             <argument type="service" id="clock"/>
-            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishCheck"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
             <argument type="service" id="setono_sylius_cms.manager.scheduled_publish"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexerInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryPublisher"/>
 
@@ -70,7 +88,7 @@
             <argument type="service" id="setono_sylius_cms.factory.scheduled_publish"/>
             <argument type="service" id="setono_sylius_cms.manager.scheduled_publish"/>
             <argument type="service" id="sylius.event_bus"/>
-            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
             <argument type="service" id="clock"/>
             <argument type="service" id="security.token_storage"/>
         </service>
@@ -99,13 +117,24 @@
         <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver" class="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver">
             <argument type="service" id="doctrine"/>
             <argument type="service" id="clock"/>
-            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\HomepageModifierInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver"/>
+
+        <!-- The positions editors drag entries of a content type ordered by position into, in the admin list -->
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntryReorderer" class="Setono\SyliusCMSPlugin\Publishing\EntryReorderer">
+            <argument type="service" id="doctrine"/>
+            <argument type="service" id="clock"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntryReordererInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryReorderer"/>
 
         <!-- Everything that reads an entry's working copy goes through it, such as the builder's preview -->
         <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface" alias="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager"/>

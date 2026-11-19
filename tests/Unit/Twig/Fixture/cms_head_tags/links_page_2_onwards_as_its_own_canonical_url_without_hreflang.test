@@ -1,0 +1,18 @@
+--TEST--
+cms_head_tags() links page 2 onwards of the entry's paginated Entries block as its canonical URL, with ?page=N, and prints no hreflang links, because another locale's page N needn't hold the same entries
+--TEMPLATE--
+{{ cms_head_tags(entry) }}
+--DATA--
+return $this->rendering(
+    [
+        'entry' => $this->pageWith([
+            'en_US' => ['title' => 'Blog', 'slug' => 'blog', 'metaDescription' => 'News from the shop'],
+            'da_DK' => ['title' => 'Blog', 'slug' => 'blog'],
+        ]),
+    ],
+    channel: $this->channel(['en_US', 'da_DK'], 'en_US'),
+    page: 3,
+)
+--EXPECT--
+<meta name="description" content="News from the shop">
+<link rel="canonical" href="https://shop.example/en_US/blog?page=3">

@@ -64,6 +64,7 @@ final class ShopStylesheetTest extends TestCase
             '--cms-button-secondary-color' => ['--cms-button-secondary-color', 'inherit'],
             '--cms-radius' => ['--cms-radius', '0.25rem'],
             '--cms-placeholder-background' => ['--cms-placeholder-background', '#e0e0e0'],
+            '--cms-article-width' => ['--cms-article-width', '48rem'],
         ];
     }
 
@@ -184,6 +185,45 @@ final class ShopStylesheetTest extends TestCase
     {
         self::assertSame('var(--cms-placeholder-background)', self::declarations('.cms-embed-code--placeholder')['background'] ?? null);
         self::assertArrayNotHasKey('background', self::declarations('.cms-embed-code'), 'The code itself has the shop\'s colours');
+    }
+
+    /**
+     * @test
+     */
+    public function it_contains_a_blog_post_s_article_to_the_article_width_and_centres_it(): void
+    {
+        $article = self::declarations('.cms-article');
+
+        self::assertSame('var(--cms-article-width)', $article['max-width'] ?? null);
+        self::assertSame('auto', $article['margin-inline'] ?? null);
+    }
+
+    /**
+     * The Entries block's grid is the Products block's: as many cards to a row as fit at --cms-grid-item-min-width
+     *
+     * @test
+     */
+    public function it_lays_out_an_entries_grid_as_a_products_grid_and_stretches_a_blog_post_card_s_link_over_it(): void
+    {
+        self::assertSame(self::declarations('.cms-products--grid'), self::declarations('.cms-entries--grid'));
+        self::assertSame('relative', self::declarations('.cms-blog-post-card')['position'] ?? null);
+        self::assertSame('absolute', self::declarations('.cms-blog-post-card__link::after')['position'] ?? null);
+        self::assertSame('0', self::declarations('.cms-blog-post-card__link::after')['inset'] ?? null);
+    }
+
+    /**
+     * The page links sit below the cards, across a grid's whole row, as a row of numbers without list bullets
+     *
+     * @test
+     */
+    public function it_puts_the_page_links_below_the_entries_across_the_grid_in_a_row_without_bullets(): void
+    {
+        self::assertSame('1 / -1', self::declarations('.cms-pagination')['grid-column'] ?? null);
+        self::assertSame('flex', self::declarations('.cms-pagination')['display'] ?? null);
+        self::assertSame('flex', self::declarations('.cms-pagination__list')['display'] ?? null);
+        self::assertSame('none', self::declarations('.cms-pagination__list')['list-style'] ?? null);
+        self::assertSame('0', self::declarations('.cms-pagination__list')['padding'] ?? null);
+        self::assertArrayHasKey('font-weight', self::declarations('.cms-pagination__link--current'), 'The current page stands out');
     }
 
     /**

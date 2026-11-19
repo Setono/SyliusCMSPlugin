@@ -24,11 +24,12 @@ interface CompletenessQueryInterface
      * Per channel, how many entries are in it, and how many of them are complete in each of its locales
      *
      * @param array<string, list<string>> $localesByChannel the locale codes of each channel, by channel code
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
      *
      * @return array<string, array{entries: int, complete: array<string, int>}> by channel code, in the order given, with
      *                                                                          the locales in the order given
      */
-    public function count(array $localesByChannel): array;
+    public function count(array $localesByChannel, array $hiddenContentTypes = []): array;
 
     /**
      * The DQL condition that holds for the entries that aren't complete in the locale. It sets the parameter it needs on

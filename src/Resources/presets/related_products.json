@@ -1,0 +1,32 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.related_products.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.products"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.related_products.description"
+    },
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "01a1f161-50b6-70f7-9821-c742dc83f0a2",
+            "type": "products",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "products": {
+                    "$limit": 8,
+                    "$params": {},
+                    "$source": "product_associations"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

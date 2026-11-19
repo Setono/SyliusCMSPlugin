@@ -17,11 +17,13 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindMetadata;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutMetadata;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\LinkTargetMetadata;
@@ -60,6 +62,7 @@ final readonly class RegistryExporter
         private ContextKeyRegistryInterface $contextKeys,
         private SlotRegistryInterface $slots,
         private BindablePropertyRegistryInterface $bindableProperties,
+        private ContentTypeFields $contentTypeFields = new ContentTypeFields(new FieldReader()),
     ) {
     }
 
@@ -70,7 +73,8 @@ final readonly class RegistryExporter
     {
         return [
             'blockTypes' => array_map($this->blockType(...), $this->blockTypes->all()),
-            'contentTypes' => array_map($this->contentType(...), $this->contentTypes->all()),
+            // A disabled content type is hidden from the builder
+            'contentTypes' => array_map($this->contentType(...), $this->contentTypes->enabled()),
             'conditionKinds' => array_map($this->conditionKind(...), $this->conditionKinds->all()),
             // In the order the link control offers them. A target whose ref is translatable, such as a URL, is typed per locale, and the others are picked with the search under their code
             'linkTargets' => array_map(fn (LinkTargetMetadata $target): array => [
@@ -169,11 +173,15 @@ final readonly class RegistryExporter
             'blocks' => null === $contentType->blocks ? null : self::allowed($this->nestingRules->topLevel($contentType->code)),
             // null when it has no URL of its own, so no slug
             'prefix' => $contentType->prefix,
+            // The code of its collection's category content type, whose entries From a collection's categories picker searches
+            'categoryType' => $contentType->categoryType,
             // Whether its entries can be a channel's homepage, which only pages can, so the settings offer "Homepage of"
             'homepage' => is_a($contentType->modelClass, PageInterface::class, true),
             // The context keys its entries provide their tree, or null for a snippet, whose context field declares them
             'provides' => EntryContext::keysOf($contentType),
             'layouts' => $this->layouts($contentType->code),
+            // Its own fields, which the entry settings render: shared ones on its model, then translatable ones on its translations
+            'fields' => $this->entryFields($contentType),
         ];
     }
 
@@ -233,8 +241,24 @@ final readonly class RegistryExporter
             'code' => $source->code,
             'label' => $this->translator->trans($source->label),
             'needs' => $source->needs,
+            // The content types whose entries it fits as the entry, such as categories for In this category, or null for any
+            'entryContentTypes' => $source->entryContentTypes($this->contentTypes->enabled()),
             'fields' => $this->sharedFields($source->fields),
         ], $sources));
+    }
+
+    /**
+     * A content type's own fields, shared on its model and translatable on its translations whatever their field types'
+     * defaults, and never bound: an entry is the host-page context, and has none of its own
+     *
+     * @return list<array{name: string, schema: array<string, mixed>}>
+     */
+    private function entryFields(ContentTypeMetadata $contentType): array
+    {
+        return array_values(array_map(
+            fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => array_diff_key($this->schema($field), ['x-cms-bindable' => true, 'x-cms-binds-inside' => true])],
+            [...$this->contentTypeFields->shared($contentType), ...$this->contentTypeFields->translatable($contentType)],
+        ));
     }
 
     /**

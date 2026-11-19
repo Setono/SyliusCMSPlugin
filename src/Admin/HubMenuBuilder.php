@@ -6,15 +6,21 @@ namespace Setono\SyliusCMSPlugin\Admin;
 
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
+use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
- * The Content hub's own side menu, the KnpMenu menu "setono_sylius_cms.admin.hub": Overview, Entries and Library.
- * Items show a count from their "count" extra. Later tickets and projects add their items in a listener of
- * the event this dispatches, the way Sylius's admin menu is extended. See "Navigation" in docs/spec/admin.md
+ * The Content hub's own side menu, the KnpMenu menu "setono_sylius_cms.admin.hub": Overview, Entries, with an item
+ * per collection after Pages and Snippets, which lists its categories too, and Library: Media, Presets and Transfer.
+ * Items show a count from their "count" extra, and a label already translated has the "translation_domain" extra
+ * false, as in KnpMenuBundle's templates. Projects add their items in a listener of the event this dispatches, the
+ * way Sylius's admin menu is extended.
+ * See "Navigation" in docs/spec/admin.md
  */
 final readonly class HubMenuBuilder
 {
@@ -24,6 +30,9 @@ final readonly class HubMenuBuilder
         private FactoryInterface $factory,
         private EventDispatcherInterface $eventDispatcher,
         private EntryRepositoryInterface $entryRepository,
+        private ContentTypeRegistryInterface $contentTypes,
+        private Collections $collections,
+        private CollectionNames $collectionNames,
     ) {
     }
 
@@ -46,7 +55,8 @@ final readonly class HubMenuBuilder
             ->addChild('all', ['route' => 'setono_sylius_cms_admin_entry_index_all'])
             ->setLabel('setono_sylius_cms.menu.admin.hub.all_entries')
             ->setLabelAttribute('icon', 'list')
-            ->setExtra('count', $this->entryRepository->countEntries())
+            // The entries of a content type switched off are hidden from the admin
+            ->setExtra('count', $this->entryRepository->countEntries(null, $this->contentTypes->disabledCodes()))
         ;
 
         $entries
@@ -63,13 +73,51 @@ final readonly class HubMenuBuilder
             ->setExtra('count', $this->entryRepository->countEntries(SnippetInterface::CONTENT_TYPE))
         ;
 
+        foreach ($this->collections->all() as $collection) {
+            $code = $collection->code();
+            $categories = $collection->categories?->code;
+
+            $entries
+                ->addChild($code, null === $categories ? [
+                    'route' => 'setono_sylius_cms_admin_entry_index',
+                    'routeParameters' => ['contentType' => $code],
+                ] : [
+                    // Its entries and its categories, switched by All and a button for each, in lists of their own
+                    'route' => 'setono_sylius_cms_admin_collection_index',
+                    'routeParameters' => ['contentType' => $code],
+                    'extras' => ['routes' => [
+                        ['route' => 'setono_sylius_cms_admin_entry_index', 'parameters' => ['contentType' => $code]],
+                        ['route' => 'setono_sylius_cms_admin_entry_index', 'parameters' => ['contentType' => $categories]],
+                    ]],
+                ])
+                // Named as its lists are, by the collection's name such as Blog, or else by the plural or the label,
+                // which is translated already
+                ->setLabel($this->collectionNames->collection($collection))
+                ->setExtra('translation_domain', false)
+                ->setLabelAttribute('icon', 'folder outline')
+                ->setExtra('count', $this->entryRepository->countEntries($code) + (null === $categories ? 0 : $this->entryRepository->countEntries($categories)))
+            ;
+        }
+
         $library = $menu->addChild('library')->setLabel('setono_sylius_cms.menu.admin.hub.library');
 
-        // Presets and Transfer join with their tickets
         $library
             ->addChild('media', ['route' => 'setono_sylius_cms_admin_media_index'])
             ->setLabel('setono_sylius_cms.menu.admin.hub.media')
             ->setLabelAttribute('icon', 'images outline')
+        ;
+
+        $library
+            ->addChild('presets', ['route' => 'setono_sylius_cms_admin_preset_index'])
+            ->setLabel('setono_sylius_cms.menu.admin.hub.presets')
+            ->setLabelAttribute('icon', 'clone outline')
+        ;
+
+        $library
+            // An import's page is one of the Transfer screen's
+            ->addChild('transfer', ['route' => 'setono_sylius_cms_admin_transfer', 'extras' => ['routes' => [['route' => 'setono_sylius_cms_admin_import_show']]]])
+            ->setLabel('setono_sylius_cms.menu.admin.hub.transfer')
+            ->setLabelAttribute('icon', 'exchange')
         ;
 
         $this->eventDispatcher->dispatch(new MenuBuilderEvent($this->factory, $menu), self::EVENT);

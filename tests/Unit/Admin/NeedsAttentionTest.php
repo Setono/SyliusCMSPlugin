@@ -18,6 +18,7 @@ use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\AnyMessage;
 
@@ -105,12 +106,16 @@ final class NeedsAttentionTest extends TestCase
      */
     private function needingAttention(array $entries): void
     {
-        $this->entries->createNeedingAttentionPaginator($this->problemCounts->reveal())->willReturn(new Pagerfanta(new ArrayAdapter($entries)));
+        // Without the entries of the content types switched off, whose overview pages answer 404
+        $this->entries->createNeedingAttentionPaginator($this->problemCounts->reveal(), ['store_location'])->willReturn(new Pagerfanta(new ArrayAdapter($entries)));
     }
 
     private function needsAttention(): NeedsAttention
     {
-        return new NeedsAttention($this->entries->reveal(), $this->problemCounts->reveal(), $this->problemFinder->reveal());
+        $contentTypes = $this->prophesize(ContentTypeRegistryInterface::class);
+        $contentTypes->disabledCodes()->willReturn(['store_location']);
+
+        return new NeedsAttention($this->entries->reveal(), $this->problemCounts->reveal(), $this->problemFinder->reveal(), $contentTypes->reveal());
     }
 
     private static function problem(EntryInterface $entry, string $kind, Severity $severity): Problem

@@ -14,8 +14,11 @@ use Setono\SyliusCMSPlugin\Builder\RegistryExporter;
 use Setono\SyliusCMSPlugin\Builder\UiStrings;
 use Setono\SyliusCMSPlugin\Condition\ConditionKindInterface;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
+use Setono\SyliusCMSPlugin\Field\DateHandler;
 use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
+use Setono\SyliusCMSPlugin\Field\EntriesHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\MediaHandler;
 use Setono\SyliusCMSPlugin\Field\TaxonHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
@@ -44,13 +47,17 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Titled;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Location;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ProductBadge;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\RatingHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Review;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Wide;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\Clearance;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\NearbyShops;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\ProductTaxons;
 use Sylius\Component\Core\Model\ProductInterface;
@@ -255,12 +262,39 @@ final class RegistryExporterTest extends TestCase
     {
         $contentTypes = $this->exporter()->export()['contentTypes'];
 
-        self::assertSame(['code', 'label', 'blocks', 'prefix', 'homepage', 'provides', 'layouts'], array_keys($contentTypes[0]));
+        self::assertSame(['code', 'label', 'blocks', 'prefix', 'categoryType', 'homepage', 'provides', 'layouts', 'fields'], array_keys($contentTypes[0]));
         self::assertSame(['page', '[setono_sylius_cms.content_type.page]', [
             ['type' => 'columns', 'min' => null, 'max' => null],
             ['type' => 'heading', 'min' => null, 'max' => null],
         ], '', true], [$contentTypes[0]['code'], $contentTypes[0]['label'], $contentTypes[0]['blocks'], $contentTypes[0]['prefix'], $contentTypes[0]['homepage']]);
-        self::assertSame(['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null, 'prefix' => null, 'homepage' => false, 'provides' => ['entry'], 'layouts' => []], $contentTypes[1]);
+        self::assertSame(['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null, 'prefix' => null, 'categoryType' => null, 'homepage' => false, 'provides' => ['entry'], 'layouts' => [], 'fields' => []], $contentTypes[1]);
+    }
+
+    /**
+     * The entry settings render a content type's own fields from their schemas: those of its model shared by all
+     * translations and those of its translations translatable, whatever their field types' defaults, and never bound
+     *
+     * @test
+     */
+    public function it_exports_the_schemas_of_a_content_types_own_fields_shared_or_translatable_where_they_sit(): void
+    {
+        /** @var array<string, array{fields: list<array{name: string, schema: array<string, mixed>}>}> $contentTypes */
+        $contentTypes = array_column($this->exporter()->export()['contentTypes'], null, 'code');
+        $fields = array_column($contentTypes['shop']['fields'], 'schema', 'name');
+
+        self::assertSame(['city', 'openedOn', 'renovatedAt', 'parking', 'photo', 'directions'], array_keys($fields));
+        self::assertSame(['type' => 'string', 'x-cms-options' => ['maxLength' => null], 'x-cms-type' => 'text', 'x-cms-label' => '[app.cms.field.city]', 'x-cms-help' => null, 'x-cms-required' => true, 'x-cms-translatable' => false], $fields['city']);
+        self::assertTrue($fields['directions']['x-cms-translatable']);
+        self::assertArrayNotHasKey('x-cms-bindable', $fields['directions']);
+        self::assertFalse($fields['parking']['default']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_out_a_disabled_content_type(): void
+    {
+        self::assertSame(['page', 'recipe', 'snippet', 'location'], array_column($this->exporter(disabledContentTypes: ['shop'])->export()['contentTypes'], 'code'));
     }
 
     /**
@@ -273,7 +307,7 @@ final class RegistryExporterTest extends TestCase
         /** @var array<string, array{provides: list<string>|null}> $contentTypes */
         $contentTypes = array_column($this->exporter()->export()['contentTypes'], null, 'code');
 
-        self::assertSame(['page' => ['entry'], 'recipe' => ['entry'], 'snippet' => null], array_map(static fn (array $contentType): ?array => $contentType['provides'], $contentTypes));
+        self::assertSame(['page' => ['entry'], 'recipe' => ['entry'], 'snippet' => null, 'shop' => ['entry'], 'location' => ['entry']], array_map(static fn (array $contentType): ?array => $contentType['provides'], $contentTypes));
     }
 
     /**
@@ -487,6 +521,19 @@ final class RegistryExporterTest extends TestCase
     }
 
     /**
+     * A collection's category type, by its code, whose entries From a collection's categories picker searches
+     *
+     * @test
+     */
+    public function it_exports_the_category_type_of_a_content_type_by_its_code(): void
+    {
+        $contentTypes = array_column($this->exporter()->export()['contentTypes'], 'categoryType', 'code');
+
+        self::assertSame('recipe', $contentTypes['location'] ?? null);
+        self::assertNull($contentTypes['shop'] ?? null);
+    }
+
+    /**
      * The "Filled by" select offers them, with their parameters filled in inline. A disabled source isn't offered, and
      * the lists it fills already keep resolving through it. See "Sources" in docs/spec/builder.md
      *
@@ -499,6 +546,7 @@ final class RegistryExporterTest extends TestCase
                 'code' => 'on_sale',
                 'label' => '[app.source.on_sale]',
                 'needs' => [],
+                'entryContentTypes' => null,
                 'fields' => [
                     [
                         'name' => 'taxon',
@@ -526,7 +574,9 @@ final class RegistryExporterTest extends TestCase
                     ],
                 ],
             ],
-            ['code' => 'product_taxons', 'label' => '[app.source.product_taxons]', 'needs' => ['product'], 'fields' => []],
+            ['code' => 'product_taxons', 'label' => '[app.source.product_taxons]', 'needs' => ['product'], 'entryContentTypes' => null, 'fields' => []],
+            // It fits only shops as the entry, so the builder offers it only there
+            ['code' => 'nearby_shops', 'label' => '[app.source.nearby_shops]', 'needs' => ['entry'], 'entryContentTypes' => ['shop'], 'fields' => []],
         ], $this->exporter()->export()['sources']);
     }
 
@@ -536,8 +586,9 @@ final class RegistryExporterTest extends TestCase
      * @param array<string, class-string> $blockTypes block types besides the shipped Columns, Column and Heading
      * @param array<string, ConditionKindInterface> $conditionKinds condition kinds besides those of Conditions::registry()
      * @param list<string> $disabledLayouts
+     * @param list<string> $disabledContentTypes
      */
-    private function exporter(array $disabled = [], array $styles = [], array $blockTypes = [], array $conditionKinds = [], array $disabledLayouts = []): RegistryExporter
+    private function exporter(array $disabled = [], array $styles = [], array $blockTypes = [], array $conditionKinds = [], array $disabledLayouts = [], array $disabledContentTypes = []): RegistryExporter
     {
         $translator = $this->prophesize(TranslatorInterface::class);
         $translator->trans(Argument::type('string'))->will(static fn (array $arguments): string => sprintf('[%s]', is_string($arguments[0] ?? null) ? $arguments[0] : ''));
@@ -556,22 +607,28 @@ final class RegistryExporterTest extends TestCase
         $catalogues = $this->prophesize(TranslatorBagInterface::class);
         $catalogues->getCatalogue()->willReturn($catalogue);
 
+        $contentTypes = new ContentTypeRegistry([
+            'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+            'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+            'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
+            'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
+            'location' => ['model' => Location::class, 'translation' => null, 'resource' => 'app.location'],
+        ], disabled: $disabledContentTypes);
+
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
+            EntriesHandler::class => static fn (): EntriesHandler => new EntriesHandler(Sources::listFieldHandler(), $contentTypes),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
             OpeningHoursHandler::class => static fn (): OpeningHoursHandler => new OpeningHoursHandler(),
             RatingHandler::class => static fn (): RatingHandler => new RatingHandler(),
             DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             TaxonHandler::class => static fn (): TaxonHandler => new TaxonHandler(),
+            DateHandler::class => static fn (): DateHandler => new DateHandler(),
+            MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
         ]));
 
         $blockTypes = new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class, 'heading' => Heading::class] + $blockTypes, new FieldReader(), $disabled, $styles);
-        $contentTypes = new ContentTypeRegistry([
-            'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
-            'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
-            'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
-        ]);
 
         return new RegistryExporter(
             $blockTypes,
@@ -585,7 +642,7 @@ final class RegistryExporterTest extends TestCase
             // A configured limit below PHP's
             new MediaLimits(new UploadLimit(2 * 1024 * 1024, 8 * 1024 * 1024), new MediaTypes(['image' => ['image/jpeg', 'image/png'], 'document' => ['application/pdf']])),
             Links::registry(),
-            Sources::registry(['on_sale' => new OnSale(), 'clearance' => new Clearance(), 'product_taxons' => new ProductTaxons()], ['clearance']),
+            Sources::registry(['on_sale' => new OnSale(), 'clearance' => new Clearance(), 'product_taxons' => new ProductTaxons(), 'nearby_shops' => new NearbyShops()], ['clearance']),
             new ContextKeyRegistry([
                 'product' => ['class' => ProductInterface::class, 'label' => 'setono_sylius_cms.context_key.product'],
                 'entry' => ['class' => EntryInterface::class, 'label' => 'setono_sylius_cms.context_key.entry'],

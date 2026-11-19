@@ -1,0 +1,106 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.image_and_text.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.content"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.image_and_text.description"
+    },
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "01a1f161-50ae-78fb-ada2-411cdb534c00",
+            "type": "columns",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": [
+                {
+                    "key": "01a1f161-50ae-78fb-ada2-411cd958d8e9",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-50ae-78fb-ada2-411cd8e5fa7b",
+                            "type": "image",
+                            "version": 1,
+                            "style": null,
+                            "fields": {},
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "key": "01a1f161-50ae-78fb-ada2-411cdb12ac4c",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-50ae-78fb-ada2-411cd9ef781c",
+                            "type": "heading",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "text": {
+                                    "$trans": "setono_sylius_cms.preset.image_and_text.heading"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-50ae-78fb-ada2-411cdabe3266",
+                            "type": "rich_text",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "content": {
+                                    "$trans": "setono_sylius_cms.preset.image_and_text.text"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-50ae-78fb-ada2-411cdb122cd1",
+                            "type": "button",
+                            "version": 1,
+                            "style": "primary",
+                            "fields": {
+                                "link": {
+                                    "anchor": null,
+                                    "label": {
+                                        "$trans": "setono_sylius_cms.preset.image_and_text.button"
+                                    },
+                                    "ref": "/",
+                                    "target": "url"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

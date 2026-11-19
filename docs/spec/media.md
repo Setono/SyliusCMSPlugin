@@ -16,7 +16,7 @@ A media item is one of three kinds:
 | `document` | a configurable allowlist, PDF by default | as uploaded |
 
 - The allowed MIME types per kind and the maximum upload size are config: `media.types` and `media.max_upload_size` ([Extending](extending.md#configuration)).
-- **The upload limit** defaults to PHP's effective limit (`UploadedFile::getMaxFilesize()`, the smaller of `upload_max_filesize` and `post_max_size`). A configured `media.max_upload_size` above it is lowered to it, because PHP refuses a bigger file before the plugin sees it. The builder gets the effective limit with its registry and checks a file before uploading it.
+- **The upload limit** defaults to PHP's effective limit (`UploadedFile::getMaxFilesize()`, the smaller of `upload_max_filesize` and `post_max_size`). A configured `media.max_upload_size` above it is lowered to it, because PHP refuses a bigger file before the plugin sees it. The builder gets the effective limit with its registry and checks a file before uploading it. An import doesn't upload its files through PHP, so the limits of the PHP that runs it (the CLI's or the Messenger worker's) don't apply: its files are checked against `media.max_upload_size` alone, and without one their size isn't limited ([Transfer](transfer.md#media-files)).
 - **YouTube and Vimeo videos aren't media items.** The Video block holds their URL in a field ([Blocks](blocks.md)).
 - **Product and taxon images stay out.** They remain Sylius's own. Content shows them through block types that read products or taxons, such as product cards and taxon tiles. There are no image bindings in v2.0.
 
@@ -39,7 +39,7 @@ A media item is one of three kinds:
 - They drag and drop many files at once, and each goes into the open folder.
 - **Duplicates.** When an uploaded file's content matches an existing media item's current file, the editor is offered that media item instead. They can still upload a copy, which becomes a new media item.
 - A file over the upload limit, or of a type that `media.types` doesn't allow, is refused with a message naming the limit.
-- **Every file is checked the same way**, whether it's uploaded, replaced or imported ([Transfer](transfer.md#media-files)): its type against `media.types`, its size against the upload limit, its MIME type, dimensions and checksum read from the file itself, and SVG sanitised. Nothing is trusted from the file's name or from metadata that came with it.
+- **Every file is checked the same way**, whether it's uploaded, replaced or imported ([Transfer](transfer.md#media-files)): its type against `media.types`, its size against the upload limit (an imported file's against `media.max_upload_size` alone), its MIME type, dimensions and checksum read from the file itself, and SVG sanitised. Nothing is trusted from the file's name or from metadata that came with it.
 
 ### EXIF
 
@@ -127,7 +127,7 @@ The index drives:
 
 ## Image processing
 
-- **Storage.** Media items are stored in the plugin's own Flysystem storage, `media.storage`, which is a local public directory by default: `%kernel.project_dir%/public/media/cms`. Like Sylius's own `public/media/image`, it holds the only copy of every file, so a project must keep it across deploys, such as on a shared or persistent volume. Gaufrette isn't supported, and Sylius's `sylius.storage` isn't reused ([ADR 0014](../adr/0014-images-are-processed-by-liip-behind-an-image-provider.md)).
+- **Storage.** Media items are stored in the plugin's own Flysystem storage, `media.storage`, which is a local public directory by default: `%kernel.project_dir%/public/media/cms`. Like Sylius's own `public/media/image`, it holds the only copy of every file, so a project must keep it across deploys, such as on a shared or persistent volume. The export zips uploaded for an import in the admin are kept elsewhere, in the private `transfer.storage` ([Transfer](transfer.md#who-runs-it)), since this directory is served. The Messenger worker needs the same media storage as the admin, because an import stores media files in it. Gaufrette isn't supported, and Sylius's `sylius.storage` isn't reused ([ADR 0014](../adr/0014-images-are-processed-by-liip-behind-an-image-provider.md)).
 - **The default storage** is the Flysystem storage `setono_sylius_cms.storage`, which the plugin defines in flysystem-bundle's config the way Sylius defines `sylius.storage`: the `local` adapter, public visibility. Its code uses only what Flysystem 2 and 3 both have, so a shop on either major installs the plugin.
 - **File URLs** are built by the plugin, never asked of the storage: `Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface::generate(string $path)` turns a storage path into a public URL, for media items' files and the image variants cached beside them. The default gives `/media/cms/{path}`, where the default storage is served, without a storage call.
 - **LiipImagine** generates image variants on first request, with the plugin's own loader and resolver, both named `setono_sylius_cms` by default (`media.liip.loader` and `media.liip.resolver`). It caches them in the plugin's storage.

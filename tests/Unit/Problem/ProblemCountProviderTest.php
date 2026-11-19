@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Problem\ProblemCountProvider;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface;
 use Setono\SyliusCMSPlugin\Problem\TimeDependentProblemKindInterface;
 use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Symfony\Component\Clock\MockClock;
 
 final class ProblemCountProviderTest extends TestCase
@@ -68,7 +69,8 @@ final class ProblemCountProviderTest extends TestCase
     public function it_gives_the_stores_errors_and_warnings_with_the_time_dependent_ones_as_of_now_once_the_stale_counts_are_updated(): void
     {
         $this->updater->updateStale()->shouldBeCalledOnce();
-        $this->query->total($this->kinds, $this->clock->now())->willReturn(new ProblemCount(3, 4));
+        // Without the entries of the content types switched off, which have no overview page to fix them on
+        $this->query->total($this->kinds, $this->clock->now(), ['store_location'])->willReturn(new ProblemCount(3, 4));
 
         self::assertEquals(new ProblemCount(3, 4), $this->provider()->getTotal());
     }
@@ -118,7 +120,7 @@ final class ProblemCountProviderTest extends TestCase
         $provider->getCounts([$page]);
         $this->updater->checkProphecyMethodsPredictions();
 
-        $this->query->total($this->kinds, $this->clock->now())->willReturn(new ProblemCount());
+        $this->query->total($this->kinds, $this->clock->now(), ['store_location'])->willReturn(new ProblemCount());
         $provider->getTotal();
         $provider->getNeedsAttentionCondition(new QueryBuilder($this->prophesize(EntityManagerInterface::class)->reveal()), 'o');
         $this->updater->checkProphecyMethodsPredictions();
@@ -140,6 +142,9 @@ final class ProblemCountProviderTest extends TestCase
 
     private function provider(): ProblemCountProvider
     {
-        return new ProblemCountProvider($this->query->reveal(), $this->updater->reveal(), $this->kinds, $this->clock);
+        $contentTypes = $this->prophesize(ContentTypeRegistryInterface::class);
+        $contentTypes->disabledCodes()->willReturn(['store_location']);
+
+        return new ProblemCountProvider($this->query->reveal(), $this->updater->reveal(), $this->kinds, $this->clock, $contentTypes->reveal());
     }
 }

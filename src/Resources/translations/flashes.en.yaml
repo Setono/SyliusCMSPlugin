@@ -9,6 +9,11 @@ setono_sylius_cms:
     entry_schedule_in_the_past: Pick a time in the future.
     entry_schedule_invalid: '{1} It wasn''t scheduled: one error needs fixing.|]1,Inf[ It wasn''t scheduled: %count% errors need fixing.'
     entry_schedule_time_missing: Pick when to publish.
+    export_nothing_picked: Pick what to export first.
+    import_abandoned: The import has been cancelled, and its zip deleted.
+    import_not_an_export: '%filename% isn''t an export zip. Upload a zip the Transfer screen or setono:cms:export made.'
+    import_not_uploaded: 'Choose an export zip to upload, of at most %limit%. Import a bigger export with setono:cms:import.'
+    import_not_waiting: This import has moved on since the page was shown.
     page_scope_invalid: 'The page scope wasn''t saved: %errors%'
     page_scope_not_a_list: The page scope wasn't saved. It should be a list of conditions.
     page_scope_saved: The page scope has been saved. The placement shows on the pages it matches at once.
@@ -16,6 +21,8 @@ setono_sylius_cms:
     placement_removed: The placement has been removed. The snippet no longer shows there.
     placement_slot_not_offered: Pick a slot that provides the host-page context the snippet needs.
     placements_order_outdated: The slot's placements changed meanwhile, so the order wasn't saved. Order them again.
+    preset_deleted: The preset has been deleted.
+    preset_saved: The preset has been saved.
     placements_ordered: The order has been saved. The slot shows its placements in the new order at once.
     revision_restored: The revision has been restored into the draft. Review it, then publish it.
     share_link_created: The share link has been made. Copy it from Share links.

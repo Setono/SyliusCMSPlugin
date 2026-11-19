@@ -1,0 +1,8 @@
+--TEST--
+cms_pagination() gives nothing for an Entries block that doesn't paginate, whose template shows the first items of its list
+--TEMPLATE--
+{{ cms_pagination(view) is null ? "nothing" : "a pagination" }}
+--DATA--
+return $this->onPageOfTheBlog(1, items: 12, limit: 5, paginate: false)
+--EXPECT--
+nothing

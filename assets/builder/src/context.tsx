@@ -9,7 +9,7 @@ import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
 import type { SnippetPreviewApi } from './snippetPreview';
-import type { StoredBlock } from './types';
+import type { FieldDefinition, InsertedPreset, PresetContent, PresetDetails, PresetIndex, SavedPreset, StoredBlock } from './types';
 import type { BuilderState, BuilderStore } from './store';
 import type { UrlsState, UrlsStore } from './urls';
 import type { ValidationState, ValidationStore } from './validation';
@@ -37,6 +37,8 @@ export interface BuilderSession {
     overviewUrl: string;
     /** A snippet's placements, which are managed on its overview page, or null for an entry that isn't a snippet. */
     placements: SnippetPlacement[] | null;
+    /** What the server tells the editor once the builder opens, such as what creating from a starting point left out. */
+    notices: string[];
     /** What the top bar shows of a snippet's preview and the sample objects it can show it with. Null without the endpoints. */
     snippetPreview: SnippetPreviewApi | null;
     /**
@@ -46,6 +48,8 @@ export interface BuilderSession {
     editSnippet: ((snippet: string, block: string) => void) | null;
     /** The blocks a snippet shows, which Detach to edit here copies. Null without the endpoint. */
     snippetBlocks: ((snippet: string) => Promise<StoredBlock[]>) | null;
+    /** The block picker's Presets tab: the presets at a spot, once the unsaved changes are sent, and a preset's blocks ready to insert. Null without the endpoints. */
+    presets: PresetsSession | null;
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl: (preview: PreviewRequest) => Promise<string>;
@@ -65,10 +69,45 @@ export interface BuilderSession {
     urlPrefix: string | null;
     /** Whether the entry can be a channel's homepage, which only a page can. */
     homepage: boolean;
+    /** Whether the entry's content type has a block tree. Without one, the tree pane is hidden. */
+    hasBlockTree: boolean;
+    /**
+     * Whether the entry's content type has a URL of its own. Without one, an entry other than a snippet, such as a FAQ
+     * item, has no page to preview.
+     */
+    hasOwnUrl: boolean;
+    /** The content type's own fields, which the Settings tab renders, shared ones and translatable ones. */
+    entryFields: FieldDefinition[];
     /** The warnings about the entry's URLs and the URLs of its old slugs, as the server has them. */
     urls: UrlsStore;
     /** Says the editor changed the title in a locale, so the slug can follow it. */
     titleChanged: (locale: string, before: string | null) => void;
+}
+
+/** What the Presets tab and ★ ask the server. */
+export interface PresetsSession {
+    /**
+     * The block presets at the top level, or in a block's children, as the server sees the working copy once the unsaved
+     * changes are sent, and the categories in use.
+     */
+    list(parent: string | null): Promise<PresetIndex>;
+    /** A preset's blocks ready to insert into the entry. */
+    insert(id: string): Promise<InsertedPreset>;
+    /** Saving blocks as presets, and changing editor presets. Null without their endpoints. */
+    editing: PresetEditing | null;
+}
+
+/** What ★ and the Presets tab do with editor presets. Each takes effect at once. See "Editor presets" in docs/spec/layouts-and-presets.md */
+export interface PresetEditing {
+    /** Saves the blocks with these keys, or the whole tree as a starting point, as a new editor preset, once the unsaved changes are sent. */
+    create(content: PresetContent, details: PresetDetails): Promise<SavedPreset>;
+    /** Replaces an editor preset's blocks with the blocks with these keys, or an editor starting point's with the whole tree, once the unsaved changes are sent. */
+    replace(id: string, content: PresetContent): Promise<SavedPreset>;
+    /** Renames or recategorises an editor preset, or changes its description. */
+    update(id: string, details: Partial<PresetDetails>): Promise<SavedPreset>;
+    remove(id: string): Promise<void>;
+    /** Where the editor preset downloads as a code preset file. */
+    exportUrl(id: string): string;
 }
 
 const BuilderContext = createContext<BuilderSession | null>(null);

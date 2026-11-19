@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
-use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Preview\FieldMarker;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
+use Setono\SyliusCMSPlugin\Rendering\EntryFieldValues;
 use Setono\SyliusCMSPlugin\Rendering\FieldValue;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Value\RichText;
@@ -26,7 +26,7 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
     public function __construct(
         private BlockRendererInterface $blockRenderer,
         private FieldMarker $fieldMarker,
-        private FallbackValues $fallbackValues,
+        private EntryFieldValues $entryFieldValues,
         private PreviewContext $previewContext,
     ) {
     }
@@ -41,8 +41,8 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
 
     /**
      * Prints a field of a block, a layout or an entry. A block's or a layout's value is already hydrated, with fallback
-     * resolved, and rich text is printed as its HTML. An entry's translatable field falls back through the fallback chain
-     * of the render context's locale. In the builder's preview, a field of a block being rendered is marked, so editors
+     * resolved, and rich text is printed as its HTML. An entry's field is hydrated by its field type, and a translatable
+     * one falls back through the fallback chain of the render context's locale. In the builder's preview, a field of a block being rendered is marked, so editors
      * can type it in place
      *
      * @param array<string, mixed> $context
@@ -56,7 +56,7 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
                 throw new \LogicException(sprintf('An entry\'s fields can only be printed from a template that has the render context in "%s", such as a layout template', self::RENDER_CONTEXT));
             }
 
-            return self::escape($subject, $name, $this->fallbackValues->entryValue($subject, $name, $renderContext->localeCode));
+            return self::escape($subject, $name, $this->entryFieldValues->value($subject, $name, $renderContext));
         }
 
         $html = self::escape($subject, $name, FieldValue::read($subject, $name));
@@ -72,8 +72,8 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
     /**
      * Reads a field of a block, a layout or an entry without printing it, such as a media list's ItemList to loop over or
      * a media field's media item. A block's or a layout's value is already hydrated, with fallback resolved, and null
-     * when it's missing, such as a broken reference. An entry's translatable field falls back through the fallback
-     * chain of the render context's locale. It's never marked for typing in place
+     * when it's missing, such as a broken reference. An entry's field is hydrated by its field type, such as a Media
+     * field's media item, and a translatable one falls back through the fallback chain of the render context's locale. It's never marked for typing in place
      *
      * @param array<string, mixed> $context
      */
@@ -88,7 +88,7 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
             throw new \LogicException(sprintf('An entry\'s fields can only be read from a template that has the render context in "%s", such as a layout template', self::RENDER_CONTEXT));
         }
 
-        return $this->fallbackValues->entryValue($subject, $name, $renderContext->localeCode);
+        return $this->entryFieldValues->value($subject, $name, $renderContext);
     }
 
     /**

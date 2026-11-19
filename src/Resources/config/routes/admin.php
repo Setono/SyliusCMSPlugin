@@ -2,17 +2,24 @@
 
 declare(strict_types=1);
 
+use Setono\SyliusCMSPlugin\Controller\Admin\AbandonImportAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\CardDisplaysAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateMediaFolderAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreatePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DeleteMediaItemAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\DeletePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\ExportPresetAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\InsertPresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaUsesAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresetIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSamplesAction;
@@ -21,6 +28,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplaceMediaFileAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplacePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RestoreRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevisionIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevokeShareLinkAction;
@@ -35,17 +43,23 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SourceCountAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdatePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UploadMediaAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction as CancelSchedulePageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\ConfirmImportAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction as CreateShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\DeletePresetAction as DeletePresetPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\ExportAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\OrderEntriesAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\PresetsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction;
@@ -53,6 +67,10 @@ use Setono\SyliusCMSPlugin\Controller\Admin\RestoreRevisionAction as RestoreRevi
 use Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction as RevokeShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction as ScheduleEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\SetPlacementPageScopeAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\ShowImportAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\TransferAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\UpdatePresetAction as UpdatePresetPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\UploadImportAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -81,18 +99,41 @@ return static function (RoutingConfigurator $routes): void {
         ]])
     ;
 
-    // A code no content type has fails the condition, so the request ends in a 404
+    // A code no content type has, or that of a content type switched off, fails the condition, so the request ends in a 404
     $routes->add('setono_sylius_cms_admin_entry_index', '/cms/entries/{contentType}')
         ->controller('setono_sylius_cms.controller.entry::indexAction')
         ->methods(['GET'])
         ->requirements(['contentType' => '[a-z][a-z0-9_]*'])
-        ->condition("service('setono_sylius_cms_content_types').has(params['contentType'])")
+        ->condition("service('setono_sylius_cms_content_types').isEnabled(params['contentType'])")
         ->defaults(['_sylius' => [
             'section' => 'admin',
             'permission' => true,
             'grid' => 'setono_sylius_cms_admin_entry',
             'template' => '@SetonoSyliusCMSPlugin/admin/entry/index.html.twig',
         ]])
+    ;
+
+    // A collection with categories, such as the blog: its entries and its categories in one list, beside their own
+    // lists, which its buttons switch between. Named by the code of its entries' content type, such as blog_post. Any
+    // other code fails the condition, so the request ends in a 404
+    $routes->add('setono_sylius_cms_admin_collection_index', '/cms/collections/{contentType}')
+        ->controller('setono_sylius_cms.controller.entry::indexAction')
+        ->methods(['GET'])
+        ->requirements(['contentType' => '[a-z][a-z0-9_]*'])
+        ->condition("service('setono_sylius_cms_collections').hasCategories(params['contentType'])")
+        ->defaults(['_sylius' => [
+            'section' => 'admin',
+            'permission' => true,
+            'grid' => 'setono_sylius_cms_admin_entry_collection',
+            'template' => '@SetonoSyliusCMSPlugin/admin/entry/index.html.twig',
+        ]])
+    ;
+
+    // The positions editors drag the entries of a content type ordered by position into, in its list
+    $routes->add('setono_sylius_cms_admin_entry_order', '/cms/entries/{contentType}/order')
+        ->controller(OrderEntriesAction::class)
+        ->methods(['POST'])
+        ->requirements(['contentType' => '[a-z][a-z0-9_]*'])
     ;
 
     $routes->add('setono_sylius_cms_admin_entry_create', '/cms/entries/{contentType}/new')
@@ -210,6 +251,59 @@ return static function (RoutingConfigurator $routes): void {
         ->methods(['GET'])
     ;
 
+    // The Presets screen (docs/spec/admin.md#presets), and its Edit and Delete of an editor preset
+    $routes->add('setono_sylius_cms_admin_preset_index', '/cms/presets')
+        ->controller(PresetsAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_preset_update', '/cms/presets/{uuid}')
+        ->controller(UpdatePresetPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_preset_delete', '/cms/presets/{uuid}/delete')
+        ->controller(DeletePresetPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // The Transfer screen (docs/spec/admin.md#transfer), and its Download of an export as a zip
+    $routes->add('setono_sylius_cms_admin_transfer', '/cms/transfer')
+        ->controller(TransferAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_transfer_export', '/cms/transfer/export')
+        ->controller(ExportAction::class)
+        ->methods(['GET'])
+    ;
+
+    // The Transfer screen's import: Upload, the import's page, and its Import and Cancel
+    $routes->add('setono_sylius_cms_admin_import_upload', '/cms/transfer/imports')
+        ->controller(UploadImportAction::class)
+        ->methods(['POST'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_import_show', '/cms/transfer/imports/{uuid}')
+        ->controller(ShowImportAction::class)
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_import_confirm', '/cms/transfer/imports/{uuid}/confirm')
+        ->controller(ConfirmImportAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_import_abandon', '/cms/transfer/imports/{uuid}/abandon')
+        ->controller(AbandonImportAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
     // The builder's JSON endpoints are internal: their paths, names and bodies can change in any release (docs/spec/builder.md#json-endpoints)
     $routes->add('setono_sylius_cms_admin_api_registry', '/cms/api/registry')
         ->controller(RegistryAction::class)
@@ -239,6 +333,51 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(SnippetBlocksAction::class)
         ->methods(['GET'])
         ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // The block presets at a spot in an entry's tree, for the block picker's Presets tab
+    $routes->add('setono_sylius_cms_admin_api_preset_index', '/cms/api/presets')
+        ->controller(PresetIndexAction::class)
+        ->methods(['GET'])
+    ;
+
+    // ★ in the builder: saves the selected blocks as an editor preset
+    $routes->add('setono_sylius_cms_admin_api_preset_create', '/cms/api/presets')
+        ->controller(CreatePresetAction::class)
+        ->methods(['POST'])
+    ;
+
+    // "Replace <name>", a rename or a new category, and Delete, of an editor preset. Code presets are read-only
+    $routes->add('setono_sylius_cms_admin_api_preset_replace', '/cms/api/presets/{uuid}')
+        ->controller(ReplacePresetAction::class)
+        ->methods(['PUT'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_preset_update', '/cms/api/presets/{uuid}')
+        ->controller(UpdatePresetAction::class)
+        ->methods(['PATCH'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_preset_delete', '/cms/api/presets/{uuid}')
+        ->controller(DeletePresetAction::class)
+        ->methods(['DELETE'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // An editor preset as a code preset file, which the Presets tab and the Presets screen download
+    $routes->add('setono_sylius_cms_admin_api_preset_export', '/cms/api/presets/{uuid}/export')
+        ->controller(ExportPresetAction::class)
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // A preset's blocks ready to insert into an entry. A code preset is named by its code, an editor preset by its UUID
+    $routes->add('setono_sylius_cms_admin_api_preset_insert', '/cms/api/presets/{preset}/insert')
+        ->controller(InsertPresetAction::class)
+        ->methods(['POST'])
+        ->requirements(['preset' => '[a-z][a-z0-9_]*|' . Requirement::UUID])
     ;
 
     $routes->add('setono_sylius_cms_admin_api_entry_save', '/cms/api/entries/{uuid}')
@@ -319,6 +458,12 @@ return static function (RoutingConfigurator $routes): void {
     // How many items a source yields for the builder's parameters, under a preview token
     $routes->add('setono_sylius_cms_admin_api_source_count', '/cms/api/sources/count')
         ->controller(SourceCountAction::class)
+        ->methods(['POST'])
+    ;
+
+    // The displays the Entries block offers for what its entries field holds, under a preview token
+    $routes->add('setono_sylius_cms_admin_api_card_displays', '/cms/api/cards/displays')
+        ->controller(CardDisplaysAction::class)
         ->methods(['POST'])
     ;
 

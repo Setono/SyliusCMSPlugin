@@ -7,16 +7,17 @@ namespace Setono\SyliusCMSPlugin\Media;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EditorPresetInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface;
 
 /**
- * Keeps the media usage index in line with the entries in the flush that writes them, so the index changes in the same
- * transaction as the content: a draft save, a discard, a restore, a publish, a new entry, an upgrade and, later, an
- * import. The rows of an entry the flush deletes go with it, as the database deletes them. See "Usage index" in
- * docs/spec/media.md
+ * Keeps the media usage index in line with the entries and editor presets in the flush that writes them, so the index
+ * changes in the same transaction as the content: a draft save, a discard, a restore, a publish, a new entry, a preset
+ * save, an upgrade and, later, an import. The rows of an entry or a preset the flush deletes go with it, as the
+ * database deletes them. See "Usage index" in docs/spec/media.md
  *
  * @internal
  */
@@ -40,7 +41,16 @@ final readonly class MediaUsageListener
         /** @var array<int, DraftInterface|null> $drafts the drafts the flush writes, or null for one it deletes, by the entry's object id */
         $drafts = [];
 
+        /** @var list<EditorPresetInterface> $presets */
+        $presets = [];
+
         foreach ([...$unitOfWork->getScheduledEntityInsertions(), ...$unitOfWork->getScheduledEntityUpdates()] as $entity) {
+            if ($entity instanceof EditorPresetInterface) {
+                $presets[] = $entity;
+
+                continue;
+            }
+
             $entry = self::entryOf($entity);
             if (null !== $entry) {
                 $entries[spl_object_id($entry)] = $entry;
@@ -68,6 +78,10 @@ final readonly class MediaUsageListener
         foreach ($entries as $id => $entry) {
             $draft = array_key_exists($id, $drafts) ? $drafts[$id] : $this->draftOf($entry);
             $this->write($manager, $this->indexer->index($entry, $draft, null === $entry->getId() ? [] : $this->usages->findByEntry($entry)));
+        }
+
+        foreach ($presets as $preset) {
+            $this->write($manager, $this->indexer->indexPreset($preset, null === $preset->getId() ? [] : $this->usages->findByPreset($preset)));
         }
     }
 

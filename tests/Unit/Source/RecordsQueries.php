@@ -11,6 +11,7 @@ use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\QueryBuilder;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
 use Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface;
 use Setono\SyliusCMSPlugin\Query\VisibleTaxonsQueryInterface;
 use Sylius\Component\Core\Model\Product;
@@ -56,6 +57,28 @@ trait RecordsQueries
             ->from(Taxon::class, 'taxon')
             ->andWhere('taxon.enabled = :cms_visible_enabled')
             ->setParameter('cms_visible_enabled', true));
+
+        return $query->reveal();
+    }
+
+    /**
+     * @param array<string, class-string> $models the model of each content type, by code
+     */
+    private function visibleEntries(array $models): VisibleEntriesQueryInterface
+    {
+        $entityManager = $this->recordingEntityManager();
+        $query = $this->prophesize(VisibleEntriesQueryInterface::class);
+        $query->createQueryBuilder(Argument::type('string'), Argument::any())->will(static function (array $arguments) use ($entityManager, $models): QueryBuilder {
+            $contentType = $arguments[0] ?? null;
+            self::assertIsString($contentType);
+            self::assertArrayHasKey($contentType, $models);
+
+            return (new QueryBuilder($entityManager))
+                ->select('entry')
+                ->from($models[$contentType], 'entry')
+                ->andWhere('entry.enabled = :cms_visible_enabled')
+                ->setParameter('cms_visible_enabled', true);
+        });
 
         return $query->reveal();
     }

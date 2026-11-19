@@ -1,0 +1,109 @@
+{#
+ # The Presets screen in the hub's library: starting points and block presets in two tabs. Code presets are read-only
+ # and marked as coming from code. Each editor preset has Edit, which opens a dialog that renames and recategorises it,
+ # Download, which gives it as a code preset file, and Delete. A preset whose blocks are invalid says why. The forms come
+ # back here. admin/presets.js runs the dialogs. See "Presets" in docs/spec/admin.md
+ #}
+{% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
+
+{% import '@SyliusUi/Macro/headers.html.twig' as headers %}
+{% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
+
+{% block title %}{{ 'setono_sylius_cms.ui.presets'|trans }} {{ parent() }}{% endblock %}
+
+{% block hub_content %}
+    {{ headers.default('setono_sylius_cms.ui.presets'|trans, 'clone outline', 'setono_sylius_cms.ui.presets_description'|trans) }}
+
+    {{ breadcrumb.crumble([
+        { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
+        { label: 'setono_sylius_cms.ui.content'|trans, url: path('setono_sylius_cms_admin_overview') },
+        { label: 'setono_sylius_cms.ui.presets'|trans },
+    ]) }}
+
+    {% set starting_points = tab == 'starting_points' %}
+
+    <nav class="ui pointing secondary menu" data-preset-tabs aria-label="{{ 'setono_sylius_cms.ui.presets'|trans }}">
+        {% for name in tabs %}
+            <a class="item{% if name == tab %} active{% endif %}" href="{{ path('setono_sylius_cms_admin_preset_index', {'tab': name}) }}"{% if name == tab %} aria-current="page"{% endif %}>
+                {{- ('setono_sylius_cms.ui.' ~ name)|trans -}}
+            </a>
+        {% endfor %}
+    </nav>
+
+    {% if rows is empty %}
+        <div class="ui info message" data-no-presets>{{ (starting_points ? 'setono_sylius_cms.ui.no_starting_points' : 'setono_sylius_cms.ui.no_block_presets')|trans }}</div>
+    {% else %}
+        <table class="ui celled table" data-presets>
+            <thead>
+                <tr>
+                    <th>{{ 'setono_sylius_cms.ui.preset_name'|trans }}</th>
+                    <th>{{ 'setono_sylius_cms.ui.preset_category'|trans }}</th>
+                    {% if starting_points %}<th>{{ 'setono_sylius_cms.ui.preset_content_type'|trans }}</th>{% endif %}
+                    <th>{{ 'setono_sylius_cms.ui.preset_description'|trans }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr id="cms-preset-{{ row.id }}" data-preset="{{ row.id }}"{% if row.issues is not empty %} class="warning"{% endif %}>
+                        <td>
+                            <strong data-name>{{ row.name }}</strong>
+                            {% if row.fromCode %} <span class="ui mini basic label" data-from-code>{{ 'setono_sylius_cms.ui.from_code'|trans }}</span>{% endif %}
+                            {% if row.issues is not empty %}
+                                <ul class="ui list" data-issues aria-label="{{ 'setono_sylius_cms.ui.preset_invalid'|trans }}">
+                                    {% for issue in row.issues %}
+                                        <li><i class="orange exclamation triangle icon" aria-hidden="true"></i> {{ issue }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </td>
+                        <td data-category>{{ row.category }}</td>
+                        {% if starting_points %}<td data-content-type>{{ row.contentType }}</td>{% endif %}
+                        <td data-description>{{ row.description }}</td>
+                        <td class="right aligned collapsing">
+                            {% if not row.fromCode %}
+                                <div class="ui buttons">
+                                    <button type="button" class="ui labeled icon button" data-cms-dialog-open aria-haspopup="dialog" aria-controls="cms-preset-edit-{{ row.id }}" aria-label="{{ 'setono_sylius_cms.ui.edit_preset'|trans({'%name%': row.name}) }}">
+                                        <i class="pencil icon"></i> {{ 'setono_sylius_cms.ui.edit'|trans }}
+                                    </button>
+                                    <a class="ui labeled icon button" href="{{ path('setono_sylius_cms_admin_api_preset_export', {'uuid': row.id}) }}" download aria-label="{{ 'setono_sylius_cms.ui.download_preset'|trans({'%name%': row.name}) }}">
+                                        <i class="download icon"></i> {{ 'setono_sylius_cms.ui.download'|trans }}
+                                    </a>
+                                </div>
+                                {{ form_start(delete_forms[row.id], {attr: {class: 'cms-preset-delete'}}) }}
+                                    <button type="submit" class="ui red labeled icon button" data-requires-confirmation aria-label="{{ 'setono_sylius_cms.ui.delete_preset'|trans({'%name%': row.name}) }}">
+                                        <i class="trash icon"></i> {{ 'setono_sylius_cms.ui.delete'|trans }}
+                                    </button>
+                                {{ form_end(delete_forms[row.id]) }}
+
+                                <dialog id="cms-preset-edit-{{ row.id }}" class="cms-dialog" aria-labelledby="cms-preset-edit-{{ row.id }}-heading">
+                                    <button type="button" class="cms-dialog__close" data-cms-dialog-close aria-label="{{ 'setono_sylius_cms.ui.close'|trans }}"><i class="close icon"></i></button>
+                                    <h2 class="ui header" id="cms-preset-edit-{{ row.id }}-heading">{{ 'setono_sylius_cms.ui.edit_preset'|trans({'%name%': row.name}) }}</h2>
+                                    {% set edit_form = edit_forms[row.id] %}
+                                    {{ form_start(edit_form, {attr: {class: 'ui form'}}) }}
+                                        {{ form_row(edit_form.name) }}
+                                        {{ form_row(edit_form.category) }}
+                                        {{ form_row(edit_form.description) }}
+                                        <button type="submit" class="ui primary labeled icon button"><i class="save icon"></i> {{ 'setono_sylius_cms.ui.save'|trans }}</button>
+                                    {{ form_end(edit_form) }}
+                                </dialog>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    {# The categories in use, which editors are suggested when they give a preset one #}
+    <datalist id="cms-preset-categories">
+        {% for category in categories %}
+            <option value="{{ category }}"></option>
+        {% endfor %}
+    </datalist>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/admin/presets.js') }}"></script>
+{% endblock %}

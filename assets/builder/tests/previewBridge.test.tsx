@@ -314,6 +314,37 @@ describe('the bridge in the preview', () => {
         await waitFor(() => expect(sent().at(-1)).toMatchObject({ type: 'patch', blocks: [{ key: 'a' }] }));
     });
 
+    it('should patch the new page, not the one it replaces, with what changed while it loaded, even when the old page only gets ready then', async () => {
+        let answer: (url: string) => void = () => {};
+        const createPreviewUrl: Mock<BuilderApi['createPreviewUrl']> = vi.fn(async () => `${ORIGIN}/en_US/about-us?_cms_preview=token-1`);
+        const api = fakeApi(undefined, { createPreviewUrl });
+        render(<App config={config} api={api} autosaveDelay={10} />);
+        await screen.findByRole('heading', { level: 1 });
+        await waitFor(() => expect(frame()).toHaveAttribute('src', `${ORIGIN}/en_US/about-us?_cms_preview=token-1`));
+        createPreviewUrl.mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    answer = resolve;
+                }),
+        );
+        fireEvent.change(screen.getByRole('combobox', { name: 'Shown to' }), { target: { value: '@no_group' } });
+        await waitFor(() => expect(createPreviewUrl).toHaveBeenCalledTimes(2));
+
+        // The old page was slow to load: its bridge gets ready after the new page was asked for, and the editor goes on
+        const old = await connectBridge();
+        fireEvent.click(treeRow('Welcome'));
+        fireEvent.change(screen.getByLabelText('Text'), { target: { value: 'Welcome back' } });
+        await act(async () => answer(`${ORIGIN}/en_US/about-us?_cms_preview=token-2`));
+        await waitFor(() => expect(frame()).toHaveAttribute('src', `${ORIGIN}/en_US/about-us?_cms_preview=token-2`));
+
+        // The new page was rendered from what the server held when it was asked for, so the change is patched into it
+        const { sent } = await connectBridge();
+
+        await waitFor(() => expect(sent().at(-1)).toMatchObject({ type: 'patch', blocks: [{ key: 'a' }] }));
+        expect(api.renderPreview).toHaveBeenCalledExactlyOnceWith('token-2', [block('a', { text: { en_US: 'Welcome back' } })]);
+        expect(old.sent()).toEqual([]);
+    });
+
     it('should open the block picker for the spot of + in the preview, and add the block there', async () => {
         const { sent } = await openWithBridge(fakeApi());
 
@@ -416,6 +447,30 @@ describe('the editing tools in the preview', () => {
 
         expect(treeRows()).toEqual(['HeadingWelcome', 'HeadingWelcome', 'HeadingGoodbye']);
         await waitFor(() => expect(sent().find((message) => message.type === 'insert')).toMatchObject({ previous: ['a'], next: ['b'] }));
+    });
+
+    it("should give the bridge ★ when presets can be saved, and open Save as preset for the toolbar's block, or the selection it's part of", async () => {
+        const editing = {
+            presets: vi.fn(async () => ({ presets: [], startingPoints: [], categories: [] })),
+            insertPreset: vi.fn(async () => ({ blocks: [], notices: [] })),
+            createPreset: vi.fn(async () => ({ id: 'p', name: 'Promo', category: null, description: null, changedAt: '2026-11-20T10:00:00Z' })),
+            replacePreset: vi.fn(() => Promise.reject(new Error('Not replaced in this test'))),
+            updatePreset: vi.fn(() => Promise.reject(new Error('Not updated in this test'))),
+            deletePreset: vi.fn(async () => undefined),
+            presetExportUrl: (id: string) => `/presets/${id}/export`,
+        };
+        const api = fakeApi([block('a', { text: { en_US: 'First' } }), block('b', { text: { en_US: 'Second' } }), block('c', { text: { en_US: 'Third' } })], editing);
+        const { sent } = await openWithBridge(api);
+        expect(sent()[0]).toMatchObject({ type: 'init', strings: { savePreset: 'Save as preset' } });
+        fireEvent.click(treeRow('First'));
+        fireEvent.click(treeRow('Third'), { metaKey: true });
+
+        fromBridge({ type: 'save_preset', key: 'c' });
+        const dialog = within(await screen.findByRole('dialog', { name: 'Save as preset' }));
+        fireEvent.change(dialog.getByRole('textbox', { name: 'Name' }), { target: { value: 'Promo' } });
+        fireEvent.click(dialog.getByRole('button', { name: 'Save preset' }));
+
+        await waitFor(() => expect(editing.createPreset).toHaveBeenCalledWith(['a', 'c'], { name: 'Promo', category: null, description: null }));
     });
 
     it("should act on the whole selection when the toolbar's block is part of it", async () => {

@@ -1,0 +1,10 @@
+--TEST--
+cms_admin_collection_name() names a collection by its name, setono_sylius_cms.collection.<code>, or else by its entries' plural, or else by their label
+--TEMPLATE--
+{{ cms_admin_collection_name(cms_admin_collection('blog_post')) }}
+{{ cms_admin_collection_name(collection) }}
+--DATA--
+return $this->theCollectionOf('recipe')
+--EXPECT--
+Blog
+Recipes

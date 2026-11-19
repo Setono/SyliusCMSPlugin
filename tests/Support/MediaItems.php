@@ -14,12 +14,16 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 /**
  * Helpers for functional and UI tests that need media items, folders or files to upload. Media items are created through
  * the media library's own uploader, so they're checked and stored like any upload, in the test application's
- * public/media/cms. Each test removes the files it stored there, since the database is rolled back but the files aren't
+ * public/media/cms. Each test removes the files it stored there, and the export zips an upload kept in the transfer
+ * storage's private/cms, since the database is rolled back but the files aren't
  */
 trait MediaItems
 {
     /** @var list<string>|null what the storage held before the test */
     private ?array $storedBefore = null;
+
+    /** @var list<string>|null the uploaded export zips the transfer storage held before the test */
+    private ?array $keptImportsBefore = null;
 
     /** @var list<string> */
     private array $temporaryUploads = [];
@@ -35,6 +39,7 @@ trait MediaItems
     protected function rememberStoredMedia(): void
     {
         $this->storedBefore = self::storedMedia();
+        $this->keptImportsBefore = self::keptImports();
     }
 
     /**
@@ -44,6 +49,10 @@ trait MediaItems
     {
         foreach (array_diff(self::storedMedia(), $this->storedBefore ?? []) as $directory) {
             self::removeDirectory(self::mediaDirectory() . '/' . $directory);
+        }
+
+        foreach (array_diff(self::keptImports(), $this->keptImportsBefore ?? []) as $zip) {
+            unlink($zip);
         }
 
         foreach ($this->temporaryUploads as $file) {
@@ -150,6 +159,16 @@ trait MediaItems
     protected static function mediaDirectory(): string
     {
         return dirname(__DIR__) . '/Application/public/media/cms';
+    }
+
+    /**
+     * @return list<string> the export zips uploads kept in the test application's default transfer storage
+     */
+    private static function keptImports(): array
+    {
+        $zips = glob(dirname(__DIR__) . '/Application/private/cms/imports/*.zip');
+
+        return false === $zips ? [] : $zips;
     }
 
     /**

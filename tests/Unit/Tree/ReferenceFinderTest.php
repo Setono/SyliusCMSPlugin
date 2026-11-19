@@ -10,9 +10,15 @@ use Setono\SyliusCMSPlugin\Field\MediaHandler;
 use Setono\SyliusCMSPlugin\Field\MediaListHandler;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Field\ToggleHandler;
+use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Hero;
 use Setono\SyliusCMSPlugin\Tree\FoundReference;
@@ -96,11 +102,45 @@ final class ReferenceFinderTest extends TestCase
     /**
      * @test
      */
+    public function it_finds_the_references_of_a_block_presets_blocks_and_of_a_starting_points_layout_too(): void
+    {
+        $blocks = [new StoredBlock(self::A, 'gallery', 1, fields: ['cover' => self::COVER])];
+        $cover = new FoundReference(new Reference('media_item', self::COVER, true), self::A, 'cover', null);
+
+        self::assertEquals([$cover], [...$this->finder()->inPreset(new Preset('Gallery', $blocks))]);
+        self::assertEquals([
+            new FoundReference(new Reference('media_item', self::HERO, true), null, 'image', null),
+            $cover,
+        ], [...$this->finder()->inPreset(new Preset('Hero page', $blocks, startingPoint: new StartingPoint('page', new StoredLayout('hero', 1, ['image' => self::HERO]))))]);
+    }
+
+    /**
+     * @test
+     */
     public function it_leaves_out_the_layout_of_a_tree_when_the_code_no_longer_has_it(): void
     {
         $tree = new StoredTree(new StoredLayout('removed', 1, ['image' => self::HERO]), []);
 
         self::assertSame([], [...$this->finder()->inTree($tree, 'page')]);
+    }
+
+    /**
+     * A content type's own fields hold references too, such as a shop's photo, before those of its tree
+     *
+     * @test
+     */
+    public function it_finds_the_references_of_an_entrys_own_fields_and_then_of_its_tree(): void
+    {
+        $shop = new Shop();
+        $shop->setPhoto(self::IMAGE);
+        $shop->setCity('Aarhus');
+        $shop->setBlockTree(new StoredTree(null, [new StoredBlock(self::A, 'gallery', 1, fields: ['cover' => self::COVER])]));
+        $contentType = new ContentTypeMetadata('shop', 'app.shop', 1, 'shops', null, Shop::class, ShopTranslation::class, 'app.shop');
+
+        self::assertEquals([
+            new FoundReference(new Reference('media_item', self::IMAGE, true), null, 'photo', null, true),
+            new FoundReference(new Reference('media_item', self::COVER, true), self::A, 'cover', null),
+        ], [...$this->finder()->inEntry($shop, $contentType)]);
     }
 
     /**
@@ -124,6 +164,7 @@ final class ReferenceFinderTest extends TestCase
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
                 MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
                 MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),
+                ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             ])),
         );
     }

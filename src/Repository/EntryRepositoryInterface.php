@@ -48,55 +48,96 @@ interface EntryRepositoryInterface
     public function iterateAll(): iterable;
 
     /**
+     * Every entry of the content type, the one created first first
+     *
+     * @param string $contentType a content type code
+     *
+     * @return list<EntryInterface>
+     */
+    public function findByContentType(string $contentType): array;
+
+    /**
+     * The entries whose title or slug in any locale contains the search, ignoring case, of every content type but those
+     * left out, newest first
+     *
+     * @param list<string> $hiddenContentTypes the codes of content types whose entries it leaves out
+     *
+     * @return list<EntryInterface>
+     */
+    public function search(string $search, int $limit, array $hiddenContentTypes = []): array;
+
+    /**
      * The entries of an admin list: of the content type, or of every content type when it's null. Entries are "o", and
      * the grids' filters reach their translations as "translation". The translations and audience groups are fetched
-     * with them, for the rows (see "Entry lists" in docs/spec/admin.md)
+     * with them, for the rows (see "Entry lists" in docs/spec/admin.md). A content type ordered by position lists its
+     * entries in that order, before the sorting a grid adds
      *
      * @param string|null $contentType a content type code
+     * @param list<string> $hiddenContentTypes the codes of content types whose entries every content type's list leaves
+     *                                         out, such as those switched off in setono_sylius_cms.disabled.content_types
      */
-    public function createListQueryBuilder(?string $contentType = null): QueryBuilder;
+    public function createListQueryBuilder(?string $contentType = null, array $hiddenContentTypes = []): QueryBuilder;
+
+    /**
+     * The entries of a collection's admin list, which lists its categories too, such as the blog's posts and
+     * categories: those of the content type and of the category content type it declares, unless that's hidden. As in
+     * createListQueryBuilder(), entries are "o", with their translations and audience groups fetched
+     *
+     * @param string $contentType the code of the collection's content type, such as blog_post
+     * @param list<string> $hiddenContentTypes the codes of content types whose entries it leaves out
+     */
+    public function createCollectionListQueryBuilder(string $contentType, array $hiddenContentTypes = []): QueryBuilder;
 
     /**
      * How many entries the content type has, or every content type when it's null
      *
      * @param string|null $contentType a content type code
+     * @param list<string> $hiddenContentTypes the codes of content types whose entries every content type's count leaves out
      */
-    public function countEntries(?string $contentType = null): int;
+    public function countEntries(?string $contentType = null, array $hiddenContentTypes = []): int;
 
     /**
      * The entries whose date window starts after $now, the first to start first, which the Overview's Coming up lists:
      * those enabled, and published or with a publish that hasn't failed scheduled for their start or before, as only
      * their start changes what shoppers see
      *
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
+     *
      * @return list<EntryInterface>
      */
-    public function findStartingAfter(\DateTimeImmutable $now, int $limit): array;
+    public function findStartingAfter(\DateTimeImmutable $now, int $limit, array $hiddenContentTypes = []): array;
 
     /**
      * The entries whose date window ends after $now, the first to end first, which the Overview's Coming up lists:
      * those enabled, and published or with a publish that hasn't failed scheduled for their end or before, as only
      * their end changes what shoppers see
      *
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
+     *
      * @return list<EntryInterface>
      */
-    public function findEndingAfter(\DateTimeImmutable $now, int $limit): array;
+    public function findEndingAfter(\DateTimeImmutable $now, int $limit, array $hiddenContentTypes = []): array;
 
     /**
      * The entries a draft is in progress for: those with a draft, which are published entries with unpublished changes,
      * and those never published, which are their own working copy. The one edited last first, which the Overview's
      * Drafts in progress lists
      *
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
+     *
      * @return list<EntryInterface>
      */
-    public function findDraftsInProgress(int $limit): array;
+    public function findDraftsInProgress(int $limit, array $hiddenContentTypes = []): array;
 
     /**
      * The entries the lists' Needs attention filter finds, those with an error or a warning by the counts stored with
      * each, the one edited last first, which the Overview's Needs attention pages through
      *
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
+     *
      * @return Pagerfanta<EntryInterface>
      */
-    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts): Pagerfanta;
+    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts, array $hiddenContentTypes = []): Pagerfanta;
 
     /**
      * The entries that may name one of the customer groups in their audience or in a customer group condition, in
@@ -111,8 +152,11 @@ interface EntryRepositoryInterface
 
     /**
      * The entries that may refer to one of the records, by their codes or UUIDs, in their rows' block tree or their
-     * draft. As both are JSON, it's the entries that hold one of them as a JSON string anywhere, which can be more than
-     * those that refer to it
+     * draft, or, for an entry, in an indexed field of their published content, such as a post's categories, through the
+     * reference table, or in the column of an Entry or Snippet field of their content type's own. As the tree and the
+     * draft are JSON, it's the entries that hold one of them as a JSON string anywhere, which can be more than those that
+     * refer to it. The JSON column of a content type's own list field that isn't indexed isn't searched, as no portable
+     * query can
      *
      * @param list<string> $ids
      *

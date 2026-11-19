@@ -10,15 +10,24 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Command\UpgradeCommand;
+use Setono\SyliusCMSPlugin\Model\EditorPreset;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Preset\EditorPresetContent;
+use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Repository\EditorPresetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Upgrade\EntryRewrite;
 use Setono\SyliusCMSPlugin\Upgrade\EntryRewriterInterface;
 use Setono\SyliusCMSPlugin\Upgrade\Kind;
 use Setono\SyliusCMSPlugin\Upgrade\NewerVersion;
+use Setono\SyliusCMSPlugin\Upgrade\PresetRewriter;
+use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
+use Setono\SyliusCMSPlugin\Upgrade\Upgraded;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -35,11 +44,42 @@ final class UpgradeCommandTest extends TestCase
     /** @var ObjectProphecy<ObjectManager> */
     private ObjectProphecy $manager;
 
+    /** @var ObjectProphecy<EditorPresetRepositoryInterface> */
+    private ObjectProphecy $presets;
+
+    /** @var ObjectProphecy<StoredDataUpgraderInterface> */
+    private ObjectProphecy $upgrader;
+
     protected function setUp(): void
     {
         $this->entries = $this->prophesize(EntryRepositoryInterface::class);
         $this->rewriter = $this->prophesize(EntryRewriterInterface::class);
         $this->manager = $this->prophesize(ObjectManager::class);
+        $this->presets = $this->prophesize(EditorPresetRepositoryInterface::class);
+        $this->presets->findAllInCreationOrder()->willReturn([]);
+        $this->upgrader = $this->prophesize(StoredDataUpgraderInterface::class);
+    }
+
+    /**
+     * @test
+     */
+    public function it_upgrades_and_writes_back_the_editor_presets_that_need_it_in_one_go_and_counts_them(): void
+    {
+        $this->entries->iterateAll()->willReturn([]);
+        $old = self::editorPreset('0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a', 1);
+        $current = self::editorPreset('0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0b', 2);
+        $this->presets->findAllInCreationOrder()->willReturn([$old, $current]);
+        $this->upgrader->upgradeBlocks([self::block(1)])->willReturn(new Upgraded([self::block(2)]));
+        $this->upgrader->upgradeBlocks([self::block(2)])->willReturn(new Upgraded([self::block(2)], [new NewerVersion(Kind::BlockType, 'teaser', 4, 3)]));
+        $this->manager->flush()->shouldBeCalledTimes(2);
+        $this->manager->clear()->shouldBeCalledTimes(2);
+
+        $display = self::display($this->upgrade([]));
+
+        self::assertStringContainsString('Upgraded the editor preset 0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a', $display);
+        self::assertStringNotContainsString('Upgraded the editor preset 0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0b', $display);
+        self::assertStringContainsString('In the editor preset 0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0b: The block type "teaser" was saved with version 4, but the code has version 3. It\'s kept as it is', $display);
+        self::assertStringContainsString('Upgraded 1 editor preset.', $display);
     }
 
     /**
@@ -188,10 +228,29 @@ final class UpgradeCommandTest extends TestCase
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             ]),
             $this->manager->reveal(),
+            $this->presets->reveal(),
+            new PresetRewriter(new PresetUpgrader($this->upgrader->reveal())),
         ));
         $tester->execute($input);
 
         return $tester;
+    }
+
+    private static function editorPreset(string $uuid, int $version): EditorPreset
+    {
+        $row = new EditorPreset();
+        $row->setUuid($uuid);
+        (new EditorPresetContent())->write($row, new Preset('Teaser', [new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'teaser', $version)], changedAt: new \DateTimeImmutable('2026-11-10T08:00:00Z')));
+
+        return $row;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function block(int $version): array
+    {
+        return ['key' => '0193a5be-0000-7000-8000-000000000001', 'type' => 'teaser', 'version' => $version, 'style' => null, 'fields' => new \stdClass(), 'translated' => new \stdClass(), 'conditions' => [], 'children' => []];
     }
 
     /**

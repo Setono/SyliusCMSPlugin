@@ -90,7 +90,7 @@ final class DraftTest extends BuilderApiTestCase
 
         $client->request('GET', '/admin/cms/api/entries/' . $page->getUuid());
         self::assertSame(
-            sprintf('{"entry":%s,"lockToken":1,%s"status":"unpublished_changes","schedule":null,"editors":[],"completeness":{"en_US":{"untranslated":0,"outdated":0}}}', (string) self::draftOf($page)?->getContent(), '"settings":{"enabled":true,"showFrom":null,"showUntil":null,"channels":["WEB"],"audience":{"mode":"everyone","groups":[]},"homepageOf":[]},'),
+            sprintf('{"entry":%s,"lockToken":1,%s"status":"unpublished_changes","schedule":null,"editors":[],"completeness":{"en_US":{"untranslated":0,"outdated":0}}}', (string) self::draftOf($page)?->getContent(), '"settings":{"enabled":true,"showFrom":null,"showUntil":null,"channels":["WEB"],"audience":{"mode":"everyone","groups":[]},"homepageOf":[],"position":null},'),
             $client->getResponse()->getContent(),
         );
     }
@@ -154,7 +154,7 @@ final class DraftTest extends BuilderApiTestCase
         self::assertResponseIsSuccessful();
         self::assertSame(
             sprintf(
-                '{"entry":{"uuid":"%s","contentType":"page","version":1,"createdAt":"%s","fields":{"noindex":false},"translations":{"en_US":{"shown":true,"fields":{"metaDescription":null,"metaTitle":null,"slug":"about-us","title":"About us"},"translated":{}}},"tree":{"layout":{"code":"standard","version":1,"fields":{},"translated":{}},"blocks":[{"key":"%s","type":"heading","version":1,"style":null,"fields":{"text":{"en_US":"Hello"}},"translated":{},"conditions":[],"children":[]}]}},"lockToken":2,"settings":{"enabled":true,"showFrom":null,"showUntil":null,"channels":["WEB"],"audience":{"mode":"everyone","groups":[]},"homepageOf":[]},"status":"published","schedule":null,"editors":[],"completeness":{"en_US":{"untranslated":0,"outdated":0}}}',
+                '{"entry":{"uuid":"%s","contentType":"page","version":1,"createdAt":"%s","fields":{"noindex":false},"translations":{"en_US":{"shown":true,"fields":{"metaDescription":null,"metaTitle":null,"slug":"about-us","title":"About us"},"translated":{}}},"tree":{"layout":{"code":"standard","version":1,"fields":{},"translated":{}},"blocks":[{"key":"%s","type":"heading","version":1,"style":null,"fields":{"text":{"en_US":"Hello"}},"translated":{},"conditions":[],"children":[]}]}},"lockToken":2,"settings":{"enabled":true,"showFrom":null,"showUntil":null,"channels":["WEB"],"audience":{"mode":"everyone","groups":[]},"homepageOf":[],"position":null},"status":"published","schedule":null,"editors":[],"completeness":{"en_US":{"untranslated":0,"outdated":0}}}',
                 $page->getUuid(),
                 $page->getCreatedAt()->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z'),
                 self::KEY,

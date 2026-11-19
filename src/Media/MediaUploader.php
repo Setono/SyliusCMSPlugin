@@ -44,12 +44,7 @@ final readonly class MediaUploader implements MediaUploaderInterface
             $mediaItem->setKind($checked->kind);
             $mediaItem->setFolder($folder);
             $mediaItem->setName(self::name($originalFilename));
-            $mediaItem->setOriginalFilename($originalFilename);
-            $mediaItem->setMimeType($checked->mimeType);
-            $mediaItem->setSize($checked->size);
-            $mediaItem->setDimensions($checked->width, $checked->height);
-            $mediaItem->setChecksum($checked->checksum);
-            $mediaItem->setPath(StoragePath::for($mediaItem->getUuid(), $originalFilename, $checked->extension));
+            $checked->applyTo($mediaItem, $originalFilename, StoragePath::for($mediaItem->getUuid(), $originalFilename, $checked->extension));
             $mediaItem->setChangedAt($this->clock->now());
 
             $checked->store($this->storage, $mediaItem->getPath());

@@ -1,0 +1,35 @@
+{# The listed entries, each through its own content type's card for the display (cms_card()), each card in a
+   cms-entries__item: a grid, a carousel of 3 per view, or one after another, such as an accordion of FAQ items. An entry
+   whose content type has no card for the display is left out, and without a card to show, the block prints nothing.
+   The entry's paginated Entries block shows the page the URL asks for, with the links to its pages after the cards
+   (cms_pagination()). See "The Entries block" and "Pagination" in docs/spec/collections.md #}
+{%- set pagination = cms_pagination(view) -%}
+{%- set entries = pagination is null ? cms_value(block, 'entries') : pagination.entries -%}
+{%- set cards = [] -%}
+{%- for entry in entries ?? [] -%}
+    {%- set card -%}{{ cms_card(entry, block.display) }}{%- endset -%}
+    {%- if card is not empty -%}
+        {%- set cards = cards|merge([card]) -%}
+    {%- endif -%}
+{%- endfor -%}
+{% if cards is not empty %}
+    <div class="cms-entries cms-entries--{{ block.display }}{{ view.styleClass ? ' ' ~ view.styleClass }}">
+        {%- if block.display == 'carousel' %}
+            {#- The Carousel block's markup around the cards, showing 3 at once on wide screens -#}
+            {%- import '@SetonoSyliusCMSPlugin/block/_carousel.html.twig' as markup -%}
+            {%- set slides = [] -%}
+            {%- for card in cards -%}
+                {%- set slide -%}<div class="cms-entries__item">{{ card }}</div>{%- endset -%}
+                {%- set slides = slides|merge([slide]) -%}
+            {%- endfor %}
+            {{ markup.carousel(slides, 3) }}
+        {%- else %}
+            {%- for card in cards %}
+                <div class="cms-entries__item">{{ card }}</div>
+            {%- endfor %}
+        {%- endif %}
+        {%- if pagination is not null and pagination.links|length > 1 %}
+            {% include '@SetonoSyliusCMSPlugin/block/_pagination.html.twig' with {pagination: pagination} only %}
+        {%- endif %}
+    </div>
+{% endif %}

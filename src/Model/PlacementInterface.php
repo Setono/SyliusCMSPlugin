@@ -18,6 +18,11 @@ interface PlacementInterface extends ResourceInterface
 
     public function getUuid(): string;
 
+    /**
+     * For a placement an import creates, which keeps the UUID it has in the export (docs/spec/transfer.md#placements)
+     */
+    public function setUuid(string $uuid): void;
+
     public function getSnippet(): SnippetInterface;
 
     /**

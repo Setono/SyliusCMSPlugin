@@ -5,6 +5,9 @@ setono_sylius_cms:
         embed_code_off_changed: 'Embed code is switched off in this shop, so the code of an Embed code block can''t be changed. Undo the change, or remove the block.'
         exactly_one_of: 'Fill in one of these, but only one: %fields%.'
         not_allowed: '%block% can''t go here.'
+        paginate_twice: 'Only one list on a page can be split into pages. Turn off "Split into pages" here, or on the other list.'
+        paginate_without_source: 'A list can only be split into pages when a source fills it. Pick a source under "Filled by", or turn off "Split into pages".'
+        paginate_without_url: 'Only an entry with its own URL can split a list into pages. Turn off "Split into pages".'
         snippet_inside_itself: 'It would show this snippet inside itself: %path%. Pick another snippet.'
         too_few: '{1} Needs at least one %type% block inside.|]1,Inf[ Needs at least %count% %type% blocks inside.'
         too_many: '[0,1] Can hold at most one %type% block.|]1,Inf[ Can hold at most %count% %type% blocks.'
@@ -17,8 +20,10 @@ setono_sylius_cms:
         condition: 'The condition "%kind%" on the block "%block%"'
         does_not_provide: '%what% doesn''t provide the host-page context %context%.'
         layout_binding: 'The binding "%binding%" in the layout'
+        entry_source: 'The source "%source%" in the field "%field%"'
         layout_source: 'The source "%source%" in the layout''s field "%field%"'
         needs: '%what% needs the host-page context %context%.'
+        needs_entry_of: '%what% only works in an entry of the type %content_types%.'
         placement: 'The placement in "%slot%"'
         snippet: 'The snippet "%snippet%"'
         source: 'The source "%source%" in the block "%block%"'
@@ -32,6 +37,7 @@ setono_sylius_cms:
         not_code: This value should be HTML code.
         not_date: This value should be a date.
         not_date_time: This value should be a date and time.
+        not_entry: This value should be an entry.
         not_link: This value should be a link.
         not_link_anchor: 'An anchor is the part after the #, without spaces.'
         not_link_url: 'A link can''t lead to this URL. Start it with https://, http://, mailto:, tel: or /.'
@@ -76,3 +82,6 @@ setono_sylius_cms:
         taken: 'The URL %url% is already the URL of "%title%" in %channels%.'
         taken_by_route: 'The URL %url% is taken by the route %route%.'
         taken_in_channel: 'The URL %url% is already the URL of "%title%" in %channels%, so this can''t be shown there too.'
+    # Why the create dialog refuses a starting point. See "Starting points" in docs/spec/layouts-and-presets.md
+    starting_point:
+        disabled: 'This starting point can''t be used until a developer fixes it. Pick another.'

@@ -23,6 +23,8 @@ final readonly class RenderContext
      *                                publishes nothing
      * @param array<string, object> $hostPageContext context key => object
      * @param self::PREVIEW_MODE_*|null $previewMode
+     * @param int<1, max> $page the page of the paginated Entries block that shows: the ?page=N of an entry shown at its
+     *                         own URL, which the pass before rendering checks, and 1 everywhere else
      */
     public function __construct(
         public ChannelInterface $channel,
@@ -33,6 +35,7 @@ final readonly class RenderContext
         public \DateTimeImmutable $now,
         private array $hostPageContext = [],
         public ?string $previewMode = null,
+        public int $page = 1,
     ) {
     }
 
@@ -60,16 +63,27 @@ final readonly class RenderContext
      */
     public function withPreviewMode(?string $previewMode): self
     {
-        return new self($this->channel, $this->localeCode, $this->currencyCode, $this->customer, $this->customerGroup, $this->now, $this->hostPageContext, $previewMode);
+        return new self($this->channel, $this->localeCode, $this->currencyCode, $this->customer, $this->customerGroup, $this->now, $this->hostPageContext, $previewMode, $this->page);
     }
 
     /**
-     * The same context on another page, such as the page of a snippet preview's sample object
+     * The same context on another page, such as the page of a snippet preview's sample object, on its page 1
      *
      * @param array<string, object> $hostPageContext
      */
     public function withHostPageContext(array $hostPageContext): self
     {
         return new self($this->channel, $this->localeCode, $this->currencyCode, $this->customer, $this->customerGroup, $this->now, $hostPageContext, $this->previewMode);
+    }
+
+    /**
+     * The same context on another page of the entry's paginated Entries block. See "Pagination" in
+     * docs/spec/collections.md
+     *
+     * @param int<1, max> $page
+     */
+    public function withPage(int $page): self
+    {
+        return new self($this->channel, $this->localeCode, $this->currencyCode, $this->customer, $this->customerGroup, $this->now, $this->hostPageContext, $this->previewMode, $page);
     }
 }

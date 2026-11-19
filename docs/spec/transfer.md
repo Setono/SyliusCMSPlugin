@@ -12,7 +12,7 @@ Moving content between environments of a store: what a [transfer](../../GLOSSARY
 - **On-save settings travel and apply on import:** `enabled`, the date window, the channels, the audience, "Homepage of", the position and a snippet's placements ([Content model](content-model.md#whats-drafted-and-what-takes-effect-on-save)). They apply as a save in the admin would.
   - A new entry still shows nothing until it's published, because a placement of an unpublished snippet shows nothing, and a homepage shoppers can't see falls back to Sylius's own.
   - A snippet that's already live in the target gets its imported placements at once, before its new content is published.
-- **Media items** travel with their folders, metadata and original files. The target generates its own image variants. Missing folders are created, and existing folders aren't moved or renamed.
+- **Media items** travel with their folders, metadata and original files. The target generates its own image variants. The folders of the media items an import creates or updates are created when the target lacks them, with their parents, and existing folders aren't moved or renamed.
 - **A transfer never deletes.** It creates and updates in the target. There's no mirror mode.
 
 **What never travels:** drafts, revisions, share links and old slugs. The target records its own old slugs when a publish there changes a slug. The media usage index and the category reference table are rebuilt in the target from what's imported.
@@ -134,7 +134,7 @@ Every folder that holds an exported media item, with its parents:
 ]
 ```
 
-Parents come before their children.
+Parents come before their children, and folders with the same parent are in name order. An export without media items has an empty list.
 
 ### media/&lt;uuid&gt;.json
 
@@ -164,6 +164,7 @@ Parents come before their children.
 | --- | --- |
 | `folder` | The folder's UUID, or `null` for Unsorted. |
 | `kind` | `image`, `video` or `document`. |
+| `filename` | The original filename. When that isn't a plain basename an import takes ([Media files](#media-files)), it's the name the file is stored under. |
 | `width`, `height` | Pixels, for images. `null` otherwise. |
 | `alt` | A locale map, for images. Empty otherwise. |
 | `focalPoint` | `x` and `y` from 0 to 1, for images. `null` otherwise. |
@@ -176,36 +177,39 @@ The original file sits beside it at `media/<uuid>/<filename>`.
 
 - **The CLI.** `setono:cms:export` and `setono:cms:import` run in the foreground, for developers and deploys ([Commands](#commands)).
 - **The admin.** Export downloads a zip. Import uploads one, shows the dry-run plan and asks for confirmation ([Admin](admin.md#transfer)). An import started in the admin runs on the Messenger worker that scheduled publishing already needs, and the admin shows its progress and result. Any admin user can import, because v2 has no editor roles.
-  - **The uploaded zip is kept in the plugin's Flysystem storage** (`media.storage`), not in a temporary file, so a worker on another server can read it. It's deleted when the import finishes or is abandoned.
+  - **The dry run runs on the worker too**, since it checks every media file. It runs as if overwriting, so the plan lists the conflicts and checks everything else. A dry run that refuses even so finishes the import with its reasons, and one that would apply waits for an admin user to confirm it, with the overwrite checkbox when the plan lists conflicts and the option to publish everything imported.
+  - **The uploaded zip is kept in the plugin's transfer storage** (`transfer.storage`), not in a temporary file, so the worker can read it. By default that's a private local directory outside the web root, `%kernel.project_dir%/private/cms`, which the worker reads when it runs on the same server; a worker on another server needs a storage both share, such as S3. The media storage isn't used, because its default directory is served by the web server. The zip is written private, under a random path in `imports/`, in case a project names a public storage. It's deleted when the import finishes, fails or is abandoned: cancelled before it's confirmed, or left unconfirmed for a day.
+  - **The messages** `RunImport` (the dry run, and the confirmed import) and the delayed `AbandonImport` are sent on Sylius's event bus and routed to Sylius's `main` transport, like a scheduled publish's.
   - **A refused import is a result, not an error.** The handler records the refusal and its reasons for the admin and returns, so Messenger doesn't retry it. Only an unexpected error throws.
-- **The Sylius fixture** `setono_cms_import` loads an export folder, then publishes everything it imported, for demo and test data ([Extending](extending.md#fixture)).
+  - **An import whose run keeps throwing fails.** Messenger retries the message as its transport's retry strategy allows. Once it gives up, a `WorkerMessageFailedEvent` listener marks the import failed with the error, which its page shows, and deletes its zip. The message goes on to the failure transport as any other.
+- **The Sylius fixture** `setono_cms_import` loads an export folder or zip, then publishes everything it imported, for demo and test data. An import that refuses fails the load with its reasons ([Extending](extending.md#fixture)).
 
 ## What an import does
 
 1. **It reads, checks and upgrades.** It checks the zip and every media file ([Media files](#media-files)). Content type, layout and block type upgraders run on the export's entries and presets as they're read ([Content model](content-model.md#schema-changes)).
-2. **It plans.** It works out what's created, updated, unchanged or left alone, the conflicts, the homepage changes and the unresolved references. A record identical to the target's is marked unchanged first, before the [stale check](#stale-records), so it's never a conflict. With `--publish`, the plan also runs publish validation on every entry it would publish. A dry run shows the plan and stops.
-3. **It applies the plan all or nothing**, in one database transaction. Any conflict or error means nothing changes. Files are written to storage only after the plan is complete, and the delayed delete of a replaced file is dispatched after the transaction commits ([Media](media.md#replacing-a-file)).
+2. **It plans.** It works out what's created, updated, unchanged or left alone, the conflicts, the homepage changes and the unresolved references. A record identical to the target's is marked unchanged first, before the [stale check](#stale-records), so it's never a conflict. With `--publish`, the plan also runs publish validation on every entry it would publish, and lists each that fails. A dry run shows the plan, and applies it in a transaction it rolls back, so it checks everything the real run would and changes nothing.
+3. **It applies the plan all or nothing**, in one database transaction. Any conflict or error means nothing changes. The events of what it writes, such as `EntrySettingsChanged` and `EntryPublished`, are dispatched once that transaction commits, and never for an import that rolls back. Files are written to storage only after the plan is complete, and the delayed delete of a replaced file is dispatched after the transaction commits ([Media](media.md#replacing-a-file)).
 
 What applying does to each record:
 
 - **A picked entry** has its content saved as its draft, or written to its rows when it was never published in the target, as a save in the builder would ([Publishing](publishing.md)). It goes live only through a publish: the `--publish` option, or an editor in the target. That publish validates, checks slug clashes, records old slugs and stores a revision like any other. With `--publish`, a publish that fails validation fails the whole import.
 - **A picked editor preset** is replaced, or created.
-- **A picked media item** replaces its file the way a replace in the library does: it keeps its UUID and takes effect everywhere at once ([ADR 0013](../adr/0013-media-items-take-effect-on-save.md)). Its metadata is updated too.
+- **A picked media item** replaces its file the way a replace in the library does: it keeps its UUID and takes effect everywhere at once ([ADR 0013](../adr/0013-media-items-take-effect-on-save.md)). Its metadata is updated too, alt text and focal point included. A file of another kind than the target's media item refuses the import, as a replace refuses it. When the target holds the same file already, the media item keeps it, and its URLs, and only its metadata changes.
 - **A dependency** (a snippet or media item that came along) is created when the target lacks it, and otherwise left as it is, so the target's own edits to a shared snippet, or a logo replaced there, survive.
 - **On-save settings and placements** of the records it writes apply at once.
 - **An unchanged record**, identical to the target's, is skipped: no draft and no revision.
 - **Every write an import makes sets `changedAt` to the export's value**: the draft or rows it saves, the on-save settings and placements it applies, and the publish that `--publish` or the fixture runs. A record keeps it until someone changes it in the target ([Stale records](#stale-records)).
 
-When it's done, the import dispatches `ImportFinished` ([Extending](extending.md#events)).
+When it's done, the import dispatches `ImportFinished` ([Extending](extending.md#events)). A dry run, or an import that refused, changed nothing and dispatches none.
 
 ### Media files
 
 An export is untrusted input: any admin user can import one. So every file in it goes through the same checks as an upload ([Media](media.md#uploading)), whether its media item is picked, a dependency, or new in the target:
 
-- **The zip.** Every entry must resolve inside the export's root. An absolute path, a `..` segment or a link refuses the import.
+- **The zip.** Every entry must resolve inside the export's root. An absolute path, a `..` segment or a link refuses the import, and so does a link in an export folder.
 - **The filename.** `filename` must be a plain basename: no `/`, `\`, `..` or control characters. Anything else refuses the import.
 - **The checksum.** The file's SHA-256 must match `checksum`. A mismatch refuses the import.
-- **The file itself.** Its type is checked against `media.types` and its size against the upload limit. Its MIME type, size and dimensions are read from the file, and the values in the JSON are ignored. SVG is sanitised.
+- **The file itself.** Its type is checked against `media.types` and its size against `media.max_upload_size`. PHP's own `upload_max_filesize` and `post_max_size` don't lower that limit, as they do an upload's: the import doesn't upload the file through PHP, and the CLI or worker that runs it often has much lower limits than the web server. Without a configured limit, a file of any size is imported. Its kind, MIME type, size and dimensions are read from the file, and the values in the JSON are ignored, so metadata of another kind, such as alt text in the JSON of what's a document, is left out. SVG is sanitised.
 
 A file that fails a check refuses the whole import, with the media item named.
 
@@ -217,7 +221,7 @@ The plan lists conflicts, and the import refuses while there are any. Records ma
 | --- | --- |
 | A picked entry has a draft or a scheduled publish in the target. | `--overwrite`, or the admin's checkbox, discards the draft and cancels the schedule. |
 | A picked record changed in the target after the export's copy ([Stale records](#stale-records)). | `--overwrite`, or the admin's checkbox. |
-| An entry's URL clashes with another entry's in a channel and locale. | An editor changes a slug in one environment. `--overwrite` doesn't resolve it. |
+| An entry's URL clashes with another entry's in a channel and locale: one published in the target that the import doesn't write, or another entry the import writes. | An editor changes a slug in one environment. `--overwrite` doesn't resolve it. |
 
 Overwriting a picked entry keeps the target's previous published content restorable as a revision once the import is published.
 
@@ -233,7 +237,7 @@ An entry created separately in each environment has two UUIDs, so it's two entri
 
 ## References that don't resolve
 
-References that don't resolve in the target import unchanged: Sylius codes the target lacks (products, taxons, channels, customer groups, locales, product attributes) and CMS UUIDs that are neither exported nor present. The dry run and the import's result list them, and the admin flags them as broken references ([Admin](admin.md#problems)).
+References that don't resolve in the target import unchanged: Sylius codes the target lacks (products, taxons, channels, customer groups, locales, including those of media items' alt text, product attributes) and CMS UUIDs that are neither exported nor present. The dry run and the import's result list them, and the admin flags them as broken references ([Admin](admin.md#problems)).
 
 ## Code the target must have
 
@@ -254,7 +258,8 @@ setono:cms:export <dir> [--entry=UUID]... [--content-type=CODE]... [--media-fold
 ```
 
 - **Selection.** `--entry` picks entries, `--content-type` picks every entry of a content type, `--media-folder` picks every media item in a folder and its subfolders, and `--presets` picks every editor preset. `--all` picks every entry, editor preset and media item. Options combine, and at least one is required.
-- **Output.** It writes the folder to `<dir>`, which must be empty or missing. `--zip` writes `<dir>.zip` instead.
+- **Output.** It writes the folder to `<dir>`, which must be empty or missing. `--zip` writes `<dir>.zip` instead, which must not exist.
+- **Exit codes.** It exits with `2` (`Command::INVALID`), writing nothing, when no option is given, `<dir>` isn't empty, `<dir>.zip` exists, or an option names an entry, content type, media folder or editor preset there's none of.
 
 ```text
 setono:cms:import <path> [--dry-run] [--publish] [--overwrite]
@@ -262,15 +267,15 @@ setono:cms:import <path> [--dry-run] [--publish] [--overwrite]
 
 - `<path>` is an export folder or zip.
 - `--dry-run` prints the plan and changes nothing. It checks everything the real run would, so it exits with the code the real run would, and works as a gate in CI and deploys.
-- `--publish` publishes every imported entry as part of the import.
+- `--publish` publishes every entry the import writes, created or updated, as part of the import. They're all validated first, and the snippets an entry shows are published before it.
 - `--overwrite` overwrites the records the plan lists as conflicts, discarding their drafts. It doesn't resolve URL clashes.
 - **Exit codes**, with the reasons printed:
 
   | Code | Meaning |
   | --- | --- |
   | `0` | It applied, or the dry run would. |
-  | `1` | It refused for a reason `--overwrite` doesn't fix: unknown code, a URL clash, a failed publish, a file that fails its checks, or an `embed_code` block while it's off. |
-  | `2` (`Command::INVALID`) | `<path>` isn't a readable export folder or zip, or its `format` is unknown. |
+  | `1` | It refused for a reason `--overwrite` doesn't fix: unknown code, a URL clash, a failed publish, a file that fails its checks, an `embed_code` block while it's off, or an entry whose UUID is an entry of another content type in the target. |
+  | `2` (`Command::INVALID`) | `<path>` isn't a readable export folder or zip, its `format` is unknown, a file in it isn't in the export format, or a media item's file is missing. |
   | `3` | It refused only because of conflicts that `--overwrite` would resolve. |
 
   Unresolved references are reported and don't fail the import.

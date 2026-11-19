@@ -1,0 +1,10 @@
+{# The template of the test application's Store layout of store locations (tests/Application/Layout/Store.php) #}
+{% extends '@SetonoSyliusCMSPlugin/layout/base.html.twig' %}
+
+{% block cms_content %}
+    <article class="app-store">
+        <h1>{{ cms_field(entry, 'title') }}</h1>
+        <p class="app-store__city">{{ cms_field(entry, 'city') }}</p>
+        <p class="app-store__directions">{{ cms_field(entry, 'directions') }}</p>
+    </article>
+{% endblock %}

@@ -8,6 +8,9 @@ use Setono\SyliusCMSPlugin\Admin\EntryRow;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\TranslationChip;
 use Setono\SyliusCMSPlugin\Admin\TranslationChips;
+use Setono\SyliusCMSPlugin\Collection\CollectionMetadata;
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
+use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
@@ -35,6 +38,8 @@ final class AdminRuntime implements RuntimeExtensionInterface, ResetInterface
         private readonly RepositoryInterface $customerGroupRepository,
         private readonly EntryRows $entryRows,
         private readonly TranslationChips $translationChips,
+        private readonly Collections $collections,
+        private readonly CollectionNames $collectionNames,
     ) {
     }
 
@@ -63,13 +68,40 @@ final class AdminRuntime implements RuntimeExtensionInterface, ResetInterface
     }
 
     /**
-     * Every content type, which the create dialog offers to pick from
+     * Every content type that isn't switched off, which the create dialog offers to pick from
      *
      * @return list<ContentTypeMetadata>
      */
     public function contentTypes(): array
     {
-        return $this->contentTypes->all();
+        return $this->contentTypes->enabled();
+    }
+
+    /**
+     * The collection with categories whose entries or categories are of the content type, such as the blog for blog
+     * posts and blog categories, whose lists switch between its entries, its categories and both. Null for any other
+     */
+    public function collection(string $contentType): ?CollectionMetadata
+    {
+        $collection = $this->collections->of($contentType);
+
+        return null !== $collection && $collection->hasCategories() ? $collection : null;
+    }
+
+    /**
+     * The collection's name, which its hub item and its lists show, such as Blog
+     */
+    public function collectionName(CollectionMetadata $collection): string
+    {
+        return $this->collectionNames->collection($collection);
+    }
+
+    /**
+     * The content type's plural, which names its list, such as Posts
+     */
+    public function contentTypePlural(ContentTypeMetadata $contentType): string
+    {
+        return $this->collectionNames->plural($contentType);
     }
 
     /**

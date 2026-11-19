@@ -32,12 +32,17 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
 use Setono\SyliusCMSPlugin\Media\Liip\FilterSets;
 use Setono\SyliusCMSPlugin\Media\Liip\LocalVariants;
+use Setono\SyliusCMSPlugin\Preset\CodePresetFiles;
+use Setono\SyliusCMSPlugin\Problem\PresetProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
+use Setono\SyliusCMSPlugin\Transfer\Import\AbandonImport;
+use Setono\SyliusCMSPlugin\Transfer\Import\RunImport;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Resource\DirectoryResource;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -50,14 +55,28 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public const CHOICES_PROVIDER_TAG = 'setono_sylius_cms.choices_provider';
 
+    public const PRESET_PROBLEM_KIND_TAG = 'setono_sylius_cms.preset_problem_kind';
+
     /** The service id of the storage media items are stored in, which media.storage defaults to */
     public const STORAGE = 'setono_sylius_cms.storage';
 
     /** The directory the default storage writes to, which the web server serves at MediaUrlGenerator::BASE_URL */
     public const STORAGE_DIRECTORY = '%kernel.project_dir%/public/media/cms';
 
+    /** The service id of the storage uploaded export zips wait for the worker in, which transfer.storage defaults to */
+    public const TRANSFER_STORAGE = 'setono_sylius_cms.transfer_storage';
+
+    /** The directory the default transfer storage writes to: private, outside the web root, as Sylius's plugins keep invoices */
+    public const TRANSFER_STORAGE_DIRECTORY = '%kernel.project_dir%/private/cms';
+
     /** The name of the plugin's own Liip loader and resolver, which media.liip defaults to */
     public const LIIP_NAME = 'setono_sylius_cms';
+
+    /**
+     * The directory of the code presets the plugin ships, the page starting points and block presets a fresh install
+     * starts from. See "Shipped code presets" in docs/spec/layouts-and-presets.md
+     */
+    private const PRESETS_DIRECTORY = __DIR__ . '/../Resources/presets';
 
     /** The entry lists show the entries edited last first */
     private const GRID_SORTING = ['lastEdited' => 'desc'];
@@ -72,7 +91,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, bindable_properties: array<string, array<string, array{label: string, type: string, path: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>, presets: list<string>, content_types: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, bindable_properties: array<string, array<string, array{label: string, type: string, path: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, presets: array{paths: list<string>}, transfer: array{storage: string}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         // The Embed code block is switched off like a disabled block type until a project opts in (ADR 0018)
@@ -83,6 +102,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         // RegisterLayoutsPass checks them against the layouts the code has
         $container->setParameter('setono_sylius_cms.disabled.layouts', $config['disabled']['layouts']);
         $container->setParameter('setono_sylius_cms.disabled.sources', $config['disabled']['sources']);
+        // RegisterContentTypesPass checks them against the content types the code has, and hands them to the registry
+        $container->setParameter(RegisterContentTypesPass::DISABLED_PARAMETER, $config['disabled']['content_types']);
         $container->setParameter('setono_sylius_cms.default_layouts', array_filter(array_map(
             static fn (array $contentType): ?string => $contentType['default_layout'] ?? null,
             $config['content_types'],
@@ -101,6 +122,9 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->setParameter('setono_sylius_cms.media.widths', $config['media']['widths']);
         $container->setParameter('setono_sylius_cms.bestsellers.window', $config['bestsellers']['window']);
         $container->setParameter('setono_sylius_cms.builder.scripts', $config['builder']['scripts']);
+        self::registerCodePresets($container, $config['presets']['paths'], $config['disabled']['presets']);
+        // The plugin version an export's manifest names: null for the one that's installed, which a test pins
+        $container->setParameter('setono_sylius_cms.plugin_version', null);
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
@@ -118,6 +142,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
             $container->setAlias(self::STORAGE, $config['media']['storage']);
         }
 
+        // The Flysystem storage uploaded export zips wait in: the plugin's own private local one, which prepend() defines,
+        // unless a project configures another, such as one a worker on another server shares
+        if (self::TRANSFER_STORAGE !== $config['transfer']['storage']) {
+            $container->setAlias(self::TRANSFER_STORAGE, $config['transfer']['storage']);
+        }
+
         // Made variants are looked for with a file check only where the plugin's Liip resolver caches them in the default
         // local storage. Elsewhere, such as on S3, that would be a call to the storage, so every variant gets Liip's
         // runtime URL
@@ -130,6 +160,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
         $container->registerForAutoconfiguration(FieldHandlerInterface::class)->addTag(self::FIELD_HANDLER_TAG);
         $container->registerForAutoconfiguration(ProblemKindInterface::class)->addTag(RegisterProblemKindsPass::TAG);
+        $container->registerForAutoconfiguration(PresetProblemKindInterface::class)->addTag(self::PRESET_PROBLEM_KIND_TAG);
         $container->registerForAutoconfiguration(ChoicesProviderInterface::class)->addTag(self::CHOICES_PROVIDER_TAG);
         $container->registerAttributeForAutoconfiguration(AsConditionKind::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterConditionKindsPass::TAG);
@@ -155,6 +186,30 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->registerAttributeForAutoconfiguration(AsBindableProperty::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterBindablePropertiesPass::TAG);
         });
+    }
+
+    /**
+     * The code preset files in the directories of setono_sylius_cms.presets.paths, by code, which a duplicate code fails.
+     * Each directory is a resource of the container, so adding or removing a file rebuilds it. See "Code presets" in
+     * docs/spec/layouts-and-presets.md
+     *
+     * @param list<string> $paths
+     * @param list<string> $disabled
+     */
+    private static function registerCodePresets(ContainerBuilder $container, array $paths, array $disabled): void
+    {
+        $directories = array_map(static function (string $path) use ($container): string {
+            $resolved = $container->getParameterBag()->resolveValue($path);
+
+            return is_string($resolved) ? $resolved : throw new \LogicException(sprintf('The directory %s in setono_sylius_cms.presets.paths must be a path', $path));
+        }, $paths);
+        $files = CodePresetFiles::in($directories);
+        foreach ($directories as $directory) {
+            $container->addResource(new DirectoryResource((string) realpath($directory), '/\.json$/'));
+        }
+
+        $container->setParameter('setono_sylius_cms.presets.files', $files);
+        $container->setParameter('setono_sylius_cms.disabled.presets', $disabled);
     }
 
     /**
@@ -192,13 +247,22 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $this->prependOverviewEvents($container);
         $this->prependProblems($container);
         $this->prependMessenger($container);
-        // Before the config is read, so the slots it reads hold them
-        $container->prependExtensionConfig($this->getAlias(), ['context_keys' => StockContextKeys::config(), 'slots' => StockSlots::config()]);
+        // Before the config is read, so the slots it reads hold them. The shipped code presets' directory comes first, as
+        // a bundle prepends its own
+        $container->prependExtensionConfig($this->getAlias(), [
+            'context_keys' => StockContextKeys::config(),
+            'slots' => StockSlots::config(),
+            'presets' => ['paths' => [self::PRESETS_DIRECTORY]],
+        ]);
 
-        /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}, slots: array<string, array{template_event?: array{name: string, priority: int}}>} $config */
+        /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}, transfer: array{storage: string}, slots: array<string, array{template_event?: array{name: string, priority: int}}>} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
 
         $this->prependSlotBlocks($container, $config['slots']);
+
+        if (self::TRANSFER_STORAGE === $config['transfer']['storage']) {
+            $this->prependTransferStorage($container);
+        }
 
         if (self::STORAGE === $config['media']['storage']) {
             $this->prependStorage($container);
@@ -295,6 +359,27 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     }
 
     /**
+     * The plugin's own storage for the export zips uploaded on the Transfer screen, setono_sylius_cms.transfer_storage: a
+     * local private directory outside the web root, since the media storage's is served. A zip waits there for the
+     * Messenger worker, which must run on the same server to read it, and is deleted once its import is done. A project
+     * with a worker on another server names a storage both share in transfer.storage. See "Who runs it" in
+     * docs/spec/transfer.md
+     */
+    private function prependTransferStorage(ContainerBuilder $container): void
+    {
+        $container->prependExtensionConfig('flysystem', [
+            'storages' => [
+                self::TRANSFER_STORAGE => [
+                    'adapter' => 'local',
+                    'options' => ['directory' => self::TRANSFER_STORAGE_DIRECTORY],
+                    'visibility' => 'private',
+                    'directory_visibility' => 'private',
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * The LiipImagine filter sets image variants are made with, one per format, reading with the loader and caching with
      * the resolver media.liip names. A project changes their quality in its own liip_imagine config.
      * See "Image processing" in docs/spec/media.md
@@ -305,9 +390,11 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     }
 
     /**
-     * Routes the delayed message that runs a scheduled publish to Sylius's main transport, the way Sylius routes the
-     * messages that schedule catalog promotions, so the shop's Messenger worker runs it. Projects route it elsewhere in
-     * their own framework config. See "Scheduled publishes" in docs/spec/publishing.md
+     * Routes the plugin's messages to Sylius's main transport, the way Sylius routes the messages that schedule catalog
+     * promotions, so the shop's Messenger worker handles them: the delayed messages that run a scheduled publish and
+     * delete a replaced file, and those that run an import started in the admin and abandon one no one confirmed.
+     * Projects route them elsewhere in their own framework config. See "Scheduled publishes" in
+     * docs/spec/publishing.md, "Replacing a file" in docs/spec/media.md and "Who runs it" in docs/spec/transfer.md
      */
     private function prependMessenger(ContainerBuilder $container): void
     {
@@ -316,6 +403,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'routing' => [
                     ScheduledPublishDue::class => 'main',
                     DeleteReplacedFile::class => 'main',
+                    RunImport::class => 'main',
+                    AbandonImport::class => 'main',
                 ],
             ],
         ]);
@@ -436,8 +525,9 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         'name' => 'doctrine/orm',
                         'options' => [
                             'class' => '%setono_sylius_cms.model.entry.class%',
-                            // The route's content type code, which All entries' route doesn't have
-                            'repository' => ['method' => 'createListQueryBuilder', 'arguments' => ['$contentType']],
+                            // The route's content type code, which All entries' route doesn't have, and the content types
+                            // switched off, whose entries All entries leaves out
+                            'repository' => ['method' => 'createListQueryBuilder', 'arguments' => ['$contentType', '%' . RegisterContentTypesPass::DISABLED_PARAMETER . '%']],
                         ],
                     ],
                     'sorting' => self::GRID_SORTING,
@@ -484,6 +574,29 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'limits' => self::GRID_LIMITS,
                     'fields' => [
                         'type' => $field('setono_sylius_cms.ui.type', 'type', 20),
+                    ],
+                ],
+                // A collection with categories, such as the blog: its entries and its categories, by type, and a create
+                // dialog that asks which of the two
+                'setono_sylius_cms_admin_entry_collection' => [
+                    'extends' => 'setono_sylius_cms_admin_entry',
+                    'driver' => [
+                        'options' => [
+                            'repository' => ['method' => 'createCollectionListQueryBuilder', 'arguments' => ['$contentType', '%' . RegisterContentTypesPass::DISABLED_PARAMETER . '%']],
+                        ],
+                    ],
+                    'sorting' => self::GRID_SORTING,
+                    'limits' => self::GRID_LIMITS,
+                    'fields' => [
+                        'type' => $field('setono_sylius_cms.ui.type', 'type', 20),
+                    ],
+                    'actions' => [
+                        'main' => [
+                            'create' => [
+                                'type' => self::CREATE_ENTRY_ACTION,
+                                'options' => ['contentType' => null, 'collection' => '$contentType'],
+                            ],
+                        ],
                     ],
                 ],
             ],

@@ -11,8 +11,6 @@
 
 {% set row = cms_admin_entry_row(entry) %}
 {% set title = row.title|default('setono_sylius_cms.ui.untitled'|trans) %}
-{# The entry's list is named by its content type's plural, setono_sylius_cms.content_type_plural.<code>, or else by its label #}
-{% set plural = 'setono_sylius_cms.content_type_plural.' ~ row.contentType.code %}
 
 {% block title %}{{ title }} {{ parent() }}{% endblock %}
 
@@ -39,7 +37,7 @@
             {{ breadcrumb.crumble([
                 { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
                 { label: 'setono_sylius_cms.ui.content'|trans, url: path('setono_sylius_cms_admin_overview') },
-                { label: plural|trans != plural ? plural|trans : row.contentType.label|trans, url: path('setono_sylius_cms_admin_entry_index', {'contentType': row.contentType.code}) },
+                { label: cms_admin_content_type_plural(row.contentType), url: path('setono_sylius_cms_admin_entry_index', {'contentType': row.contentType.code}) },
                 { label: title },
             ]) }}
         </div>

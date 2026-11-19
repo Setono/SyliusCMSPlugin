@@ -55,18 +55,19 @@ final readonly class SnippetUses
     }
 
     /**
-     * Whether a Snippet field in the entry's tree, in a block or in its layout, holds the snippet
+     * Whether a Snippet field holds the snippet: one of its content type's own, or one in its tree, in a block or in its layout
      */
     private function shows(EntryInterface $entry, SnippetInterface $snippet): bool
     {
         try {
-            $contentType = $this->contentTypes->getByEntry($entry)->code;
+            $contentType = $this->contentTypes->getByEntry($entry);
         } catch (UnknownContentTypeException) {
             // An entry of a content type the code no longer has shows nowhere
             return false;
         }
 
-        foreach ($this->referenceFinder->inTree($entry->getBlockTree(), $contentType) as $found) {
+        // Its content type's own Snippet fields show a snippet too
+        foreach ($this->referenceFinder->inEntry($entry, $contentType) as $found) {
             if (SnippetReferences::isSnippetReference($found->reference) && $found->reference->id === $snippet->getUuid()) {
                 return true;
             }

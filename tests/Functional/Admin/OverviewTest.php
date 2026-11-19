@@ -55,7 +55,7 @@ final class OverviewTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSame('cms-create-entry', $crawler->selectButton('Create')->attr('aria-controls'));
         self::assertSame(
-            [['Announcement', '/admin/cms/entries/announcement/new'], ['Page', '/admin/cms/entries/page/new'], ['Snippet', '/admin/cms/entries/snippet/new']],
+            [['Announcement', '/admin/cms/entries/announcement/new'], ['Store location', '/admin/cms/entries/store_location/new'], ['Page', '/admin/cms/entries/page/new'], ['Snippet', '/admin/cms/entries/snippet/new'], ['Blog post', '/admin/cms/entries/blog_post/new'], ['Blog category', '/admin/cms/entries/blog_category/new'], ['FAQ item', '/admin/cms/entries/faq_item/new'], ['FAQ category', '/admin/cms/entries/faq_category/new']],
             $crawler->filter('dialog#cms-create-entry [data-cms-create-entry-type]')->each(static fn (Crawler $type): array => [trim($type->text()), (string) $type->attr('href')]),
         );
         // The panels sit in the order of the spec

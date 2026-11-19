@@ -20,7 +20,7 @@ This specification is the source of truth for building v2. It was assembled from
 ## Platform
 
 - **Sylius 1.14 only.** This was reaffirmed on 2026-11-13, knowing that 1.14's security support ends in December 2026. A Sylius 2.x port comes later as a separate effort. Keeping that port cheap is nice to have, not a hard constraint.
-- **PHP ≥ 8.2**, **Symfony 6.4 only**, and **Twig 3**.
+- **PHP ≥ 8.2**, with the `dom`, `filter`, `libxml`, `mbstring` and `zip` extensions, **Symfony 6.4 only**, and **Twig 3**.
 - **Databases:** the ones Sylius supports, MySQL 8.0+ and PostgreSQL. Every query the spec relies on, such as the category reference table, works on both.
 - **What v2 builds on**, all of it already in a Sylius 1.14 install unless marked:
   - Doctrine ORM and Sylius's ResourceBundle and GridBundle
@@ -29,6 +29,7 @@ This specification is the source of truth for building v2. It was assembled from
   - Flysystem 2 or 3, through the plugin's own storage, defined in flysystem-bundle's config as Sylius defines its own
   - Pagerfanta's `AdapterInterface` (`^3` on 1.14) as part of the source contract ([ADR 0022](../adr/0022-sources-return-a-pagerfanta-adapter.md))
   - `ueberdosis/tiptap-php` for rich text (new dependency)
+  - `enshrined/svg-sanitize` for uploaded SVG images (new dependency)
 - **No Symfony UX, no Encore entry and no Node in host projects.** The builder ships prebuilt ([ADR 0008](../adr/0008-the-builder-is-a-react-app-with-a-twig-preview-in-a-same-origin-iframe.md)).
 
 ## Scope
@@ -51,7 +52,7 @@ v2.0 covers:
 
 - **Migrating v1 data to v2.** v2 is a clean break. Migration tooling would be a separate, later effort.
 - **Sylius 2.x support.** A separate port after v2 ships on Sylius 1.14.
-- **Admin-editable Twig.** Ruled out for security, UX and maintainability. The `BlockRendererInterface` seam lets a sandboxed code block be added later ([Extending](extending.md#block-renderers)). Raw HTML is a separate, opt-in block ([ADR 0018](../adr/0018-raw-html-is-an-opt-in-embed-code-block.md)).
+- **Admin-editable Twig.** Ruled out for security, UX and maintainability. A sandboxed code block, with a renderer of its own, may be added later ([Extending](extending.md#block-templates)). Raw HTML is a separate, opt-in block ([ADR 0018](../adr/0018-raw-html-is-an-opt-in-embed-code-block.md)).
 - **AI assist.** No AI generation, rewriting or translation. The per-field translation state is the seam a future translator fills ([Extending](extending.md#translation-state)).
 - **Translation export and import**, such as XLIFF or CSV for translation agencies.
 - **Editor roles and permissions.** Sylius 1.x OSS has no RBAC to build on, so every admin user can do everything.

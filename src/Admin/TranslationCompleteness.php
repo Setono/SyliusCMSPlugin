@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Admin;
 
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 
@@ -22,6 +23,7 @@ final readonly class TranslationCompleteness
     public function __construct(
         private ChannelRepositoryInterface $channelRepository,
         private CompletenessQueryInterface $query,
+        private ContentTypeRegistryInterface $contentTypes,
     ) {
     }
 
@@ -40,7 +42,7 @@ final readonly class TranslationCompleteness
         }
 
         $byChannel = [];
-        foreach ($this->query->count($localesByChannel) as $code => $count) {
+        foreach ($this->query->count($localesByChannel, $this->contentTypes->disabledCodes()) as $code => $count) {
             $locales = [];
             foreach ($count['complete'] as $localeCode => $complete) {
                 $locales[] = new LocaleCompleteness($localeCode, $count['entries'], $complete);

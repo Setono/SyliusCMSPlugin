@@ -31,6 +31,11 @@ class MediaFolder implements MediaFolderInterface
         return $this->uuid;
     }
 
+    public function setUuid(string $uuid): void
+    {
+        $this->uuid = $uuid;
+    }
+
     public function getName(): string
     {
         return $this->name;

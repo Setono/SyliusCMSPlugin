@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Shop;
 
-use Setono\SyliusCMSPlugin\Context\EntryContext;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
 use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
-use Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -27,7 +25,7 @@ final readonly class ShowEntryAction
         private EntryUrlMatcher $entryUrlMatcher,
         private VisibleEntriesQueryInterface $visibleEntries,
         private RenderContextFactoryInterface $renderContextFactory,
-        private LayoutRendererInterface $layoutRenderer,
+        private EntryPage $entryPage,
         private PreviewedEntryProvider $previewedEntryProvider,
         private UrlGeneratorInterface $urlGenerator,
     ) {
@@ -54,8 +52,8 @@ final readonly class ShowEntryAction
             return $this->redirectTo($request, $this->urlGenerator->generate('setono_sylius_cms_shop_entry', ['_locale' => $localeCode, 'path' => $match->redirectTo]));
         }
 
-        // 3. and 4. The tree in the entry's layout, with the entry as host-page context
-        return new Response($this->layoutRenderer->render($entry, $this->renderContextFactory->create(EntryContext::objects($entry))));
+        // 3. and 4. The tree in the entry's layout, at the page of its paginated Entries block, with the entry as host-page context
+        return $this->entryPage->render($request, $entry);
     }
 
     /**

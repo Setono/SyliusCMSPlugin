@@ -1,7 +1,8 @@
 {#
  # The entry lists in the hub: the grids of the entry resource, rendered by its resource controller, so `resources` is
- # the grid view. All entries' route has no content type, and a content type's list has its code in the route.
- # See "Entry lists" in docs/spec/admin.md
+ # the grid view. All entries' route has no content type, and a content type's list has its code in the route. A
+ # collection with categories, such as the blog, has a list of its own of both, which has its entries' code in the
+ # route, and its three lists switch between All, its entries and its categories. See "Entry lists" in docs/spec/admin.md
  #}
 {% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
 
@@ -10,13 +11,18 @@
 
 {% set definition = resources.definition %}
 {% set content_type_code = app.request.attributes.get('contentType') %}
+{% set collection_list = 'setono_sylius_cms_admin_collection_index' == app.request.attributes.get('_route') %}
+{% set collection = content_type_code is null ? null : cms_admin_collection(content_type_code) %}
+{# Editors drag the entries of a content type ordered by position into order in its list, which saves it at once #}
+{% set ordered_by_position = content_type_code is not null and not collection_list and cms_admin_content_type(content_type_code).order.byPosition %}
 
+{# Each of a collection's lists is named by the collection's name, such as Blog, and a content type's by its plural #}
 {% if content_type_code is null %}
     {% set heading = 'setono_sylius_cms.ui.all_entries'|trans %}
+{% elseif collection is not null %}
+    {% set heading = cms_admin_collection_name(collection) %}
 {% else %}
-    {# A content type's list is named by its plural, setono_sylius_cms.content_type_plural.<code>, or else by its label #}
-    {% set plural = 'setono_sylius_cms.content_type_plural.' ~ content_type_code %}
-    {% set heading = plural|trans != plural ? plural|trans : cms_admin_content_type(content_type_code).label|trans %}
+    {% set heading = cms_admin_content_type_plural(cms_admin_content_type(content_type_code)) %}
 {% endif %}
 
 {% block title %}{{ heading }} {{ parent() }}{% endblock %}
@@ -43,5 +49,40 @@
         </div>
     </div>
 
+    {% if collection is not null %}
+        {% set switches = [
+            {label: 'setono_sylius_cms.ui.all'|trans, url: path('setono_sylius_cms_admin_collection_index', {'contentType': collection.code}), current: collection_list},
+            {label: cms_admin_content_type_plural(collection.entries), url: path('setono_sylius_cms_admin_entry_index', {'contentType': collection.code}), current: not collection_list and content_type_code == collection.code},
+            {label: cms_admin_content_type_plural(collection.categories), url: path('setono_sylius_cms_admin_entry_index', {'contentType': collection.categories.code}), current: content_type_code == collection.categories.code},
+        ] %}
+        <nav class="ui basic buttons cms-collection-switch" data-cms-collection-switch aria-label="{{ heading }}">
+            {% for switch in switches %}
+                <a class="ui button{% if switch.current %} active{% endif %}" href="{{ switch.url }}"{% if switch.current %} aria-current="page"{% endif %}>{{ switch.label }}</a>
+            {% endfor %}
+        </nav>
+    {% endif %}
+
+    {% if ordered_by_position %}
+        <div class="ui info message cms-entry-order"
+             data-cms-entry-order
+             data-url="{{ path('setono_sylius_cms_admin_entry_order', {'contentType': content_type_code}) }}"
+             data-csrf-token="{{ csrf_token('setono_sylius_cms_entry_order') }}"
+             data-move-up="{{ 'setono_sylius_cms.ui.move_up'|trans }}"
+             data-move-down="{{ 'setono_sylius_cms.ui.move_down'|trans }}"
+             data-saving="{{ 'setono_sylius_cms.ui.order_saving'|trans }}"
+             data-saved="{{ 'setono_sylius_cms.ui.order_saved'|trans }}"
+             data-failed="{{ 'setono_sylius_cms.ui.order_not_saved'|trans }}">
+            <p>{{ 'setono_sylius_cms.ui.drag_to_order'|trans }}</p>
+            <p class="cms-entry-order__status" role="status" aria-live="polite" data-cms-entry-order-status></p>
+        </div>
+    {% endif %}
+
     {{ sylius_grid_render(resources, '@SyliusAdmin/Grid/_default.html.twig') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if ordered_by_position %}
+        <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/admin/entry-order.js') }}"></script>
+    {% endif %}
 {% endblock %}

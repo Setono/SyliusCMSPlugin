@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
-use Setono\SyliusCMSPlugin\Binding\BoundValue;
-use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
-use Setono\SyliusCMSPlugin\Tree\StoredValue;
+use Setono\SyliusCMSPlugin\Tree\StoredValueFit;
 use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Symfony\Component\Translation\TranslatableMessage;
 
@@ -31,7 +29,7 @@ final readonly class MisfitValue implements ProblemKindInterface
     public function __construct(
         private TreeValues $treeValues,
         private ContentTypeRegistryInterface $contentTypes,
-        private FallbackValues $fallbackValues,
+        private StoredValueFit $fit,
     ) {
     }
 
@@ -41,18 +39,19 @@ final readonly class MisfitValue implements ProblemKindInterface
      */
     public function findIn(EntryInterface $entry): iterable
     {
-        foreach ($this->treeValues->inTree($entry->getBlockTree(), $this->contentTypes->getByEntry($entry)->code) as $value) {
-            if (!$this->doesNotFit($value)) {
+        foreach ($this->treeValues->inEntry($entry, $this->contentTypes->getByEntry($entry)) as $value) {
+            if (!$this->fit->doesNotFit($value)) {
                 continue;
             }
 
             $field = $value->field;
             if (null === $value->block || null === $value->blockType) {
+                // In one of the content type's own fields, or in the layout
                 yield new Problem(
                     self::CODE,
                     Severity::Error,
                     $entry,
-                    new TranslatableMessage('setono_sylius_cms.problem.misfit_layout_value', ['%field%' => new TranslatableMessage($field->field->label)]),
+                    new TranslatableMessage($value->inEntry ? 'setono_sylius_cms.problem.misfit_entry_value' : 'setono_sylius_cms.problem.misfit_layout_value', ['%field%' => new TranslatableMessage($field->field->label)]),
                     Fix::inBuilder($entry, null, $value->locale),
                     null,
                     $field->name,
@@ -76,22 +75,5 @@ final readonly class MisfitValue implements ProblemKindInterface
                 $value->locale,
             );
         }
-    }
-
-    /**
-     * A translatable field's value that isn't a locale map doesn't fit, unless it's empty, and nor does a value its
-     * field type doesn't take. A binding fits a field that can be bound, in its shape
-     */
-    private function doesNotFit(StoredValue $value): bool
-    {
-        if (BoundValue::isBound($value->field, $value->value)) {
-            return null === BoundValue::of($value->field, $value->value);
-        }
-
-        if ($value->isNotByLocale()) {
-            return '' !== $value->value && [] !== $value->value;
-        }
-
-        return !$this->fallbackValues->fits($value->field->field, $value->value);
     }
 }

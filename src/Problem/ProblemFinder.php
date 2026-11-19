@@ -22,17 +22,13 @@ final readonly class ProblemFinder implements ProblemFinderInterface
     {
         $workingCopy = $this->workingCopies->getWorkingCopy($entry);
 
-        $errors = $warnings = [];
+        $problems = [];
         foreach ($this->kinds as $kind) {
             foreach ($kind->findIn($workingCopy) as $problem) {
-                if (Severity::Error === $problem->severity) {
-                    $errors[] = $problem;
-                } else {
-                    $warnings[] = $problem;
-                }
+                $problems[] = $problem;
             }
         }
 
-        return [...$errors, ...$warnings];
+        return Severity::errorsFirst($problems);
     }
 }

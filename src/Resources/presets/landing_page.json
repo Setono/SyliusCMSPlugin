@@ -1,0 +1,341 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.landing_page.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.pages"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.landing_page.description"
+    },
+    "thumbnail": "/bundles/setonosyliuscmsplugin/thumbnail/preset/landing_page.svg",
+    "startingPoint": {
+        "contentType": "page",
+        "layout": {
+            "code": "standard",
+            "version": 1,
+            "fields": {
+                "showTitle": false
+            },
+            "translated": {}
+        },
+        "default": false
+    },
+    "blocks": [
+        {
+            "key": "01a1f161-5053-787a-9764-e4d97ae3ba13",
+            "type": "carousel",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": [
+                {
+                    "key": "01a1f161-5053-787a-9764-e4d978b65022",
+                    "type": "banner",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "heading": {
+                            "$trans": "setono_sylius_cms.preset.banner_carousel.slide_1.heading"
+                        },
+                        "text": {
+                            "$trans": "setono_sylius_cms.preset.banner_carousel.slide_1.text"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d97865e029",
+                            "type": "button",
+                            "version": 1,
+                            "style": "primary",
+                            "fields": {
+                                "link": {
+                                    "anchor": null,
+                                    "label": {
+                                        "$trans": "setono_sylius_cms.preset.banner_carousel.slide_1.button"
+                                    },
+                                    "ref": "/",
+                                    "target": "url"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "key": "01a1f161-5053-787a-9764-e4d979d2478c",
+                    "type": "banner",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "heading": {
+                            "$trans": "setono_sylius_cms.preset.banner_carousel.slide_2.heading"
+                        },
+                        "text": {
+                            "$trans": "setono_sylius_cms.preset.banner_carousel.slide_2.text"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d9795a3a10",
+                            "type": "button",
+                            "version": 1,
+                            "style": "primary",
+                            "fields": {
+                                "link": {
+                                    "anchor": null,
+                                    "label": {
+                                        "$trans": "setono_sylius_cms.preset.banner_carousel.slide_2.button"
+                                    },
+                                    "ref": "/",
+                                    "target": "url"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "key": "01a1f161-5053-787a-9764-e4d97a2105ae",
+                    "type": "banner",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "heading": {
+                            "$trans": "setono_sylius_cms.preset.banner_carousel.slide_3.heading"
+                        },
+                        "text": {
+                            "$trans": "setono_sylius_cms.preset.banner_carousel.slide_3.text"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d979f522f9",
+                            "type": "button",
+                            "version": 1,
+                            "style": "primary",
+                            "fields": {
+                                "link": {
+                                    "anchor": null,
+                                    "label": {
+                                        "$trans": "setono_sylius_cms.preset.banner_carousel.slide_3.button"
+                                    },
+                                    "ref": "/",
+                                    "target": "url"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "key": "01a1f161-5053-787a-9764-e4d97ba715b0",
+            "type": "products",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "display": "carousel",
+                "products": {
+                    "$limit": 8,
+                    "$params": {},
+                    "$source": "bestsellers"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        },
+        {
+            "key": "01a1f161-5054-7bcd-ab92-d388e722ae79",
+            "type": "columns",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": [
+                {
+                    "key": "01a1f161-5053-787a-9764-e4d97e0d225c",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d97c5da27b",
+                            "type": "image",
+                            "version": 1,
+                            "style": null,
+                            "fields": {},
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d97cd95a42",
+                            "type": "heading",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "level": "h3",
+                                "text": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_1.heading"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d97d7ca664",
+                            "type": "rich_text",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "content": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_1.text"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "key": "01a1f161-5053-787a-9764-e4d97ec62187",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d97e22b598",
+                            "type": "image",
+                            "version": 1,
+                            "style": null,
+                            "fields": {},
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d97e4a9f85",
+                            "type": "heading",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "level": "h3",
+                                "text": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_2.heading"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d97ebf2359",
+                            "type": "rich_text",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "content": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_2.text"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "key": "01a1f161-5054-7bcd-ab92-d388e688ba63",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d97fb958d1",
+                            "type": "image",
+                            "version": 1,
+                            "style": null,
+                            "fields": {},
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-5053-787a-9764-e4d9805290aa",
+                            "type": "heading",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "level": "h3",
+                                "text": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_3.heading"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-5054-7bcd-ab92-d388e649557d",
+                            "type": "rich_text",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "content": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_3.text"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "key": "01a1f161-5054-7bcd-ab92-d388e7b9adcb",
+            "type": "rich_text",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "content": {
+                    "$trans": "setono_sylius_cms.preset.landing_page.text"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

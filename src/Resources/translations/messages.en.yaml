@@ -41,6 +41,7 @@ setono_sylius_cms:
         columns: Columns
         downloads: Downloads
         embed_code: Embed code
+        entries: Entries
         first_match: First match
         group: Group
         heading: Heading
@@ -64,6 +65,10 @@ setono_sylius_cms:
             2: '2'
             3: '3'
             4: '4'
+        entries_display:
+            accordion: Accordion
+            carousel: Carousel
+            grid: Grid
         heading_level:
             h1: Heading 1
             h2: Heading 2
@@ -87,11 +92,16 @@ setono_sylius_cms:
         customer_group: Customer group
         date_window: Date window
         entry: Entry
+        entry_in_category: Entry in category
         locale: Locale
         product: Product
         product_in_taxon: Product in taxon
         taxon: Taxon
     content_type:
+        blog_category: Blog category
+        blog_post: Blog post
+        faq_category: FAQ category
+        faq_item: FAQ item
         page: Page
         snippet: Snippet
     # The context keys' labels, naming the pages that provide them. See "Context keys" in docs/spec/slots.md
@@ -101,8 +111,16 @@ setono_sylius_cms:
         taxon: Taxon page
     # A content type's list is named by its plural. One without a plural here is named by its label
     content_type_plural:
+        blog_category: Categories
+        blog_post: Posts
+        faq_category: Categories
+        faq_item: Questions
         page: Pages
         snippet: Snippets
+    # A collection is named by its content type's code here, in the hub and its list, or else by its plural or its label
+    collection:
+        blog_post: Blog
+        faq_item: FAQ
     field:
         accordion_item:
             content: Content
@@ -121,6 +139,13 @@ setono_sylius_cms:
         bestsellers_source:
             include_children: Include the taxons below it
             taxon: Taxon
+        blog_category:
+            description: Description
+        blog_post:
+            categories: Categories
+            excerpt: Excerpt
+            featured_image: Featured image
+            published_at: Date
         button:
             link: Link
         carousel:
@@ -138,11 +163,25 @@ setono_sylius_cms:
         downloads:
             documents: Documents
             heading: Heading
+        entries:
+            display: Display
+            entries: Entries
+            paginate: Split into pages
+            paginate_help: Shows as many entries per page as the list shows, with numbered links to the other pages. It needs a source.
+        entries_from_collection_source:
+            categories: Categories
+            categories_help: Leave it empty to list the whole collection.
+            content_type: Collection
         entry_condition:
             entries: Entries
+        entry_in_category_condition:
+            categories: Categories
         embed_code:
             code: Code
             code_help: 'HTML, scripts included, such as a review widget or a newsletter form. It runs in the shop as it is, but not in the builder''s preview.'
+        faq_item:
+            answer: Answer
+            categories: Categories
         group:
             full_width: Full width
         heading:
@@ -197,7 +236,34 @@ setono_sylius_cms:
             poster: Poster
             poster_help: Shown before the video plays. Leave it empty to use the video's own poster from the media library.
             video: Video
+    # What an import plans and why it refuses, which setono:cms:import prints and the admin's Import shows. See "What an
+    # import does", "Conflicts" and "Code the target must have" in docs/spec/transfer.md
+    import:
+        conflict:
+            draft: '%title% has unpublished changes here.'
+            scheduled_publish: '%title% has a scheduled publish here.'
+            stale: '%title% changed here at %changed_at%, after the export''s copy from %exported_at%.'
+            url_clash: '%title% would have the URL %url%, which %other% has in %channels%.'
+        embed_code: 'Embed code is switched off in this shop, so %title% can''t bring in an Embed code block that isn''t published here with the same key and code.'
+        # Why a media item's file in an export is refused, before the checks an upload goes through. See "Media files"
+        # in docs/spec/transfer.md
+        media_file:
+            checksum: '%filename% doesn''t match its checksum, so it isn''t the file that was exported.'
+            filename: '"%filename%" isn''t a plain filename.'
+        media_refused: 'The media item %name% can''t be imported: %reason%'
+        newer_version: '%title% can''t be imported: %reason%. Deploy the code first.'
+        not_publishable: '%title% can''t be published: %reason%'
+        other_content_type: '%title% has the UUID of an entry of the content type "%content_type%" here, so it can''t be imported.'
+        path_outside_root: 'The export holds %path%, which isn''t inside its folder: it''s an absolute path, a path with "..", or a link.'
+        settings_refused: 'The settings of %title% can''t be saved: %reason%'
+        unknown_block_type: '%title% has blocks of the type "%type%", which the code here doesn''t have. Deploy the code first.'
+        unknown_content_type: '%title% is of the content type "%content_type%", which the code here doesn''t have. Deploy the code first.'
+        unknown_layout: '%title% has the layout "%layout%", which the code here doesn''t have for its content type. Deploy the code first.'
     layout:
+        blog_category:
+            standard: Standard
+        blog_post:
+            article: Article
         page:
             standard: Standard
     # The link targets' labels. See "Link targets" in docs/spec/extending.md
@@ -216,22 +282,27 @@ setono_sylius_cms:
                 media: Media
                 overview: Overview
                 pages: Pages
+                presets: Presets
                 snippets: Snippets
+                transfer: Transfer
             main:
                 content:
                     content: Content
                     header: Content
     form:
         entry:
+            blank: Blank
             channels: Channels
             layout: Layout
             slug: Slug
             slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
             slug_rules: A slug can't start or end with a slash, or have two slashes in a row.
+            starting_point: Starting point
+            starting_point_help: A starting point gives the new entry its blocks and its layout.
             title: Title
     media:
         # Why a media item can't be deleted. See "Deleting" in docs/spec/media.md
-        in_use: '{1} It''s used in an entry, so it can''t be deleted.|]1,Inf[ It''s used in %count% entries, so it can''t be deleted.'
+        in_use: '{1} It''s used in one place, so it can''t be deleted.|]1,Inf[ It''s used in %count% places, so it can''t be deleted.'
         # Why the media library refused a file. See "Uploading" in docs/spec/media.md
         refused:
             not_allowed: '%filename% is a %type% file, which the media library doesn''t take. It takes %types%, up to %limit% each.'
@@ -243,25 +314,197 @@ setono_sylius_cms:
             over_limit: '%filename% is over the upload limit of %limit%.'
             too_big: '%filename% is %size%, over the upload limit of %limit%.'
             unreadable: '%filename% couldn''t be read as a %type% file.'
+    # The links to the pages of a paginated Entries block in the shop. See "The Entries block" in docs/spec/collections.md
+    pagination:
+        label: Pages
+        next: Next
+        previous: Previous
     # What the builder's preview shows editors and shoppers don't see
     preview:
         embed_code: 'Embed code runs in the shop, not in the builder''s preview.'
         unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
         unresolved_rich_text_link: 'A link in %field% shows as plain text here: what it links to isn''t visible in this channel and locale, or was deleted.'
+    # What inserting a preset tells editors, and why saving one is refused. See "What inserting copies" and "Editor
+    # presets" in docs/spec/layouts-and-presets.md
+    preset:
+        details_not_text: 'A preset''s name, category and description must be text.'
+        disabled_block_type: '%block% blocks are switched off, so the preset''s were left out.'
+        # Why the block picker's Presets tab leaves a preset out at a spot. See "Where a preset is offered"
+        fit:
+            needs_context: 'Needs: %context%'
+            not_allowed: '%block% isn''t allowed here'
+            nothing_to_insert: 'Nothing in it can be inserted'
+            # A paginated Entries block in it would break a pagination rule here. See "Pagination" in docs/spec/collections.md
+            paginate_twice: 'Splits a list into pages, which another list here already does'
+            paginate_without_source: 'Splits a list into pages that no source fills'
+            paginate_without_url: 'Splits a list into pages, which only an entry with its own URL can'
+            too_many: 'At most %count% %block% blocks fit here'
+            wrong_entry: 'Not for: %content_type%'
+        # What setono:cms:preset:validate reports and the Presets tab marks a preset for. See "Presets with invalid blocks"
+        issue:
+            disabled_block_type: '%block% blocks are switched off, so inserting it leaves them out.'
+            no_blocks: 'It holds no blocks, so it has nothing to insert.'
+            not_allowed: '%block% isn''t allowed in %parent%.'
+            removed_block_type: 'It has blocks of the type "%type%", which the code no longer has, so inserting it leaves them out.'
+            too_few: '%parent% needs at least %count% %block% blocks.'
+            too_many: '%parent% holds at most %count% %block% blocks.'
+            unknown_content_type: 'Its starting point is for the content type "%content_type%", which the code doesn''t have.'
+            unknown_layout: 'Its starting point''s layout "%layout%" isn''t a layout of %content_type%.'
+        name_required: 'A preset needs a name.'
+        # Why the builder's request to save or replace an editor preset was refused, which it shows the editor
+        request:
+            block_preset_by_tree: 'A block preset is replaced by blocks, not by a whole tree.'
+            blocks: 'The request needs the keys of the blocks to save, or the whole tree.'
+            entry: 'The request needs the entry the blocks are in.'
+            no_block_tree: 'The content type "%content_type%" has no block tree, so it has no starting points.'
+            no_blocks: 'The entry has no blocks to save as a starting point.'
+            select: 'Select one or more blocks to save as a preset.'
+            starting_point_by_another_tree: 'A starting point is replaced by the whole tree of an entry of its content type, "%content_type%".'
+            unknown_blocks: 'There is no block %keys% in the tree.'
+        newer_version: '"%type%" in the preset was saved with version %version%, but this store has version %code_version%, so the preset can''t be inserted.'
+        removed_block_type: 'Blocks of the type "%type%", which the code no longer has, were left out.'
+        # The texts of the code presets the plugin ships in src/Resources/presets, by code: each one's name and
+        # description, and the text in its blocks. See "Shipped code presets" in docs/spec/layouts-and-presets.md
+        banner_carousel:
+            description: 'Three banners in a carousel, each with a heading, text and a button'
+            name: 'Banner carousel'
+            slide_1:
+                button: 'Shop new arrivals'
+                heading: 'New arrivals'
+                text: '<p>The latest additions to our range, just in.</p>'
+            slide_2:
+                button: 'See the bestsellers'
+                heading: Bestsellers
+                text: '<p>The products our customers love most.</p>'
+            slide_3:
+                button: 'Shop the sale'
+                heading: Sale
+                text: '<p>Great prices on selected products, while stocks last.</p>'
+        bestsellers_carousel:
+            description: 'The channel''s bestsellers in a carousel'
+            name: 'Bestsellers carousel'
+        blog_category_archive:
+            description: 'The category''s posts, newest first, split into pages'
+            name: 'Category archive'
+        blog_page:
+            description: 'The blog''s posts, newest first, split into pages under a heading. Create it at the slug blog'
+            heading: 'Latest posts'
+            name: 'Blog page'
+        campaign_with_fallback:
+            campaign:
+                button: 'Shop the sale'
+                heading: 'Our biggest sale of the year'
+                text: '<p>Save on hundreds of products, for a limited time only.</p>'
+            description: 'A campaign banner while its date window is open, and a default banner otherwise. Set the dates in the campaign banner''s conditions'
+            fallback:
+                button: 'Shop now'
+                heading: 'Welcome to our store'
+                text: '<p>Discover this season''s new arrivals and find something you''ll love.</p>'
+            name: 'Campaign with fallback'
+        content_page:
+            description: 'A heading and text under the title, for pages such as About us or Delivery'
+            heading: 'Our story'
+            name: 'Content page'
+            text: '<p>Tell your customers who you are, how you started and what you care about.</p><p>Add more headings and text to cover everything they need to know.</p>'
+        faq:
+            description: 'Three questions, each opening to its answer'
+            name: FAQ
+            question_1:
+                answer: '<p>Most orders arrive within 2 to 5 working days.</p>'
+                title: 'How long does delivery take?'
+            question_2:
+                answer: '<p>Yes. You can return unused items within 30 days for a full refund.</p>'
+                title: 'Can I return my order?'
+            question_3:
+                answer: '<p>Email or call us, and we''ll get back to you within one working day.</p>'
+                title: 'How can I contact you?'
+        faq_page:
+            description: 'The questions of the FAQ under a heading, each opening to its answer'
+            heading: 'Frequently asked questions'
+            name: 'FAQ page'
+        footer_links:
+            about:
+                heading: 'About us'
+                privacy: 'Privacy policy'
+                story: 'Our story'
+                terms: 'Terms and conditions'
+            customer_service:
+                contact: 'Contact us'
+                delivery: Delivery
+                heading: 'Customer service'
+                returns: Returns
+            description: 'Three lists of links side by side, such as for a footer snippet'
+            name: 'Footer links'
+            shop:
+                bestsellers: Bestsellers
+                heading: Shop
+                new_arrivals: 'New arrivals'
+                sale: Sale
+        hero:
+            description: 'A full-width banner with a heading, text and two buttons, for the top of a page'
+            heading: 'Welcome to our store'
+            name: Hero
+            primary_button: 'Shop now'
+            secondary_button: 'Learn more'
+            text: '<p>Discover this season''s new arrivals and find something you''ll love.</p>'
+        image_and_text:
+            button: 'Read more'
+            description: 'An image beside a heading, text and a button'
+            heading: 'Made to last'
+            name: 'Image and text'
+            text: '<p>Tell your customers what makes your products special: how they''re made, what they''re made of and why they''re worth it.</p>'
+        landing_page:
+            description: 'A banner carousel, the bestsellers, three USPs and text, with the title hidden'
+            name: 'Landing page'
+            text: '<h2>Why shop with us</h2><p>Tell your customers who you are, what you sell and what makes your store worth coming back to.</p>'
+        latest_posts:
+            description: 'The three newest blog posts in a grid'
+            name: 'Latest posts'
+        related_posts:
+            description: 'Three posts in the categories of the post on the page, in a grid. Offered on blog posts'
+            name: 'Related posts'
+        related_products:
+            description: 'The products associated with the product on the page, of every association type. Offered where a product is available'
+            name: 'Related products'
+        three_usps:
+            description: 'Three columns, each with an image, a heading and text, for what sets your store apart'
+            name: 'Three USPs'
+            usp_1:
+                heading: 'Free delivery'
+                text: '<p>On every order over a set amount, straight to your door.</p>'
+            usp_2:
+                heading: 'Easy returns'
+                text: '<p>Changed your mind? Send it back within 30 days.</p>'
+            usp_3:
+                heading: 'Secure payment'
+                text: '<p>Pay safely with the method you prefer.</p>'
+    # The categories of the shipped code presets, which editors' presets can share
+    preset_category:
+        banners: Banners
+        blog: Blog
+        content: Content
+        navigation: Navigation
+        pages: Pages
+        products: Products
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
+        broken_entry_reference: '%field% refers to %type% that was deleted, so it isn''t shown.'
+        broken_entry_rich_text_reference: 'A link in %field% leads to %type% that was deleted, so it shows as plain text.'
         broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'
         broken_layout_rich_text_reference: 'A link in %field% in the layout leads to %type% that was deleted, so it shows as plain text.'
         broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
         broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
         capped_slot_without_catch_all: '"%slot%" is capped at %cap% and has no catch-all placement, with no page scope and a published, enabled snippet for everyone, so some pages or shoppers may see nothing there.'
+        category_archive_without_entries: 'Its page lists none of the category''s entries, as no Entries block is left in its blocks. Add an Entries block filled by %source%.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
+        misfit_entry_value: '%field% holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         page_scope_removed_kind: 'The page scope of the placement in "%slot%" has a condition of the kind "%kind%", which the code no longer has, so the placement shows nothing.'
         page_scope_unprovided: 'The page scope of the placement in "%slot%" has a condition, %kind%, that needs the host-page context "%context%", which the slot no longer provides, so the placement shows nothing.'
+        preset_removed_block_type: 'It has blocks of the type %types%, which the code no longer has, so inserting it leaves them out.'
         placement_hidden_by_homepage: 'The placement in "%slot%" doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         removed_context_key: 'It needs the context key "%key%", which the code no longer has, so none of its placements shows it.'
@@ -272,6 +515,7 @@ setono_sylius_cms:
         unknown_bindable_property: '%field% in the %block% block is bound to "%property%", which the code no longer has, so it shows its fallback.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
         unknown_layout_bindable_property: '%field% in the layout is bound to "%property%", which the code no longer has, so it shows its fallback.'
+        unknown_entry_source: '%field% is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unknown_layout_source: '%field% in the layout is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unknown_source: '%field% in the %block% block is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unreadable: 'This content can''t be read: %reason%'
@@ -280,10 +524,12 @@ setono_sylius_cms:
     problem_kind:
         broken_reference: Broken references
         capped_slot_without_catch_all: Capped slots without a catch-all placement
+        category_archive_without_entries: Category pages without an Entries block
         deleted_customer_group: Deleted customer groups
         misfit_value: Values that don't fit their field
         page_scope_mismatch: Page scopes that don't fit their slots
         placement_hidden_by_homepage: Placements a CMS homepage hides
+        preset_removed_block_type: Presets with blocks of removed types
         removed_context_key: Removed context keys
         removed_layout: Removed layouts
         scheduled_publish_failed: Failed scheduled publishes
@@ -335,9 +581,12 @@ setono_sylius_cms:
     # The sources' labels. See "Sources" in docs/spec/sources.md
     source:
         bestsellers: Bestsellers
+        entries_from_collection: From a collection
+        entries_in_this_category: In this category
         newest_products: Newest
         product_associations: Associations
         products_in_taxon: In taxon
+        related_entries: Related
         same_taxon_products: Same taxon
         taxon_children: Children of a taxon
     # The Video block's embed, named to screen readers
@@ -345,6 +594,7 @@ setono_sylius_cms:
         embed_title: Video
     ui:
         add_placement: Add placement
+        all: All
         all_entries: All entries
         all_needing_attention: '{1} The entry that needs attention|]1,Inf[ All %count% entries that need attention'
         all_drafts_in_progress: All drafts in progress
@@ -357,6 +607,7 @@ setono_sylius_cms:
             guests: Guests
             no_group: Signed in without a group
             only: 'Only %groups%'
+        block_presets: Block presets
         by: 'by %name%'
         cancel_schedule: Cancel the schedule
         channel: Channel
@@ -368,6 +619,25 @@ setono_sylius_cms:
             publishes: Publishes
             starts: Starts showing
         complete_of: '%complete% of %entries% complete'
+        delete: Delete
+        delete_preset: 'Delete %name%'
+        download: Download
+        download_preset: 'Download %name%'
+        edit: Edit
+        edit_preset: 'Edit %name%'
+        fix_in_presets: Open in Presets
+        no_block_presets: 'There are no block presets yet. Select blocks in the builder and save them with ★.'
+        no_starting_points: There are no starting points yet.
+        preset_category: Category
+        preset_content_type: Content type
+        preset_description: Description
+        preset_invalid: Invalid blocks
+        preset_name: Name
+        presets: Presets
+        preset: Preset
+        presets_description: 'Blocks saved to insert anywhere, and starting points for new entries'
+        save: Save
+        starting_points: Starting points
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
         copied: Copied
@@ -379,15 +649,89 @@ setono_sylius_cms:
         discard_changes: Discard changes
         dismiss: Dismiss
         drafts_in_progress: Drafts in progress
+        # The list of a content type ordered by position, whose entries editors drag into order. See "Entry lists" in docs/spec/admin.md
+        drag_to_order: Drag the entries into the order they're listed in, or move them with the arrows. The new order takes effect at once, without publishing.
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
         every_page_the_slot_appears_on: Every page the slot appears on
         fix_in_builder: Fix in builder
         fix_in_placements: Go to Placements
         fix_in_publishing: Go to Publishing
+        from_code: From code
         homepage_now: Homepage now
         homepage_of: Homepage of
         homepage_of_help: The page each channel shows at its root URL in place of the store's own homepage. Choose the channels in the builder's settings.
         homepage_url: 'The homepage, where its own URL redirects in the channels it''s the homepage of'
+        # The Transfer screen's import, and an import's page. See "Transfer" in docs/spec/admin.md
+        import:
+            abandon: Cancel the import
+            abandoned: This import was cancelled before it ran, and its zip deleted. Upload the export again to import it.
+            action:
+                create: Create
+                left_alone: Left alone
+                unchanged: Unchanged
+                update: Update
+            # Joins the last two of a list, such as "1 entry and 2 media items created"
+            and: and
+            came_along: Came along
+            checked_help: Nothing has changed yet. Review what the import would do, then import it.
+            conflicts: Conflicts
+            conflicts_help: Records with unpublished changes or a scheduled publish here, or changed here since the export, are in the way until they're overwritten. A URL clash needs a slug changed in one of the environments.
+            # By the kind of record's RecordKind::plural(), as the plan's headings are (entries, presets, …)
+            count:
+                entries: '%count% entry|%count% entries'
+                media_folders: '%count% media folder|%count% media folders'
+                media_items: '%count% media item|%count% media items'
+                presets: '%count% editor preset|%count% editor presets'
+            counted:
+                create: '%records% created'
+                left_alone: '%records% left alone'
+                unchanged: '%records% unchanged'
+                update: '%records% updated'
+            description: Import an export zip made by the Transfer screen or setono:cms:export
+            entries: Entries
+            failed: 'The import failed with an unexpected error, and the Messenger worker stopped retrying it: %reason%'
+            failed_help: Nothing changed, and its zip has been deleted. Upload the export again to try once more, and look in the logs for the error.
+            file: Export zip
+            file_help: 'At most %limit%, the most the server takes in one upload. Import a bigger export with setono:cms:import.'
+            help: Upload an export zip to see what the import would do. Nothing changes until you confirm it. Imported entries land in their drafts, to review and publish.
+            homepage_becomes: '%channel%: %page% becomes its homepage'
+            homepage_changes: Homepage changes
+            homepage_instead_of: '%channel%: %page% becomes its homepage, instead of %other%'
+            homepage_stops: '%channel%: %page% stops being its homepage'
+            import: Import
+            imported: 'Imported: %summary%.'
+            imported_nothing: 'Imported: nothing, as this store has everything in it already.'
+            invalid: 'The export couldn''t be read, so nothing changed: %reason%'
+            latest: Latest imports
+            media_folders: Media folders
+            media_items: Media items
+            overwrite: Overwrite the records in conflict, discarding their unpublished changes and cancelling their scheduled publishes
+            presets: Editor presets
+            progress:
+                checking: 'The Messenger worker has been checking the export since %time%.'
+                importing: 'The Messenger worker has been importing it since %time%.'
+                waiting_to_check: Waiting for the Messenger worker to check the export.
+                waiting_to_import: Waiting for the Messenger worker to import it.
+            progress_help: This page updates when it's done. If it waits for long, the Messenger worker may not be running.
+            publish: Publish everything imported
+            publish_help: Every entry the import creates or updates is published as part of it, once all of them pass publish validation.
+            reasons: Why it refused
+            refused: The import refused. Nothing changed.
+            refused_for_conflicts: Upload the export again and overwrite the records in conflict to import it.
+            state:
+                abandoned: Cancelled
+                checked: Waiting to be confirmed
+                checking: Being checked
+                failed: Failed
+                finished: Finished
+                importing: Importing
+            title: Import
+            unresolved_references: References that don't resolve here
+            unresolved_references_help: They import unchanged, and are flagged as broken references.
+            uploaded_at: 'Uploaded %at%'
+            upload: Upload
+            written: 'Review and publish what it imported:'
+            written_published: 'What it imported and published:'
         language: Language
         last_edited: Last edited
         last_edited_at: 'Last edited %at%'
@@ -422,6 +766,9 @@ setono_sylius_cms:
         order_slot_help: '{1} Only the first placement that matches the page and the shopper shows, so put the most specific first, and last a catch-all, with no page scope and a published, enabled snippet for everyone. Drag them into order.|]1,Inf[ Only the first %count% placements that match the page and the shopper show, so put the most specific first, and last a catch-all, with no page scope and a published, enabled snippet for everyone. Drag them into order.'
         order_slot_placements: 'The placements in "%slot%", in order'
         order_uncapped_slot_help: Every placement that matches the page and the shopper shows, in this order. Drag them into order.
+        order_not_saved: The order couldn't be saved. Reload the page and try again.
+        order_saved: The order is saved.
+        order_saving: Saving the order…
         other_content_type: Another content type
         page_scope: Page scope
         page_scope_removed_kind: 'A condition of the kind "%kind%", which the code no longer has, so it shows nothing'
@@ -507,6 +854,36 @@ setono_sylius_cms:
         this_page: This page
         this_snippet: This snippet
         title: Title
+        transfer:
+            add: Add
+            add_entry: 'Add %title%'
+            added: Added because the picked records use them
+            counts: '%entries%, %presets% and %media_items%'
+            description: Move content between environments of the store as export files
+            download: Download
+            editor_presets: Editor presets
+            entries: Entries
+            entry_count: '%count% entry|%count% entries'
+            everything: 'Everything: every entry, editor preset and media item'
+            export: Export
+            export_help: Pick entries, editor presets and media folders, or everything. The snippets and media items they use come along.
+            find_entries: Find entries
+            find_entries_placeholder: By title or slug
+            in_the_export: In the export
+            media_folders: Media folders
+            media_folders_help: A folder brings every media item in it and in its subfolders.
+            media_item_count: '%count% media item|%count% media items'
+            no_editor_presets: There are no editor presets.
+            no_entries_found: No entries match.
+            no_entries_picked: No entries picked yet. Find them by their title or slug.
+            no_media_folders: There are no media folders.
+            nothing_picked: Pick what to export to see what the export holds.
+            picked: Picked
+            picked_entries: Picked entries
+            preset_count: '%count% editor preset|%count% editor presets'
+            remove_entry: 'Remove %title%'
+            title: Transfer
+            update: Update
         translation_chip:
             complete: complete
             held_back: held back
@@ -596,6 +973,40 @@ setono_sylius_cms:
         context_removed_key: '%key%, which the code no longer declares'
         needs_context: 'Needs: %context%'
         not_available_here: Not available here
+        # The block picker's Presets tab. See "Presets" in docs/spec/layouts-and-presets.md
+        blocks_tab: Blocks
+        presets_tab: Presets
+        search_presets: Search presets
+        loading_presets: Loading presets…
+        presets_failed: 'The presets couldn''t be loaded.'
+        no_matching_presets: No presets match.
+        preset_uncategorised: Other
+        preset_from_code: From code
+        preset_invalid: Invalid blocks
+        preset_preview: Preview of %name%
+        insert_preset: Insert %name%
+        preset_does_not_fit: 'It doesn''t fit here any more.'
+        # Saving blocks as an editor preset (★), and changing one in the Presets tab. See "Editor presets" in docs/spec/layouts-and-presets.md
+        save_as_preset: Save as preset
+        save_as_preset_help: 'The blocks, with everything in them, are saved as a preset to insert anywhere. The entries it''s inserted into keep their own copy.'
+        preset_name: Name
+        preset_category: Category
+        preset_description: Description
+        save_preset: Save preset
+        replace_a_preset: Or replace the blocks of a preset
+        replace_preset: 'Replace %name%'
+        edit_preset: 'Edit %name%'
+        delete_preset: 'Delete %name%'
+        delete_preset_confirm: 'Delete %name%? The entries it was inserted into keep their blocks.'
+        download_preset: 'Download %name%'
+        preset_save: Save
+        preset_cancel: Cancel
+        preset_delete: Delete
+        # Saving the whole tree as a starting point, from the entry settings. See "Starting points" in docs/spec/layouts-and-presets.md
+        save_as_starting_point: Save as starting point
+        save_as_starting_point_help: 'The whole tree, with its layout and the layout''s settings, is saved as a starting point that new entries of this content type can be created from. The entries created from it keep their own copy.'
+        save_as_starting_point_empty: Add blocks to save them as a starting point.
+        replace_a_starting_point: Or replace a starting point
         condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too
@@ -615,6 +1026,7 @@ setono_sylius_cms:
         discard_changes: Discard changes
         discard_failed: Couldn't discard the changes
         discarding: Discarding…
+        dismiss: Dismiss
         drop_refused: '%block% can''t go there'
         duplicate: Duplicate
         enabled: Enabled
@@ -766,6 +1178,7 @@ setono_sylius_cms:
         no_group: Signed in without a group
         no_matching_block_types: No block types match
         no_placements: It shows in no slot yet. Placements are managed on the overview page.
+        no_preview: This entry has no page of its own to preview. It shows where it's listed, such as in an Entries block.
         noindex: Hide from search engines
         noindex_help: Asks search engines not to list this page, in every language. It takes effect when you publish.
         no_style: None
