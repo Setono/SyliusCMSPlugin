@@ -48,9 +48,10 @@ final readonly class PresetsScreenRequest
     /**
      * An editor preset's Edit form (Form\Type\PresetDetailsType) or Delete form (Form\Type\DeletePresetType)
      *
+     * @template TFormType of FormTypeInterface<TData>
      * @template TData
      *
-     * @param class-string<FormTypeInterface<TData>> $type
+     * @param class-string<TFormType> $type
      * @param TData|null $data
      *
      * @return FormInterface<TData|null>
