@@ -21,9 +21,11 @@ use Setono\SyliusCMSPlugin\Source\Entry\EntriesFromCollectionSource;
 use Setono\SyliusCMSPlugin\Source\Entry\EntriesInThisCategorySource;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Entry\EntrySources;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\NearbyShops;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\NewPosts;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Symfony\Component\Translation\IdentityTranslator;
 
 /**
@@ -79,6 +81,22 @@ final class ListedContentTypesTest extends TestCase
     }
 
     /**
+     * A picked entry of a content type that's no longer registered, and a source of what isn't an entry of a content
+     * type, have no card displays to offer
+     *
+     * @test
+     */
+    public function it_cannot_tell_the_content_type_of_an_entry_or_a_source_of_a_class_no_content_type_is(): void
+    {
+        $listed = $this->listed();
+        $recipe = new Recipe();
+
+        self::assertNull($listed->of([$recipe->getUuid()], self::context(new ReferenceMap([ReferenceType::ENTRY => [$recipe->getUuid() => $recipe]]))));
+        self::assertNull($listed->of(['$source' => 'on_sale', '$params' => [], '$limit' => 9], self::context()));
+        self::assertNull($listed->of(['$source' => 'entries_in_this_category', '$params' => [], '$limit' => 9], self::context(entry: $recipe)), 'The host page is of no content type');
+    }
+
+    /**
      * @test
      */
     public function it_lists_the_references_to_load_for_a_hand_picked_list(): void
@@ -99,6 +117,7 @@ final class ListedContentTypesTest extends TestCase
                 'entries_in_this_category' => new EntriesInThisCategorySource($visibleEntries, self::contentTypes(), self::collections(), self::indexedFields()),
                 'new_posts' => new NewPosts(),
                 'nearby_shops' => new NearbyShops(),
+                'on_sale' => new OnSale(),
             ]),
             Sources::paramsHydrator([CollectionChoicesProvider::class => new CollectionChoicesProvider(self::collections(), new CollectionNames(new IdentityTranslator()))], self::contentTypes()),
             self::contentTypes(),
