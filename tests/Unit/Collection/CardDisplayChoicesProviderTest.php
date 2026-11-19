@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Collection;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Collection\CardDisplayChoicesProvider;
 use Setono\SyliusCMSPlugin\Collection\CardDisplays;
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
 use Setono\SyliusCMSPlugin\Model\BlogPost;
 use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
 use Setono\SyliusCMSPlugin\Model\FaqItem;
@@ -34,7 +35,7 @@ final class CardDisplayChoicesProviderTest extends TestCase
         $provider = new CardDisplayChoicesProvider(new CardDisplays(new ContentTypeRegistry([
             'blog_post' => ['model' => BlogPost::class, 'translation' => BlogPostTranslation::class, 'resource' => 'setono_sylius_cms.blog_post'],
             'faq_item' => ['model' => FaqItem::class, 'translation' => FaqItemTranslation::class, 'resource' => 'setono_sylius_cms.faq_item'],
-        ])), $translator);
+        ])), new CollectionNames($translator));
 
         self::assertSame(['grid' => 'Grid', 'carousel' => 'Carousel', 'accordion' => 'Accordion'], $provider->getChoices('en_US'));
         self::assertSame('Gitter', $provider->getChoices('da_DK')['grid'] ?? null);
@@ -49,7 +50,7 @@ final class CardDisplayChoicesProviderTest extends TestCase
     {
         $provider = new CardDisplayChoicesProvider(new CardDisplays(new ContentTypeRegistry([
             'carded_oddly' => ['model' => CardedOddly::class, 'translation' => null, 'resource' => 'app.carded_oddly'],
-        ])), BlockTreeValidatorTest::translator());
+        ])), new CollectionNames(BlockTreeValidatorTest::translator()));
 
         self::assertSame(['Big grid' => 'Big grid'], $provider->getChoices('en_US'));
     }

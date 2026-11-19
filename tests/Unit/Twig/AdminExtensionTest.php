@@ -25,6 +25,8 @@ use Setono\SyliusCMSPlugin\Admin\WhereItShows;
 use Setono\SyliusCMSPlugin\Block\Snippet as SnippetBlock;
 use Setono\SyliusCMSPlugin\Builder\RegistryExporter;
 use Setono\SyliusCMSPlugin\Builder\UiStrings;
+use Setono\SyliusCMSPlugin\Collection\CollectionMetadata;
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
 use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Collection\IndexedFields;
 use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
@@ -193,6 +195,16 @@ final class AdminExtensionTest extends IntegrationTestCase
         self::assertSame(['wholesale' => 'Wholesale'], $runtime->customerGroupNames());
         $runtime->reset();
         self::assertSame(['wholesale' => 'Wholesale'], $runtime->customerGroupNames());
+    }
+
+    /**
+     * A collection without categories, which cms_admin_collection() gives none of
+     *
+     * @return array{collection: CollectionMetadata}
+     */
+    public function theCollectionOf(string $contentType): array
+    {
+        return ['collection' => new CollectionMetadata(self::contentTypes()->get($contentType))];
     }
 
     /**
@@ -417,7 +429,7 @@ final class AdminExtensionTest extends IntegrationTestCase
         $entryShareLinks = $this->entryShareLinks();
         $translationChips = $this->translationChips();
         $whereItShows = $this->whereItShows();
-        $runtime = new AdminRuntime(self::contentTypes(), $this->customerGroups->reveal(), $entryRows, $translationChips, new Collections(self::contentTypes()));
+        $runtime = new AdminRuntime(self::contentTypes(), $this->customerGroups->reveal(), $entryRows, $translationChips, new Collections(self::contentTypes()), self::collectionNames());
         $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
         $workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
         $problemFinder = $this->problemFinder();
@@ -785,7 +797,25 @@ final class AdminExtensionTest extends IntegrationTestCase
             ),
             $this->translationChips(),
             new Collections(self::contentTypes()),
+            self::collectionNames(),
         );
+    }
+
+    /**
+     * Names the Blog by its name, and blog categories and recipes by their plurals, while a page has only its label
+     */
+    private static function collectionNames(): CollectionNames
+    {
+        $translator = new Translator('en_US');
+        $translator->addLoader('array', new ArrayLoader());
+        $translator->addResource('array', [
+            'setono_sylius_cms.collection.blog_post' => 'Blog',
+            'setono_sylius_cms.content_type_plural.blog_category' => 'Categories',
+            'setono_sylius_cms.content_type_plural.recipe' => 'Recipes',
+            'setono_sylius_cms.content_type.page' => 'Page',
+        ], 'en_US');
+
+        return new CollectionNames($translator);
     }
 
     private static function contentTypes(): ContentTypeRegistry

@@ -37,10 +37,15 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
+        <!-- Names a collection, a content type's list and an Entries display, for the admin and the builder -->
+        <service id="Setono\SyliusCMSPlugin\Collection\CollectionNames" class="Setono\SyliusCMSPlugin\Collection\CollectionNames">
+            <argument type="service" id="translator"/>
+        </service>
+
         <!-- What the Entries block's display is picked from, as a Choice field's choices provider -->
         <service id="Setono\SyliusCMSPlugin\Collection\CardDisplayChoicesProvider" class="Setono\SyliusCMSPlugin\Collection\CardDisplayChoicesProvider">
             <argument type="service" id="Setono\SyliusCMSPlugin\Collection\CardDisplays"/>
-            <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\CollectionNames"/>
 
             <tag name="setono_sylius_cms.choices_provider"/>
         </service>

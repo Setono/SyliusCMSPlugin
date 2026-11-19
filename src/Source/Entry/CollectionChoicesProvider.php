@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Source\Entry;
 
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
 use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
-use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * What From a collection's contentType parameter is picked from: the collections, by the code of their entries'
@@ -19,7 +18,7 @@ final readonly class CollectionChoicesProvider implements ChoicesProviderInterfa
 {
     public function __construct(
         private Collections $collections,
-        private TranslatorInterface $translator,
+        private CollectionNames $collectionNames,
     ) {
     }
 
@@ -27,21 +26,9 @@ final readonly class CollectionChoicesProvider implements ChoicesProviderInterfa
     {
         $choices = [];
         foreach ($this->collections->all() as $collection) {
-            $choices[$collection->code()] = $this->name($collection->entries, $localeCode);
+            $choices[$collection->code()] = $this->collectionNames->collection($collection, $localeCode);
         }
 
         return $choices;
-    }
-
-    private function name(ContentTypeMetadata $contentType, string $localeCode): string
-    {
-        foreach ([sprintf('setono_sylius_cms.collection.%s', $contentType->code), sprintf('setono_sylius_cms.content_type_plural.%s', $contentType->code)] as $key) {
-            $name = $this->translator->trans($key, [], null, $localeCode);
-            if ($name !== $key) {
-                return $name;
-            }
-        }
-
-        return $this->translator->trans($contentType->label, [], null, $localeCode);
     }
 }

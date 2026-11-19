@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Collection;
 
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * What the Entries block's display is picked from: every display a content type has a card for, such as grid,
@@ -17,7 +16,7 @@ final readonly class CardDisplayChoicesProvider implements ChoicesProviderInterf
 {
     public function __construct(
         private CardDisplays $cardDisplays,
-        private TranslatorInterface $translator,
+        private CollectionNames $collectionNames,
     ) {
     }
 
@@ -25,9 +24,7 @@ final readonly class CardDisplayChoicesProvider implements ChoicesProviderInterf
     {
         $choices = [];
         foreach ($this->cardDisplays->all() as $display) {
-            $key = sprintf('setono_sylius_cms.choice.entries_display.%s', $display);
-            $label = $this->translator->trans($key, [], null, $localeCode);
-            $choices[$display] = $label === $key ? $display : $label;
+            $choices[$display] = $this->collectionNames->display($display, $localeCode);
         }
 
         return $choices;

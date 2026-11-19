@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Source\Entry;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
 use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Model\BlogCategory;
 use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslation;
@@ -49,7 +50,7 @@ final class CollectionChoicesProviderTest extends TestCase
             'blog_category' => ['model' => BlogCategory::class, 'translation' => BlogCategoryTranslation::class, 'resource' => 'setono_sylius_cms.blog_category'],
             'faq_item' => ['model' => FaqItem::class, 'translation' => FaqItemTranslation::class, 'resource' => 'setono_sylius_cms.faq_item'],
             'faq_category' => ['model' => FaqCategory::class, 'translation' => null, 'resource' => 'setono_sylius_cms.faq_category'],
-        ], disabled: ['recipe'])), $translator);
+        ], disabled: ['recipe'])), new CollectionNames($translator));
 
         // The shipped collections first, by their names, then a project's by its plural; categories aren't collections
         self::assertSame(['blog_post' => 'Blog', 'faq_item' => 'FAQ', 'shop' => 'Shops'], $provider->getChoices('en_US'));

@@ -1,0 +1,10 @@
+--TEST--
+cms_admin_content_type_plural() names a content type's list by its plural, setono_sylius_cms.content_type_plural.<code>, or else by its label
+--TEMPLATE--
+{{ cms_admin_content_type_plural(cms_admin_content_type('blog_category')) }}
+{{ cms_admin_content_type_plural(cms_admin_content_type('page')) }}
+--DATA--
+return []
+--EXPECT--
+Categories
+Page

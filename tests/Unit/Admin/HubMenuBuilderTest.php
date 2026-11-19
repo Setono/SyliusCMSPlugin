@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Admin\HubMenuBuilder;
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
 use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -23,6 +24,8 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\Post;
 use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\PostTranslation;
 use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\Translation\Translator;
 
 final class HubMenuBuilderTest extends TestCase
 {
@@ -135,9 +138,10 @@ final class HubMenuBuilderTest extends TestCase
     {
         $entries = self::child($this->menu(), 'entries');
 
+        // Named as its lists are, by its collection's name or else by its plural, already translated
         $posts = self::child($entries, 'post');
-        self::assertSame('app.post', $posts->getLabel());
-        self::assertSame(['setono_sylius_cms.collection.post', 'setono_sylius_cms.content_type_plural.post'], $posts->getExtra('names'));
+        self::assertSame('Posts', $posts->getLabel());
+        self::assertFalse($posts->getExtra('translation_domain'));
         self::assertSame('/admin/cms/entries/post', $posts->getUri());
         self::assertSame('folder outline', $posts->getLabelAttribute('icon'));
         self::assertSame(2, $posts->getExtra('count'));
@@ -201,7 +205,11 @@ final class HubMenuBuilderTest extends TestCase
             'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
         ], disabled: ['shop']);
 
-        return (new HubMenuBuilder(MenuFactory::create(), $this->eventDispatcher, $this->entryRepository->reveal(), $contentTypes, new Collections($contentTypes)))->createMenu([]);
+        $translator = new Translator('en');
+        $translator->addLoader('array', new ArrayLoader());
+        $translator->addResource('array', ['setono_sylius_cms.content_type_plural.post' => 'Posts'], 'en');
+
+        return (new HubMenuBuilder(MenuFactory::create(), $this->eventDispatcher, $this->entryRepository->reveal(), $contentTypes, new Collections($contentTypes), new CollectionNames($translator)))->createMenu([]);
     }
 
     private static function child(ItemInterface $item, string $name): ItemInterface

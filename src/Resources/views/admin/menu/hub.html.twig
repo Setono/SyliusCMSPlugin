@@ -1,8 +1,8 @@
 {#
  # Renders the hub's side menu (setono_sylius_cms.admin.hub) as a Semantic UI vertical menu. An item without a link is
- # a section, shown with its items under its label when it has any. An item's "count" extra shows as a label. An item
- # with a "names" extra, a collection's, is named by the first of those translation keys that has a translation, such
- # as its collection's name or its plural, and otherwise by its label
+ # a section, shown with its items under its label when it has any. An item's "count" extra shows as a label. An item's
+ # label is a translation key, unless its "translation_domain" extra is false, as in KnpMenuBundle's templates: a
+ # collection's item is named already, by its collection's name or its plural
  #}
 {% extends 'knp_menu.html.twig' %}
 
@@ -32,11 +32,7 @@
         {% set current = matcher.isCurrent(item) %}
         <a class="item{% if current %} {{ options.currentClass }}{% endif %}" href="{{ item.uri }}"{% if current %} aria-current="page"{% endif %}>
             {% if item.labelAttribute('icon') is not empty %}<i class="{{ item.labelAttribute('icon') }} icon"></i>{% endif %}
-            {% set name = item.label %}
-            {% for key in item.extra('names', [])|reverse %}
-                {% if key|trans != key %}{% set name = key %}{% endif %}
-            {% endfor %}
-            {{ name|trans }}
+            {{ item.extra('translation_domain', 'messages') is same as(false) ? item.label : item.label|trans }}
             {% if item.extra('count') is not null %}<div class="ui small label">{{ item.extra('count') }}</div>{% endif %}
         </a>
     {% endif %}

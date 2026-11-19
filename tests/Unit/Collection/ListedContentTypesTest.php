@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Collection;
 
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
 use Setono\SyliusCMSPlugin\Collection\ListedContentTypes;
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
 use Setono\SyliusCMSPlugin\Field\Reference;
@@ -99,7 +100,7 @@ final class ListedContentTypesTest extends TestCase
                 'new_posts' => new NewPosts(),
                 'nearby_shops' => new NearbyShops(),
             ]),
-            Sources::paramsHydrator([CollectionChoicesProvider::class => new CollectionChoicesProvider(self::collections(), new IdentityTranslator())], self::contentTypes()),
+            Sources::paramsHydrator([CollectionChoicesProvider::class => new CollectionChoicesProvider(self::collections(), new CollectionNames(new IdentityTranslator()))], self::contentTypes()),
             self::contentTypes(),
         );
     }

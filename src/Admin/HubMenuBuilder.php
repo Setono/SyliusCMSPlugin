@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Admin;
 
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
 use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
@@ -16,7 +17,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 /**
  * The Content hub's own side menu, the KnpMenu menu "setono_sylius_cms.admin.hub": Overview, Entries, with an item
  * per collection after Pages and Snippets, which lists its categories too, and Library: Media, Presets and Transfer.
- * Items show a count from their "count" extra. Projects add their items in a listener of the event this dispatches, the
+ * Items show a count from their "count" extra, and a label already translated has the "translation_domain" extra
+ * false, as in KnpMenuBundle's templates. Projects add their items in a listener of the event this dispatches, the
  * way Sylius's admin menu is extended.
  * See "Navigation" in docs/spec/admin.md
  */
@@ -30,6 +32,7 @@ final readonly class HubMenuBuilder
         private EntryRepositoryInterface $entryRepository,
         private ContentTypeRegistryInterface $contentTypes,
         private Collections $collections,
+        private CollectionNames $collectionNames,
     ) {
     }
 
@@ -87,10 +90,10 @@ final readonly class HubMenuBuilder
                         ['route' => 'setono_sylius_cms_admin_entry_index', 'parameters' => ['contentType' => $categories]],
                     ]],
                 ])
-                ->setLabel($collection->entries->label)
-                // Named by the collection's name when there's one, such as Blog, or else by the plural, as its list
-                // is, and otherwise by the label
-                ->setExtra('names', [sprintf('setono_sylius_cms.collection.%s', $code), sprintf('setono_sylius_cms.content_type_plural.%s', $code)])
+                // Named as its lists are, by the collection's name such as Blog, or else by the plural or the label,
+                // which is translated already
+                ->setLabel($this->collectionNames->collection($collection))
+                ->setExtra('translation_domain', false)
                 ->setLabelAttribute('icon', 'folder outline')
                 ->setExtra('count', $this->entryRepository->countEntries($code) + (null === $categories ? 0 : $this->entryRepository->countEntries($categories)))
             ;

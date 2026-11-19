@@ -8,7 +8,6 @@
 {% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
 
 {% set heading = 'setono_sylius_cms.ui.new_entry'|trans({'%content_type%': content_type.label|trans}) %}
-{% set plural = 'setono_sylius_cms.content_type_plural.' ~ content_type.code %}
 
 {% block title %}{{ heading }} {{ parent() }}{% endblock %}
 
@@ -18,7 +17,7 @@
     {{ breadcrumb.crumble([
         { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
         { label: 'setono_sylius_cms.ui.content'|trans, url: path('setono_sylius_cms_admin_overview') },
-        { label: plural|trans != plural ? plural|trans : content_type.label|trans, url: path('setono_sylius_cms_admin_entry_index', {'contentType': content_type.code}) },
+        { label: cms_admin_content_type_plural(content_type), url: path('setono_sylius_cms_admin_entry_index', {'contentType': content_type.code}) },
         { label: heading },
     ]) }}
 

@@ -27,7 +27,7 @@
         <!-- What From a collection's collection is picked from, as a Choice field's choices provider -->
         <service id="Setono\SyliusCMSPlugin\Source\Entry\CollectionChoicesProvider" class="Setono\SyliusCMSPlugin\Source\Entry\CollectionChoicesProvider">
             <argument type="service" id="Setono\SyliusCMSPlugin\Collection\Collections"/>
-            <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\CollectionNames"/>
 
             <tag name="setono_sylius_cms.choices_provider"/>
         </service>

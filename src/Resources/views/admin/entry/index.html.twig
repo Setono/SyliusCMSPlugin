@@ -16,20 +16,13 @@
 {# Editors drag the entries of a content type ordered by position into order in its list, which saves it at once #}
 {% set ordered_by_position = content_type_code is not null and not collection_list and cms_admin_content_type(content_type_code).order.byPosition %}
 
-{# A content type is named by its plural, setono_sylius_cms.content_type_plural.<code>, or else by its label #}
-{% macro plural(content_type) %}
-    {%- set plural = 'setono_sylius_cms.content_type_plural.' ~ content_type.code -%}
-    {{- plural|trans != plural ? plural|trans : content_type.label|trans -}}
-{% endmacro %}
-
+{# Each of a collection's lists is named by the collection's name, such as Blog, and a content type's by its plural #}
 {% if content_type_code is null %}
     {% set heading = 'setono_sylius_cms.ui.all_entries'|trans %}
 {% elseif collection is not null %}
-    {# Each of a collection's lists is named by the collection's name, setono_sylius_cms.collection.<code>, or else by its entries' plural #}
-    {% set name = 'setono_sylius_cms.collection.' ~ collection.code %}
-    {% set heading = name|trans != name ? name|trans : _self.plural(collection.entries) %}
+    {% set heading = cms_admin_collection_name(collection) %}
 {% else %}
-    {% set heading = _self.plural(cms_admin_content_type(content_type_code)) %}
+    {% set heading = cms_admin_content_type_plural(cms_admin_content_type(content_type_code)) %}
 {% endif %}
 
 {% block title %}{{ heading }} {{ parent() }}{% endblock %}
@@ -59,8 +52,8 @@
     {% if collection is not null %}
         {% set switches = [
             {label: 'setono_sylius_cms.ui.all'|trans, url: path('setono_sylius_cms_admin_collection_index', {'contentType': collection.code}), current: collection_list},
-            {label: _self.plural(collection.entries), url: path('setono_sylius_cms_admin_entry_index', {'contentType': collection.code}), current: not collection_list and content_type_code == collection.code},
-            {label: _self.plural(collection.categories), url: path('setono_sylius_cms_admin_entry_index', {'contentType': collection.categories.code}), current: content_type_code == collection.categories.code},
+            {label: cms_admin_content_type_plural(collection.entries), url: path('setono_sylius_cms_admin_entry_index', {'contentType': collection.code}), current: not collection_list and content_type_code == collection.code},
+            {label: cms_admin_content_type_plural(collection.categories), url: path('setono_sylius_cms_admin_entry_index', {'contentType': collection.categories.code}), current: content_type_code == collection.categories.code},
         ] %}
         <nav class="ui basic buttons cms-collection-switch" data-cms-collection-switch aria-label="{{ heading }}">
             {% for switch in switches %}

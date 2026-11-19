@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\TranslationChip;
 use Setono\SyliusCMSPlugin\Admin\TranslationChips;
 use Setono\SyliusCMSPlugin\Collection\CollectionMetadata;
+use Setono\SyliusCMSPlugin\Collection\CollectionNames;
 use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
@@ -38,6 +39,7 @@ final class AdminRuntime implements RuntimeExtensionInterface, ResetInterface
         private readonly EntryRows $entryRows,
         private readonly TranslationChips $translationChips,
         private readonly Collections $collections,
+        private readonly CollectionNames $collectionNames,
     ) {
     }
 
@@ -84,6 +86,22 @@ final class AdminRuntime implements RuntimeExtensionInterface, ResetInterface
         $collection = $this->collections->of($contentType);
 
         return null !== $collection && $collection->hasCategories() ? $collection : null;
+    }
+
+    /**
+     * The collection's name, which its hub item and its lists show, such as Blog
+     */
+    public function collectionName(CollectionMetadata $collection): string
+    {
+        return $this->collectionNames->collection($collection);
+    }
+
+    /**
+     * The content type's plural, which names its list, such as Posts
+     */
+    public function contentTypePlural(ContentTypeMetadata $contentType): string
+    {
+        return $this->collectionNames->plural($contentType);
     }
 
     /**
