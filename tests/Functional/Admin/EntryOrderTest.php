@@ -76,6 +76,48 @@ final class EntryOrderTest extends WebTestCase
     /**
      * @test
      */
+    public function it_changes_nothing_and_dispatches_nothing_for_the_order_the_entries_are_in(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $first = self::createAnnouncement('Free shipping');
+        $second = self::createAnnouncement('Summer sale');
+        $changedAt = self::reload($first)->getChangedAt();
+        $csrfToken = self::csrfToken($client->request('GET', '/admin/cms/entries/announcement'));
+        $client->disableReboot();
+
+        $dispatched = 0;
+        /** @var EventDispatcherInterface $eventDispatcher */
+        $eventDispatcher = self::getContainer()->get('event_dispatcher');
+        $eventDispatcher->addListener(EntrySettingsChanged::class, static function () use (&$dispatched): void {
+            ++$dispatched;
+        });
+
+        $client->request('POST', '/admin/cms/entries/announcement/order', ['_csrf_token' => $csrfToken, 'entries' => [$first->getUuid(), $second->getUuid()]]);
+
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame(0, $dispatched);
+        self::assertSame([0, 1], array_map(static fn (EntryInterface $entry): ?int => self::reload($entry)->getPosition(), [$first, $second]));
+        self::assertEquals($changedAt, self::reload($first)->getChangedAt());
+    }
+
+    /**
+     * @test
+     */
+    public function it_answers_404_for_the_order_of_a_content_type_there_is_none_of(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $csrfToken = self::csrfToken($client->request('GET', '/admin/cms/entries/announcement'));
+
+        $client->request('POST', '/admin/cms/entries/recipe/order', ['_csrf_token' => $csrfToken, 'entries' => []]);
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    /**
+     * @test
+     */
     public function it_refuses_an_order_without_the_lists_csrf_token(): void
     {
         $client = self::createClient();
