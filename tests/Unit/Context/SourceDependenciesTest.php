@@ -129,7 +129,7 @@ final class SourceDependenciesTest extends TestCase
         $lookbook->picks = self::stored('neighbours');
 
         self::assertEquals([
-            new ContextDependency(new TranslatableMessage('setono_sylius_cms.context.entry_source', ['%source%' => new TranslatableMessage('app.source.neighbours'), '%field%' => new TranslatableMessage('app.cms.field.picks')], 'validators'), ['product', 'taxon']),
+            new ContextDependency(self::inEntry('app.source.neighbours', 'app.cms.field.picks'), ['product', 'taxon']),
         ], [...self::finder()->findIn($lookbook)]);
     }
 
@@ -146,6 +146,11 @@ final class SourceDependenciesTest extends TestCase
         self::assertEquals([
             new ContextDependency(self::inBlock('app.source.category_posts', 'setono_sylius_cms.block_type.entries'), ['entry'], block: self::OUTER, entryContentTypes: ['blog_category']),
         ], [...self::finder()->findIn($page)]);
+    }
+
+    private static function inEntry(string $source, string $field): TranslatableMessage
+    {
+        return new TranslatableMessage('setono_sylius_cms.context.entry_source', ['%source%' => new TranslatableMessage($source), '%field%' => new TranslatableMessage($field)], 'validators');
     }
 
     private static function inLayout(string $source, string $field): TranslatableMessage
