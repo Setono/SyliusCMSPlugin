@@ -129,6 +129,25 @@ final class ImportTest extends WebTestCase
     }
 
     /**
+     * A request over PHP's post_max_size arrives without its file
+     *
+     * @test
+     */
+    public function it_asks_for_an_export_zip_when_the_upload_has_no_file(): void
+    {
+        $client = self::signedIn();
+        $crawler = $client->request('GET', '/admin/cms/transfer');
+        $token = $crawler->filter('form[data-cms-import-upload] input[name="_csrf_token"]')->attr('value');
+
+        $client->request('POST', '/admin/cms/transfer/imports', ['_csrf_token' => $token]);
+
+        self::assertResponseRedirects('/admin/cms/transfer');
+        $client->followRedirect();
+        self::assertSelectorTextContains('.sylius-flash-message.negative', 'Choose an export zip to upload, of at most');
+        self::assertSame([], self::imports()->findLatest(1));
+    }
+
+    /**
      * @test
      */
     public function it_answers_the_screens_script_with_the_page_to_go_to_as_json(): void
@@ -307,6 +326,38 @@ final class ImportTest extends WebTestCase
         self::consumeMessages();
         self::assertSame(ImportState::Abandoned, self::import($import->getUuid())->getState());
         self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+    }
+
+    /**
+     * The worker or another admin user moved the import on after its page was shown
+     *
+     * @test
+     */
+    public function it_says_an_import_has_moved_on_when_its_page_confirms_or_cancels_it_too_late(): void
+    {
+        self::forgetSentMessages();
+        $client = self::signedIn();
+        $this->upload($client, $this->zipOf(self::exportFixture()));
+        $import = self::latestImport();
+        $crawler = $client->followRedirect();
+        $abandon = $crawler->filter('form[data-cms-import-abandon]')->form();
+        $token = $crawler->filter('form[data-cms-import-abandon] input[name="_csrf_token"]')->attr('value');
+
+        // The worker hasn't checked it yet
+        $client->request('POST', sprintf('/admin/cms/transfer/imports/%s/confirm', $import->getUuid()), ['_csrf_token' => $token, 'overwrite' => '1']);
+
+        self::assertResponseRedirects(sprintf('/admin/cms/transfer/imports/%s', $import->getUuid()));
+        $client->followRedirect();
+        self::assertSelectorTextContains('.sylius-flash-message.negative', 'This import has moved on since the page was shown.');
+        self::assertSame(ImportState::Checking, self::import($import->getUuid())->getState());
+
+        $client->submit($abandon);
+        $client->submit($abandon);
+
+        self::assertResponseRedirects(sprintf('/admin/cms/transfer/imports/%s', $import->getUuid()));
+        $client->followRedirect();
+        self::assertSelectorTextContains('.sylius-flash-message.negative', 'This import has moved on since the page was shown.');
+        self::assertSame(ImportState::Abandoned, self::import($import->getUuid())->getState());
     }
 
     /**
