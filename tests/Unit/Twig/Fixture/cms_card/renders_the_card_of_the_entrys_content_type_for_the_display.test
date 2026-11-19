@@ -3,7 +3,7 @@ cms_card() renders the card the entry's content type has for the display, which 
 --TEMPLATE--
 <div class="cms-entries__item">{{ cms_card(entry, "grid") }}</div>
 --TEMPLATE(cms/card/location/grid.html.twig)--
-{#- The .test file starts each template on a new line -#}<article class="location-card location-card--{{ display }}">{{ entry.city }}, {{ cms_value(entry, "title") ?? "untitled" }}{{ block is defined ? " leaked" }}</article>
+{#- The .test file starts each template on a new line -#}<article class="location-card location-card--{{ display }}">{{ entry.city }}, {{ cms_value(entry, "title")|default("untitled") }}{{ block is defined ? " leaked" }}</article>
 --DATA--
 return $this->rendering(['entry' => $this->location('Aarhus'), 'block' => 'the Entries block'])
 --EXPECT--
