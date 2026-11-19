@@ -59,7 +59,9 @@ final readonly class PresetCheck
         }
 
         $blocks = array_map($serializer->denormalizeBlock(...), array_values($upgraded->data));
-        $issues = $this->startingPointIssues($preset, $blocks);
+        // A block preset is one or more saved blocks, while a starting point brings its layout and values too
+        $issues = [] === $blocks && null === $preset->startingPoint ? [new PresetIssue(PresetIssueKind::NoBlocks, null, new TranslatableMessage('setono_sylius_cms.preset.issue.no_blocks'))] : [];
+        $issues = [...$issues, ...$this->startingPointIssues($preset, $blocks)];
 
         foreach ($blocks as $block) {
             $issues = [...$issues, ...$this->blockIssues($block)];

@@ -89,6 +89,20 @@ final class PresetCheckTest extends TestCase
     }
 
     /**
+     * A preset is one or more saved blocks (GLOSSARY.md)
+     *
+     * @test
+     */
+    public function it_finds_a_preset_without_blocks(): void
+    {
+        self::assertEquals([
+            new PresetIssue(PresetIssueKind::NoBlocks, null, new TranslatableMessage('setono_sylius_cms.preset.issue.no_blocks')),
+        ], $this->check()->check(new Preset('Empty', [], code: 'empty')));
+        self::assertTrue(PresetIssueKind::NoBlocks->failsValidation());
+        self::assertFalse(PresetIssueKind::NoBlocks->disablesStartingPoint());
+    }
+
+    /**
      * @test
      */
     public function it_finds_blocks_of_removed_and_disabled_types(): void

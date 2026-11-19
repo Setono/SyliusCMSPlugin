@@ -58,6 +58,28 @@ final class ValidatePresetsCommandTest extends KernelTestCase
     }
 
     /**
+     * A preset is one or more saved blocks, and only one code preset is a content type's default starting point
+     *
+     * @test
+     */
+    public function it_exits_non_zero_for_a_preset_without_blocks_and_two_default_starting_points_of_one_content_type(): void
+    {
+        $empty = $this->temporaryFile('empty.json', self::presetFile([]));
+        $landing = $this->temporaryFile('landing.json', self::presetFile(self::blocksOf('sale_hero'), ['contentType' => 'page', 'layout' => ['code' => 'standard', 'version' => 1, 'fields' => new \stdClass(), 'translated' => new \stdClass()], 'default' => true]));
+        $launch = $this->temporaryFile('launch.json', self::presetFile(self::blocksOf('sale_hero'), ['contentType' => 'page', 'layout' => ['code' => 'standard', 'version' => 1, 'fields' => new \stdClass(), 'translated' => new \stdClass()], 'default' => true]));
+        $about = $this->temporaryFile('about.json', self::presetFile(self::blocksOf('sale_hero'), ['contentType' => 'page', 'layout' => ['code' => 'standard', 'version' => 1, 'fields' => new \stdClass(), 'translated' => new \stdClass()], 'default' => false]));
+
+        $tester = self::validate([$empty, $landing, $launch, $about]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        $display = self::display($tester);
+        self::assertStringContainsString('It holds no blocks, so it has nothing to insert.', $display);
+        self::assertStringContainsString('It\'s the default starting point of the content type "page", as launch.json is too. Only one code preset can be.', $display);
+        self::assertStringContainsString('It\'s the default starting point of the content type "page", as landing.json is too. Only one code preset can be.', $display);
+        self::assertStringContainsString('[ERROR] 3 of 4 preset files have errors.', $display);
+    }
+
+    /**
      * @test
      */
     public function it_validates_every_json_file_in_a_directory_given(): void
@@ -98,6 +120,28 @@ final class ValidatePresetsCommandTest extends KernelTestCase
     /**
      * The command's output on one line, as SymfonyStyle wraps it
      */
+    /**
+     * @param list<mixed> $blocks
+     * @param array<string, mixed>|null $startingPoint
+     */
+    private static function presetFile(array $blocks, ?array $startingPoint = null): string
+    {
+        return (string) json_encode(['format' => 1, 'name' => 'A preset', 'category' => null, 'description' => null, 'thumbnail' => null, 'startingPoint' => $startingPoint, 'blocks' => $blocks], \JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * The blocks of one of the test application's code presets
+     *
+     * @return list<mixed>
+     */
+    private static function blocksOf(string $code): array
+    {
+        /** @var array{blocks: list<mixed>} $preset */
+        $preset = json_decode((string) file_get_contents(sprintf('%s/Application/config/cms/presets/%s.json', dirname(__DIR__), $code)), true, flags: \JSON_THROW_ON_ERROR);
+
+        return $preset['blocks'];
+    }
+
     private static function display(CommandTester $tester): string
     {
         return (string) preg_replace('/\s+/', ' ', $tester->getDisplay());

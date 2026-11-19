@@ -343,6 +343,7 @@ setono_sylius_cms:
         # What setono:cms:preset:validate reports and the Presets tab marks a preset for. See "Presets with invalid blocks"
         issue:
             disabled_block_type: '%block% blocks are switched off, so inserting it leaves them out.'
+            no_blocks: 'It holds no blocks, so it has nothing to insert.'
             not_allowed: '%block% isn''t allowed in %parent%.'
             removed_block_type: 'It has blocks of the type "%type%", which the code no longer has, so inserting it leaves them out.'
             too_few: '%parent% needs at least %count% %block% blocks.'

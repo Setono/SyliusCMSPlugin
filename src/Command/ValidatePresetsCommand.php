@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Command;
 
 use Setono\SyliusCMSPlugin\Preset\CodePresetFiles;
 use Setono\SyliusCMSPlugin\Preset\InvalidPresetException;
+use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\PresetCheck;
 use Setono\SyliusCMSPlugin\Preset\PresetIssue;
 use Setono\SyliusCMSPlugin\Preset\PresetSerializer;
@@ -57,8 +58,18 @@ final class ValidatePresetsCommand extends Command
 
         $invalid = 0;
         $files = [] === $paths ? array_map(static fn (string $path): ?string => null, array_flip($this->files)) : $this->filesAt($paths);
+        $presets = [];
+        $errorsByFile = [];
         foreach ($files as $path => $error) {
-            $errors = null === $error ? $this->errorsOf((string) $path) : [$error];
+            $path = (string) $path;
+            $errorsByFile[$path] = null === $error ? $this->errorsOf($path, $presets) : [$error];
+        }
+
+        foreach (self::defaultsSharingAContentType($presets) as $path => $error) {
+            $errorsByFile[$path][] = $error;
+        }
+
+        foreach ($errorsByFile as $path => $errors) {
             if ([] === $errors) {
                 $io->writeln(sprintf(' <info>✔</info> %s', $path));
 
@@ -117,15 +128,48 @@ final class ValidatePresetsCommand extends Command
     }
 
     /**
+     * Only one code preset can be a content type's default starting point, which the create dialog picks first. Each
+     * of those that are for the same content type gets an error naming the others
+     *
+     * @param array<string, Preset> $presets the presets read, by path
+     *
+     * @return iterable<string, string> path => error
+     */
+    private static function defaultsSharingAContentType(array $presets): iterable
+    {
+        $defaults = [];
+        foreach ($presets as $path => $preset) {
+            if (true === $preset->startingPoint?->default) {
+                $defaults[$preset->startingPoint->contentType][] = $path;
+            }
+        }
+
+        foreach ($defaults as $contentType => $paths) {
+            if (count($paths) < 2) {
+                continue;
+            }
+
+            foreach ($paths as $path) {
+                $others = array_map(basename(...), array_values(array_diff($paths, [$path])));
+                yield $path => sprintf('It\'s the default starting point of the content type "%s", as %s %s too. Only one code preset can be.', $contentType, implode(', ', $others), 1 === count($others) ? 'is' : 'are');
+            }
+        }
+    }
+
+    /**
+     * @param array<string, Preset> $presets the presets read so far, by path, which it adds the file's to
+     *
      * @return list<string>
      */
-    private function errorsOf(string $path): array
+    private function errorsOf(string $path, array &$presets): array
     {
         try {
             $preset = $this->serializer->fromJson((string) file_get_contents($path), basename($path, '.json'));
         } catch (InvalidPresetException $e) {
             return [$e->getMessage()];
         }
+
+        $presets[$path] = $preset;
 
         $errors = [];
         foreach ($this->check->check($preset) as $issue) {

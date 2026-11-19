@@ -28,6 +28,9 @@ enum PresetIssueKind: string
     /** A starting point whose content type or layout the code doesn't have */
     case StartingPoint = 'starting_point';
 
+    /** A block preset with no blocks at all, so it has nothing to insert, while a preset is one or more saved blocks */
+    case NoBlocks = 'no_blocks';
+
     /**
      * Whether setono:cms:preset:validate refuses a file for it
      */
