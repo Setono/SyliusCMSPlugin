@@ -74,6 +74,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\UnresolvedReferences"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportPlannerInterface" alias="Setono\SyliusCMSPlugin\Transfer\Import\ImportPlanner"/>
 
@@ -104,12 +106,28 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
         </service>
 
+        <!-- Media come first, their files stored once the plan is complete (docs/spec/transfer.md#what-an-import-does) -->
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\MediaApplier" class="Setono\SyliusCMSPlugin\Transfer\Import\MediaApplier">
+            <argument type="service" id="setono_sylius_cms.manager.media_item"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.media_item"/>
+            <argument type="service" id="setono_sylius_cms.factory.media_folder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitMessageBus"/>
+            <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\GracePeriod"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\Importer" class="Setono\SyliusCMSPlugin\Transfer\Import\Importer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportPlannerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\MediaApplier"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportApplier"/>
             <argument type="service" id="setono_sylius_cms.manager.entry"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitMessageBus"/>
+            <argument type="service" id="setono_sylius_cms.storage"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface" alias="Setono\SyliusCMSPlugin\Transfer\Import\Importer"/>
     </services>

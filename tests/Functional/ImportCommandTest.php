@@ -52,7 +52,7 @@ final class ImportCommandTest extends KernelTestCase
     use ScheduledPublishes;
     use TemporaryDirectory;
 
-    /** The committed export: a picked page with a snippet in it, which holds another, and an editor preset */
+    /** The committed export: a picked page with a snippet in it, which holds another, an editor preset, and media */
     private const FIXTURE = __DIR__ . '/../Fixture/export';
 
     private const PAGE = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e';
@@ -65,6 +65,12 @@ final class ImportCommandTest extends KernelTestCase
 
     private const PLACEMENT = '0193a5be-7300-7b1c-8d2e-3f4a5b6c7d8e';
 
+    /** The banner, the video and its poster */
+    private const MEDIA_ITEMS = ['0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60', '0193a5be-70ab-7c12-8e2d-1b2c3d4e5f61', '0193a5be-70ac-7c13-8e2d-1b2c3d4e5f62'];
+
+    /** Campaigns, and Autumn inside it */
+    private const MEDIA_FOLDERS = ['0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b', '0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c'];
+
     /** The placement before the snippet's in the source slot */
     private const PRECEDING_PLACEMENT = '0193a5be-7301-7c2d-9e3f-4a5b6c7d8e9f';
 
@@ -76,7 +82,7 @@ final class ImportCommandTest extends KernelTestCase
         $tester = self::import(['path' => self::FIXTURE]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('Imported: 3 entries and 1 editor preset created.', self::display($tester));
+        self::assertStringContainsString('Imported: 3 entries, 1 editor preset, 3 media items and 2 media folders created.', self::display($tester));
 
         // Never published here, so the content is in the rows, and nothing is published
         $page = self::entry(self::PAGE);
@@ -132,7 +138,7 @@ final class ImportCommandTest extends KernelTestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('Autumn sale (page): create', self::display($tester));
         self::assertStringContainsString('Autumn banner (snippet), came along: create', self::display($tester));
-        self::assertStringContainsString('The dry run would import: 3 entries and 1 editor preset created.', self::display($tester));
+        self::assertStringContainsString('The dry run would import: 3 entries, 1 editor preset, 3 media items and 2 media folders created.', self::display($tester));
         self::assertNull(self::entries()->findOneByUuid(self::PAGE));
         self::assertNull(self::entries()->findOneByUuid(self::SNIPPET));
 
@@ -171,7 +177,7 @@ final class ImportCommandTest extends KernelTestCase
 
         self::assertSame(Command::SUCCESS, $overwritten->getStatusCode(), $overwritten->getDisplay());
         self::assertStringContainsString('Overwritten ----------- * Autumn sale has unpublished changes here.', self::display($overwritten));
-        self::assertStringContainsString('Imported: 2 entries and 1 editor preset created, 1 entry updated.', self::display($overwritten));
+        self::assertStringContainsString('Imported: 2 entries, 1 editor preset, 3 media items and 2 media folders created, 1 entry updated.', self::display($overwritten));
         $page = self::entry(self::PAGE);
         self::assertInstanceOf(PageInterface::class, $page);
         // The export's content is the draft, and what shoppers see stays until it's published
@@ -251,7 +257,7 @@ final class ImportCommandTest extends KernelTestCase
         $tester = self::import(['path' => $file]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('Imported: 3 entries and 1 editor preset created.', self::display($tester));
+        self::assertStringContainsString('Imported: 3 entries, 1 editor preset, 3 media items and 2 media folders created.', self::display($tester));
     }
 
     /**
@@ -357,9 +363,9 @@ final class ImportCommandTest extends KernelTestCase
         $events = $heard->getArrayCopy();
         $finished = array_pop($events);
         self::assertInstanceOf(ImportFinished::class, $finished);
-        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET], $finished->result->created());
+        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET, ...self::MEDIA_ITEMS, ...self::MEDIA_FOLDERS], $finished->result->created());
         self::assertSame([], $finished->result->updated());
-        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET], $finished->getAffectedUuids());
+        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET, ...self::MEDIA_ITEMS, ...self::MEDIA_FOLDERS], $finished->getAffectedUuids());
         self::assertEquals([new UnresolvedReference(self::SNIPPET, 'Autumn banner', 'taxon', 't_shirts')], $finished->result->unresolvedReferences());
         self::assertCount(3, array_filter($events, static fn (object $event): bool => $event instanceof EntryCreated));
         self::assertCount(3, array_filter($events, static fn (object $event): bool => $event instanceof EntryPublished));
@@ -372,7 +378,7 @@ final class ImportCommandTest extends KernelTestCase
         $finished = array_pop($events);
         self::assertInstanceOf(ImportFinished::class, $finished);
         self::assertSame([], $finished->getAffectedUuids());
-        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET], $finished->result->unchanged());
+        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET, ...self::MEDIA_ITEMS], $finished->result->unchanged());
         self::assertSame([], $events);
     }
 
@@ -388,7 +394,7 @@ final class ImportCommandTest extends KernelTestCase
         $tester = self::import(['path' => self::FIXTURE]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('Imported: 3 entries and 1 editor preset unchanged.', self::display($tester));
+        self::assertStringContainsString('Imported: 3 entries, 1 editor preset and 3 media items unchanged.', self::display($tester));
         $page = self::entry(self::PAGE);
         self::assertInstanceOf(PageInterface::class, $page);
         self::assertNull(self::draftOf($page));
@@ -408,7 +414,7 @@ final class ImportCommandTest extends KernelTestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('Autumn banner (snippet), came along: left alone', self::display($tester));
-        self::assertStringContainsString('Imported: 2 entries and 1 editor preset created, 1 entry left alone.', self::display($tester));
+        self::assertStringContainsString('Imported: 2 entries, 1 editor preset, 3 media items and 2 media folders created, 1 entry left alone.', self::display($tester));
         $snippet = self::entry(self::SNIPPET);
         self::assertInstanceOf(SnippetInterface::class, $snippet);
         self::assertSame('Autumn banner, edited here', $snippet->getTranslation('en_US')->getTitle());

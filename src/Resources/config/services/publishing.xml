@@ -12,6 +12,13 @@
             <tag name="kernel.reset" method="reset"/>
         </service>
 
+        <!-- The counterpart for messages, such as a replaced file's delayed delete, on Sylius's event bus -->
+        <service id="Setono\SyliusCMSPlugin\Event\AfterCommitMessageBus" class="Setono\SyliusCMSPlugin\Event\AfterCommitMessageBus">
+            <argument type="service" id="sylius.event_bus"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager" class="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
             <argument type="service" id="setono_sylius_cms.factory.draft"/>

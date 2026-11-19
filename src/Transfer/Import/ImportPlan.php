@@ -7,7 +7,7 @@ namespace Setono\SyliusCMSPlugin\Transfer\Import;
 /**
  * What an import would do, which a dry run shows and the admin renders before an import is confirmed: what's created,
  * updated, unchanged or left alone, the conflicts, the reasons it refuses, the homepage changes and the references
- * that don't resolve. See "What an import does" in docs/spec/transfer.md. Media items (#280) join the records
+ * that don't resolve. See "What an import does" in docs/spec/transfer.md
  */
 final readonly class ImportPlan
 {
@@ -18,6 +18,9 @@ final readonly class ImportPlan
      * @param list<ImportRefusal> $refusals
      * @param list<HomepageChange> $homepageChanges
      * @param list<UnresolvedReference> $unresolvedReferences
+     * @param list<PlannedRecord> $mediaItems
+     * @param list<PlannedRecord> $mediaFolders the folders of the media items it writes, with their parents: parents
+     *                                         before their children
      */
     public function __construct(
         public array $entries,
@@ -26,6 +29,8 @@ final readonly class ImportPlan
         public array $refusals = [],
         public array $homepageChanges = [],
         public array $unresolvedReferences = [],
+        public array $mediaItems = [],
+        public array $mediaFolders = [],
     ) {
     }
 
@@ -36,7 +41,7 @@ final readonly class ImportPlan
      */
     public function withRefusals(array $refusals): self
     {
-        return new self($this->entries, $this->presets, $this->conflicts, [...$this->refusals, ...$refusals], $this->homepageChanges, $this->unresolvedReferences);
+        return new self($this->entries, $this->presets, $this->conflicts, [...$this->refusals, ...$refusals], $this->homepageChanges, $this->unresolvedReferences, $this->mediaItems, $this->mediaFolders);
     }
 
     /**
@@ -78,11 +83,11 @@ final readonly class ImportPlan
     }
 
     /**
-     * @return list<PlannedRecord> every record, entries first
+     * @return list<PlannedRecord> every record: entries, editor presets, media items and media folders
      */
     public function records(): array
     {
-        return [...$this->entries, ...$this->presets];
+        return [...$this->entries, ...$this->presets, ...$this->mediaItems, ...$this->mediaFolders];
     }
 
     /**
@@ -90,11 +95,19 @@ final readonly class ImportPlan
      */
     public function writtenEntries(): array
     {
-        return array_values(array_filter($this->entries, static fn (PlannedRecord $entry): bool => ImportAction::Create === $entry->action || ImportAction::Update === $entry->action));
+        return array_values(array_filter($this->entries, static fn (PlannedRecord $entry): bool => $entry->writes()));
     }
 
     /**
-     * @return list<string> the UUIDs of the records with this action, entries first
+     * @return list<PlannedRecord> the media items the import writes: those it creates or updates
+     */
+    public function writtenMediaItems(): array
+    {
+        return array_values(array_filter($this->mediaItems, static fn (PlannedRecord $mediaItem): bool => $mediaItem->writes()));
+    }
+
+    /**
+     * @return list<string> the UUIDs of the records with this action, in the order of records()
      */
     public function uuids(ImportAction $action): array
     {

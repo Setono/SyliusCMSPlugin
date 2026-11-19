@@ -36,7 +36,7 @@ use Symfony\Component\Translation\TranslatableMessage;
  * of them, and then published, the snippets an entry shows before it. See "What an import does" in
  * docs/spec/transfer.md
  *
- * #280 writes the media folders and items first, with their files, which are stored once the plan is complete
+ * The media folders and items are written before it, by MediaApplier
  *
  * @internal
  */

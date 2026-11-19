@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Media;
 
 use League\Flysystem\FilesystemOperator;
+use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 
 /**
  * A file that passed the checks, ready to store: what was read from it, and where its content is. An image's content is
@@ -27,6 +28,20 @@ final class CheckedFile
         public readonly string $checksum,
         private bool $temporary = false,
     ) {
+    }
+
+    /**
+     * Points the media item at this file, stored at the path, as an upload, a replace and an import do: its original
+     * filename, and its MIME type, size, dimensions and checksum as read from the file. Its metadata stays
+     */
+    public function applyTo(MediaItemInterface $mediaItem, string $originalFilename, string $path): void
+    {
+        $mediaItem->setOriginalFilename($originalFilename);
+        $mediaItem->setPath($path);
+        $mediaItem->setMimeType($this->mimeType);
+        $mediaItem->setSize($this->size);
+        $mediaItem->setDimensions($this->width, $this->height);
+        $mediaItem->setChecksum($this->checksum);
     }
 
     /**

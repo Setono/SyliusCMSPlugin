@@ -7,12 +7,15 @@ namespace Setono\SyliusCMSPlugin\Transfer\Import;
 use Setono\SyliusCMSPlugin\Context\EntryTitle;
 use Setono\SyliusCMSPlugin\Field\ReferenceType;
 use Setono\SyliusCMSPlugin\Localization\Availability;
+use Setono\SyliusCMSPlugin\Media\RefusedFileException;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EditorPresetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryPath;
 use Setono\SyliusCMSPlugin\Routing\Slug;
 use Setono\SyliusCMSPlugin\Routing\UrlClashFinderInterface;
@@ -28,9 +31,8 @@ use Symfony\Component\Translation\TranslatableMessage;
  * alone (RecordDecision), the conflicts, the Embed code blocks it can't bring in while embed_code is off, the homepage
  * changes and the references that don't resolve. Entries are planned in the order they're written: the snippets an
  * entry shows before it, so they're published before it. See "What an import does", "Conflicts" and "Code the target
- * must have" in docs/spec/transfer.md
- *
- * #280 plans the media items and folders beside the entries and presets
+ * must have" in docs/spec/transfer.md. Media items are planned as entries and presets are, and the folders the ones it
+ * writes sit in are created when the target lacks them
  */
 final readonly class ImportPlanner implements ImportPlannerInterface
 {
@@ -46,6 +48,8 @@ final readonly class ImportPlanner implements ImportPlannerInterface
         private HomepageRepositoryInterface $homepages,
         private UnresolvedReferences $unresolvedReferences,
         private ReferenceFinder $referenceFinder,
+        private MediaItemRepositoryInterface $mediaItemRepository,
+        private MediaFolderRepositoryInterface $mediaFolderRepository,
     ) {
     }
 
@@ -99,14 +103,66 @@ final readonly class ImportPlanner implements ImportPlannerInterface
             }
         }
 
+        $mediaItems = $writtenMediaItems = [];
+        foreach ($export->mediaItems as $mediaItem) {
+            $target = $this->mediaItemRepository->findOneByUuid($mediaItem->uuid());
+            if (null !== $target && $target->getKind() !== $mediaItem->file->kind) {
+                // A file replaces only a file of its kind, as in the library
+                $refusals[] = new ImportRefusal($mediaItem->uuid(), new TranslatableMessage('setono_sylius_cms.import.media_refused', [
+                    '%name%' => $mediaItem->label(),
+                    '%reason%' => RefusedFileException::otherKind($mediaItem->exported->filename, $target->getKind())->reason,
+                ]));
+
+                continue;
+            }
+
+            $changedAt = $mediaItem->exported->changedAt;
+            $decision = RecordDecision::of($mediaItem->picked, $changedAt, null === $target ? null : new TargetRecord($target->getChangedAt(), $mediaItem->isIdenticalTo($target)));
+            $mediaItems[] = new PlannedRecord(RecordKind::MediaItem, $mediaItem->uuid(), $mediaItem->label(), $mediaItem->picked, $decision->action);
+            foreach ($decision->conflicts as $kind) {
+                $conflicts[] = new ImportConflict($kind, $mediaItem->uuid(), self::conflictMessage($kind, $mediaItem->label(), $changedAt, $target?->getChangedAt()));
+            }
+
+            if ($decision->writes()) {
+                $writtenMediaItems[] = $mediaItem;
+            }
+        }
+
         return new ImportPlan(
             $entries,
             $presets,
             $conflicts,
             $refusals,
             $this->homepageChanges($written),
-            $this->unresolvedReferences->in($export, array_values(array_map(static fn (array $written): ReadEntry => $written[0], $written)), $writtenPresets),
+            $this->unresolvedReferences->in($export, array_values(array_map(static fn (array $written): ReadEntry => $written[0], $written)), $writtenPresets, $writtenMediaItems),
+            $mediaItems,
+            $this->mediaFolders($export, $writtenMediaItems),
         );
+    }
+
+    /**
+     * The folders the media items it writes sit in, with their parents. A folder the target lacks is created, and one
+     * it has is neither moved nor renamed: unchanged when it has the export's name and parent, and otherwise left alone
+     *
+     * @param list<ReadMediaItem> $mediaItems
+     *
+     * @return list<PlannedRecord>
+     */
+    private function mediaFolders(ReadExport $export, array $mediaItems): array
+    {
+        $folders = [];
+        foreach ($export->foldersOf(array_map(static fn (ReadMediaItem $mediaItem): string => $mediaItem->uuid(), $mediaItems)) as $folder) {
+            $target = $this->mediaFolderRepository->findOneByUuid($folder->uuid);
+            $action = match (true) {
+                null === $target => ImportAction::Create,
+                $target->getName() === $folder->name && $target->getParent()?->getUuid() === $folder->parent => ImportAction::Unchanged,
+                default => ImportAction::LeaveAlone,
+            };
+
+            $folders[] = new PlannedRecord(RecordKind::MediaFolder, $folder->uuid, $folder->name, false, $action);
+        }
+
+        return $folders;
     }
 
     /**

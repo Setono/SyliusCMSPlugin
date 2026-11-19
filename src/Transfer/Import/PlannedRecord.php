@@ -23,4 +23,12 @@ final readonly class PlannedRecord
         public ?string $contentType = null,
     ) {
     }
+
+    /**
+     * Whether the import writes it: creates it, or updates it
+     */
+    public function writes(): bool
+    {
+        return ImportAction::Create === $this->action || ImportAction::Update === $this->action;
+    }
 }

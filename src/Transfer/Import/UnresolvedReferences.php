@@ -23,9 +23,9 @@ use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 /**
  * The references the records an import writes hold that don't resolve in the target: an entry or a media item that's
  * neither in the export nor in the target, a product or a taxon the target lacks, a product attribute a binding shows,
- * and the channels, customer groups and locales of their settings and translations. They're found in fields, as the
- * admin's broken references are, in bindings, in blocks' visibility conditions and in placements' page scopes. They
- * import unchanged. See "References that don't resolve" in docs/spec/transfer.md
+ * the channels, customer groups and locales of their settings and translations, and the locales of media items' alt
+ * text. They're found in fields, as the admin's broken references are, in bindings, in blocks' visibility conditions
+ * and in placements' page scopes. They import unchanged. See "References that don't resolve" in docs/spec/transfer.md
  *
  * @internal
  */
@@ -55,10 +55,11 @@ final readonly class UnresolvedReferences
     /**
      * @param list<ReadEntry> $entries the entries the import writes
      * @param list<ReadPreset> $presets the presets the import writes
+     * @param list<ReadMediaItem> $mediaItems the media items the import writes
      *
      * @return list<UnresolvedReference> by record, in the order of the records
      */
-    public function in(ReadExport $export, array $entries, array $presets): array
+    public function in(ReadExport $export, array $entries, array $presets, array $mediaItems = []): array
     {
         /** @var list<array{string, string, string, string}> $held each record's UUID and label, and a type and id */
         $held = [];
@@ -96,6 +97,13 @@ final readonly class UnresolvedReferences
 
             foreach (self::boundAttributes(new StoredTree($startingPoint?->layout, $preset->preset->blocks)) as $code) {
                 $held[] = [$preset->uuid(), $preset->label(), UnresolvedReference::PRODUCT_ATTRIBUTE, $code];
+            }
+        }
+
+        // An image's alt text in a locale the target lacks imports unchanged too
+        foreach ($mediaItems as $mediaItem) {
+            foreach (array_keys($mediaItem->altTexts()) as $localeCode) {
+                $held[] = [$mediaItem->uuid(), $mediaItem->label(), UnresolvedReference::LOCALE, $localeCode];
             }
         }
 

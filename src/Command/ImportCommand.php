@@ -13,7 +13,6 @@ use Setono\SyliusCMSPlugin\Transfer\Import\ImportPlan;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImportResult;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImportStatus;
 use Setono\SyliusCMSPlugin\Transfer\Import\PlannedRecord;
-use Setono\SyliusCMSPlugin\Transfer\Import\RecordKind;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -88,7 +87,7 @@ final class ImportCommand extends Command
 
     private function printPlan(SymfonyStyle $io, ImportPlan $plan, bool $overwrite): void
     {
-        foreach (['Entries' => $plan->entries, 'Editor presets' => $plan->presets] as $heading => $records) {
+        foreach (['Entries' => $plan->entries, 'Editor presets' => $plan->presets, 'Media items' => $plan->mediaItems, 'Media folders' => $plan->mediaFolders] as $heading => $records) {
             if ([] !== $records) {
                 $io->section($heading);
                 $io->listing(array_map(static fn (PlannedRecord $record): string => sprintf(
@@ -172,14 +171,21 @@ final class ImportCommand extends Command
     }
 
     /**
-     * Such as "1 entry updated, 2 entries and 1 editor preset created"
+     * Such as "1 entry updated, 2 entries, 1 editor preset and 3 media items created"
      */
     private static function summary(ImportPlan $plan): string
     {
+        $kinds = [
+            ['entry', 'entries', $plan->entries],
+            ['editor preset', 'editor presets', $plan->presets],
+            ['media item', 'media items', $plan->mediaItems],
+            ['media folder', 'media folders', $plan->mediaFolders],
+        ];
+
         $parts = [];
         foreach (self::ACTIONS as $word => $action) {
             $counts = [];
-            foreach ([RecordKind::Entry->value => ['entry', 'entries', $plan->entries], RecordKind::Preset->value => ['editor preset', 'editor presets', $plan->presets]] as [$one, $many, $records]) {
+            foreach ($kinds as [$one, $many, $records]) {
                 $count = count(array_filter($records, static fn (PlannedRecord $record): bool => $action === $record->action));
                 if ($count > 0) {
                     $counts[] = sprintf('%d %s', $count, 1 === $count ? $one : $many);
@@ -187,10 +193,22 @@ final class ImportCommand extends Command
             }
 
             if ([] !== $counts) {
-                $parts[] = sprintf('%s %s', implode(' and ', $counts), $word);
+                $parts[] = sprintf('%s %s', self::listed($counts), $word);
             }
         }
 
         return [] === $parts ? 'nothing to import' : implode(', ', $parts);
+    }
+
+    /**
+     * Such as "2 entries, 1 editor preset and 3 media items"
+     *
+     * @param non-empty-list<string> $items
+     */
+    private static function listed(array $items): string
+    {
+        $last = array_pop($items);
+
+        return [] === $items ? $last : sprintf('%s and %s', implode(', ', $items), $last);
     }
 }

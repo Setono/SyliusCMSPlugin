@@ -182,11 +182,13 @@ final class ExportReaderTest extends TestCase
             [self::SNIPPET, 'setono_sylius_cms.import.unknown_block_type', ['%title%' => 'Autumn banner', '%type%' => 'snippet']],
             [self::PRESET, 'setono_sylius_cms.import.unknown_block_type', ['%title%' => 'Autumn hero', '%type%' => 'image']],
         ], self::refusals($export->refusals));
+        $export->cleanUp();
 
         $export = $this->reader(contentTypes: ['snippet'])->read(new DirectorySource(self::FIXTURE));
 
         self::assertSame([[self::PAGE, 'setono_sylius_cms.import.unknown_content_type', ['%title%' => 'Autumn sale', '%content_type%' => 'page']]], self::refusals($export->refusals));
         self::assertArrayNotHasKey(self::PAGE, $export->entries);
+        $export->cleanUp();
     }
 
     /**
@@ -205,6 +207,7 @@ final class ExportReaderTest extends TestCase
             [self::PRESET, 'setono_sylius_cms.import.newer_version', ['%title%' => 'Autumn hero', '%reason%' => (string) $newer]],
         ], self::refusals($export->refusals));
         self::assertSame([], $export->entries);
+        $export->cleanUp();
     }
 
     /**

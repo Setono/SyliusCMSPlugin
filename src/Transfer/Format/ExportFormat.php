@@ -273,7 +273,7 @@ final class ExportFormat
 
     /**
      * Reads the values as they're written. An import reads a file's MIME type, size and dimensions from the file
-     * itself, and checks its checksum (#280)
+     * itself, and checks its checksum (Import\ImportedFileChecker)
      *
      * @throws InvalidExportException
      */
