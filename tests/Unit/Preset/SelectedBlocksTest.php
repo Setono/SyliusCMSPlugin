@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Preset;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Preset\InvalidPresetRequestException;
 use Setono\SyliusCMSPlugin\Preset\SelectedBlocks;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Symfony\Component\Translation\TranslatableMessage;
 
 /**
  * The blocks a ⌘-click selection saves as a preset: the selected blocks under different parents in tree order, each with
@@ -80,10 +82,12 @@ final class SelectedBlocksTest extends TestCase
      */
     public function it_refuses_a_selection_with_a_block_the_tree_does_not_have(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('There is no block 0193a5be-0000-7000-8000-0000000000ff in the tree');
-
-        SelectedBlocks::in(self::tree(), [self::HEADING, '0193a5be-0000-7000-8000-0000000000ff']);
+        try {
+            SelectedBlocks::in(self::tree(), [self::HEADING, '0193a5be-0000-7000-8000-0000000000ff']);
+            self::fail('It took a block the tree doesn\'t have');
+        } catch (InvalidPresetRequestException $e) {
+            self::assertEquals(new TranslatableMessage('setono_sylius_cms.preset.request.unknown_blocks', ['%keys%' => '0193a5be-0000-7000-8000-0000000000ff']), $e->translatable);
+        }
     }
 
     /**
@@ -91,9 +95,12 @@ final class SelectedBlocksTest extends TestCase
      */
     public function it_refuses_an_empty_selection(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-
-        SelectedBlocks::in(self::tree(), []);
+        try {
+            SelectedBlocks::in(self::tree(), []);
+            self::fail('It took no blocks');
+        } catch (InvalidPresetRequestException $e) {
+            self::assertEquals(new TranslatableMessage('setono_sylius_cms.preset.request.select'), $e->translatable);
+        }
     }
 
     /**

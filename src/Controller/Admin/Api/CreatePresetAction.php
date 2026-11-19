@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
-use Setono\SyliusCMSPlugin\Preset\InvalidPresetDetailsException;
+use Setono\SyliusCMSPlugin\Preset\InvalidPresetRequestException;
 use Setono\SyliusCMSPlugin\Preset\PresetDetails;
 use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -39,7 +39,7 @@ final readonly class CreatePresetAction
                 $body = $request->toArray();
                 $details = (new PresetDetails(''))->changedBy($body);
                 $content = $this->blocksRequest->content($body);
-            } catch (InvalidPresetDetailsException $e) {
+            } catch (InvalidPresetRequestException $e) {
                 return BuilderRequest::badRequest($e->translatable->trans($this->translator));
             } catch (JsonException|\InvalidArgumentException $e) {
                 return BuilderRequest::badRequest($e->getMessage());

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
+use Setono\SyliusCMSPlugin\Preset\InvalidPresetRequestException;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\SelectedBlocks;
 use Setono\SyliusCMSPlugin\Preset\StartingPoint;
@@ -12,6 +13,7 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Translation\TranslatableMessage;
 
 /**
  * What ★ or the entry settings save as a preset, which a request names as {"entry": <uuid>, "blocks": [<key>, …]}, the
@@ -60,7 +62,8 @@ final readonly class PresetBlocksRequest
         $keys = [];
         foreach (is_array($body['blocks'] ?? null) ? $body['blocks'] : [null] as $key) {
             if (!is_string($key)) {
-                throw new \InvalidArgumentException('The body needs the keys of the blocks to save, as {"blocks": [<key>, …]}, or the whole tree, as {"startingPoint": true}');
+                // {"blocks": [<key>, …]}, or {"startingPoint": true}
+                throw new InvalidPresetRequestException(new TranslatableMessage('setono_sylius_cms.preset.request.blocks'));
             }
 
             $keys[] = $key;
@@ -79,12 +82,12 @@ final readonly class PresetBlocksRequest
         $workingCopy = $this->workingCopies->getWorkingCopy($this->builderRequest->entry(self::entry($body)));
         $contentType = $this->contentTypes->getByEntry($workingCopy);
         if (null === $contentType->blocks) {
-            throw new \InvalidArgumentException(sprintf('The content type "%s" has no block tree, so it has no starting points', $contentType->code));
+            throw new InvalidPresetRequestException(new TranslatableMessage('setono_sylius_cms.preset.request.no_block_tree', ['%content_type%' => $contentType->code]));
         }
 
         $tree = $this->upgrader->readBlockTree($workingCopy);
         if ([] === $tree->blocks) {
-            throw new \InvalidArgumentException('The entry has no blocks to save as a starting point');
+            throw new InvalidPresetRequestException(new TranslatableMessage('setono_sylius_cms.preset.request.no_blocks'));
         }
 
         return new Preset('', $tree->blocks, startingPoint: new StartingPoint($contentType->code, $tree->layout));
@@ -97,7 +100,8 @@ final readonly class PresetBlocksRequest
     {
         $entry = $body['entry'] ?? null;
         if (!is_string($entry) || '' === $entry) {
-            throw new \InvalidArgumentException('The body needs the entry the blocks are in, as {"entry": <uuid>}');
+            // {"entry": <uuid>}
+            throw new InvalidPresetRequestException(new TranslatableMessage('setono_sylius_cms.preset.request.entry'));
         }
 
         return $entry;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Preset;
 
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Symfony\Component\Translation\TranslatableMessage;
 
 /**
  * The blocks ★ saves as a preset: the selected block, or a ⌘-click selection. A selection under different parents
@@ -25,18 +26,18 @@ final class SelectedBlocks
      *
      * @return non-empty-list<StoredBlock>
      *
-     * @throws \InvalidArgumentException for no selection, or a key the tree doesn't have
+     * @throws InvalidPresetRequestException for no selection, or a key the tree doesn't have
      */
     public static function in(array $tree, array $keys): array
     {
         $selected = array_fill_keys($keys, true);
         $blocks = self::topmost($tree, $selected);
         if ([] === $blocks) {
-            throw new \InvalidArgumentException('Select one or more blocks to save as a preset');
+            throw new InvalidPresetRequestException(new TranslatableMessage('setono_sylius_cms.preset.request.select'));
         }
 
         if ([] !== $selected) {
-            throw new \InvalidArgumentException(sprintf('There is no block %s in the tree', implode(', ', array_keys($selected))));
+            throw new InvalidPresetRequestException(new TranslatableMessage('setono_sylius_cms.preset.request.unknown_blocks', ['%keys%' => implode(', ', array_keys($selected))]));
         }
 
         return $blocks;

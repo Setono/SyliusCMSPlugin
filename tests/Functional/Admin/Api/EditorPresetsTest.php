@@ -103,16 +103,22 @@ final class EditorPresetsTest extends BuilderApiTestCase
         $page = self::createPageWithBlocks('About us', 'about-us', self::blocks());
         $csrfToken = self::openBuilder($client, $page);
 
+        // Each with the error in the admin user's language, which the builder shows
         foreach ([
-            ['blocks' => [self::HEADING], 'name' => '  '],
-            ['blocks' => [self::HEADING]],
-            ['blocks' => [], 'name' => 'Promo'],
-            ['blocks' => ['0193a5be-0000-7000-8000-0000000000ff'], 'name' => 'Promo'],
-            ['blocks' => [self::HEADING], 'name' => 'Promo', 'category' => ['Campaigns']],
-        ] as $body) {
+            [['blocks' => [self::HEADING], 'name' => '  '], 'A preset needs a name.'],
+            [['blocks' => [self::HEADING]], 'A preset needs a name.'],
+            [['blocks' => [], 'name' => 'Promo'], 'Select one or more blocks to save as a preset.'],
+            [['blocks' => ['0193a5be-0000-7000-8000-0000000000ff'], 'name' => 'Promo'], 'Select one or more blocks to save as a preset.'],
+            [['blocks' => [self::HEADING, '0193a5be-0000-7000-8000-0000000000ff'], 'name' => 'Promo'], 'There is no block 0193a5be-0000-7000-8000-0000000000ff in the tree.'],
+            [['blocks' => [self::HEADING], 'name' => 'Promo', 'category' => ['Campaigns']], null],
+            [['name' => 'Promo'], 'The request needs the keys of the blocks to save, or the whole tree.'],
+        ] as [$body, $error]) {
             self::json($client, 'POST', '/admin/cms/api/presets', ['entry' => $page->getUuid(), ...$body], $csrfToken);
 
             self::assertResponseStatusCodeSame(400, json_encode($body, \JSON_THROW_ON_ERROR));
+            if (null !== $error) {
+                self::assertSame(['error' => $error], json_decode((string) $client->getResponse()->getContent(), true));
+            }
         }
 
         self::assertSame([], self::editorPresetIds($client, $page->getUuid()));

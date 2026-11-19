@@ -112,13 +112,14 @@ final class StartingPointPresetsTest extends BuilderApiTestCase
         $snippet = self::createSnippet('Footer', [self::heading('0193a5be-0000-7000-8000-0000000000bb', 'Need help?')]);
 
         foreach ([
-            [$startingPoint, ['entry' => $page->getUuid(), 'blocks' => [self::HEADING]]],
-            [$startingPoint, ['entry' => $snippet->getUuid(), 'startingPoint' => true]],
-            [$blockPreset, ['entry' => $page->getUuid(), 'startingPoint' => true]],
-        ] as [$uuid, $body]) {
+            [$startingPoint, ['entry' => $page->getUuid(), 'blocks' => [self::HEADING]], 'A starting point is replaced by the whole tree of an entry of its content type, "page".'],
+            [$startingPoint, ['entry' => $snippet->getUuid(), 'startingPoint' => true], 'A starting point is replaced by the whole tree of an entry of its content type, "page".'],
+            [$blockPreset, ['entry' => $page->getUuid(), 'startingPoint' => true], 'A block preset is replaced by blocks, not by a whole tree.'],
+        ] as [$uuid, $body, $error]) {
             self::json($client, 'PUT', sprintf('/admin/cms/api/presets/%s', $uuid), $body, $csrfToken);
 
             self::assertResponseStatusCodeSame(400, json_encode($body, \JSON_THROW_ON_ERROR));
+            self::assertSame(['error' => $error], json_decode((string) $client->getResponse()->getContent(), true));
         }
 
         self::assertSame('page', self::preset($startingPoint)->startingPoint?->contentType);
@@ -134,11 +135,12 @@ final class StartingPointPresetsTest extends BuilderApiTestCase
         $empty = self::createPage('About us', 'about-us');
         $store = self::createStoreLocation('Flagship store', 'flagship', 'Copenhagen');
 
-        foreach ([$empty, $store] as $entry) {
+        foreach ([[$empty, 'The entry has no blocks to save as a starting point.'], [$store, 'The content type "store_location" has no block tree, so it has no starting points.']] as [$entry, $error]) {
             $csrfToken = self::openBuilder($client, $entry);
             self::json($client, 'POST', '/admin/cms/api/presets', ['entry' => $entry->getUuid(), 'startingPoint' => true, 'name' => 'Starting point'], $csrfToken);
 
             self::assertResponseStatusCodeSame(400);
+            self::assertSame(['error' => $error], json_decode((string) $client->getResponse()->getContent(), true));
         }
 
         /** @var PresetProviderInterface $presets */

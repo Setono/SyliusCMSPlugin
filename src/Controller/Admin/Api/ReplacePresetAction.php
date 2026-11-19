@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
+use Setono\SyliusCMSPlugin\Preset\InvalidPresetRequestException;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -37,16 +38,18 @@ final readonly class ReplacePresetAction
 
             try {
                 $content = $this->blocksRequest->content($request->toArray());
+            } catch (InvalidPresetRequestException $e) {
+                return BuilderRequest::badRequest($e->translatable->trans($this->translator));
             } catch (JsonException|\InvalidArgumentException $e) {
                 return BuilderRequest::badRequest($e->getMessage());
             }
 
             if (null === $preset->startingPoint && null !== $content->startingPoint) {
-                return BuilderRequest::badRequest('A block preset is replaced by blocks, not by a whole tree');
+                return BuilderRequest::badRequest($this->translator->trans('setono_sylius_cms.preset.request.block_preset_by_tree'));
             }
 
             if (null !== $preset->startingPoint && $preset->startingPoint->contentType !== $content->startingPoint?->contentType) {
-                return BuilderRequest::badRequest(sprintf('A starting point is replaced by the whole tree of an entry of its content type, "%s"', $preset->startingPoint->contentType));
+                return BuilderRequest::badRequest($this->translator->trans('setono_sylius_cms.preset.request.starting_point_by_another_tree', ['%content_type%' => $preset->startingPoint->contentType]));
             }
 
             $saved = $this->saver->save(new Preset(

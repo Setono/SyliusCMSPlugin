@@ -351,6 +351,16 @@ setono_sylius_cms:
             unknown_content_type: 'Its starting point is for the content type "%content_type%", which the code doesn''t have.'
             unknown_layout: 'Its starting point''s layout "%layout%" isn''t a layout of %content_type%.'
         name_required: 'A preset needs a name.'
+        # Why the builder's request to save or replace an editor preset was refused, which it shows the editor
+        request:
+            block_preset_by_tree: 'A block preset is replaced by blocks, not by a whole tree.'
+            blocks: 'The request needs the keys of the blocks to save, or the whole tree.'
+            entry: 'The request needs the entry the blocks are in.'
+            no_block_tree: 'The content type "%content_type%" has no block tree, so it has no starting points.'
+            no_blocks: 'The entry has no blocks to save as a starting point.'
+            select: 'Select one or more blocks to save as a preset.'
+            starting_point_by_another_tree: 'A starting point is replaced by the whole tree of an entry of its content type, "%content_type%".'
+            unknown_blocks: 'There is no block %keys% in the tree.'
         newer_version: '"%type%" in the preset was saved with version %version%, but this store has version %code_version%, so the preset can''t be inserted.'
         removed_block_type: 'Blocks of the type "%type%", which the code no longer has, were left out.'
         # The texts of the code presets the plugin ships in src/Resources/presets, by code: each one's name and
