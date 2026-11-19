@@ -22,6 +22,9 @@ app:
             recipe: Recipe
             store_location: Store location
         field:
+            intro: Introduction
+            open: Open now
+            picks: Picks
             city: City
             directions: Directions
             image: Image

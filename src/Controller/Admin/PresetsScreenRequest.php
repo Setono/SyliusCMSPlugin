@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Form\FormTypeInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
@@ -47,9 +48,12 @@ final readonly class PresetsScreenRequest
     /**
      * An editor preset's Edit form (Form\Type\PresetDetailsType) or Delete form (Form\Type\DeletePresetType)
      *
-     * @param class-string<\Symfony\Component\Form\FormTypeInterface<mixed>> $type
+     * @template TData
      *
-     * @return FormInterface<mixed>
+     * @param class-string<FormTypeInterface<TData>> $type
+     * @param TData|null $data
+     *
+     * @return FormInterface<TData|null>
      */
     public function form(string $type, Preset $preset, mixed $data = null, ?string $action = null): FormInterface
     {
@@ -60,8 +64,10 @@ final readonly class PresetsScreenRequest
      * Changes the editor preset the URL names with what its form of the type submits, and goes back to the Presets
      * screen with the flash message the change returns
      *
-     * @param class-string<\Symfony\Component\Form\FormTypeInterface<mixed>> $type
-     * @param callable(Preset, mixed): array{'success'|'error', string} $change given the preset and the form's data,
+     * @template TData
+     *
+     * @param class-string<FormTypeInterface<TData>> $type
+     * @param callable(Preset, TData|null): array{'success'|'error', string} $change given the preset and the form's data,
      *        returns the flash message's type and the message, a key of the flashes domain or a text
      *
      * @throws AccessDeniedException for anyone but an admin user

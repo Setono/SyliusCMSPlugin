@@ -91,7 +91,8 @@ final class ImportTest extends WebTestCase
         $projectDirectory = self::projectDirectory();
         self::assertFileExists($projectDirectory . '/private/cms/' . $path);
         self::assertFileDoesNotExist($projectDirectory . '/public/media/cms/' . $path);
-        self::assertSame([], glob($projectDirectory . '/public/media/cms/imports/*') ?: []);
+        $public = glob($projectDirectory . '/public/media/cms/imports/*');
+        self::assertTrue(false === $public || [] === $public, 'The media storage holds no import');
 
         // The worker runs its dry run now, and abandons it in a day if no one confirms it
         $messages = self::sentMessages();
@@ -334,7 +335,7 @@ final class ImportTest extends WebTestCase
         $crawler = $client->request('GET', sprintf('/admin/cms/transfer/imports/%s', $import->getUuid()));
         self::assertResponseIsSuccessful();
         self::assertSame('failed', $crawler->filter('[data-cms-import-state]')->attr('data-cms-import-state'));
-        self::assertSame(0, $crawler->filter('[data-cms-import-progress]')->count());
+        self::assertCount(0, $crawler->filter('[data-cms-import-progress]'));
         self::assertSame('The import failed with an unexpected error, and the Messenger worker stopped retrying it: The database went away', $crawler->filter('[data-cms-import-failure]')->text());
     }
 

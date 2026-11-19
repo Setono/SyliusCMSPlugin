@@ -31,6 +31,11 @@ class Recipe extends Entry
         return $this->servings;
     }
 
+    public function setServings(?string $servings): void
+    {
+        $this->servings = $servings;
+    }
+
     protected function createTranslation(): EntryTranslationInterface
     {
         return new EntryTranslation();

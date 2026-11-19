@@ -166,7 +166,9 @@ trait MediaItems
      */
     private static function keptImports(): array
     {
-        return glob(dirname(__DIR__) . '/Application/private/cms/imports/*.zip') ?: [];
+        $zips = glob(dirname(__DIR__) . '/Application/private/cms/imports/*.zip');
+
+        return false === $zips ? [] : $zips;
     }
 
     /**

@@ -50,9 +50,9 @@ final class DisabledContentTypeOverviewTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/cms');
 
         self::assertResponseIsSuccessful();
-        self::assertSame(0, $crawler->filter('[data-panel="needs_attention"] [data-entry]')->count());
-        self::assertSame(0, $crawler->filter('[data-panel="coming_up"] [data-event]')->count());
-        self::assertSame(0, $crawler->filter('[data-panel="drafts_in_progress"] [data-entry]')->count());
+        self::assertCount(0, $crawler->filter('[data-panel="needs_attention"] [data-entry]'));
+        self::assertCount(0, $crawler->filter('[data-panel="coming_up"] [data-event]'));
+        self::assertCount(0, $crawler->filter('[data-panel="drafts_in_progress"] [data-entry]'));
         self::assertSame(
             [['en_US', '1 of 1 complete']],
             $crawler->filter('[data-panel="translations"] [data-channel="WEB"] [data-locale]')->each(static fn (Crawler $locale): array => [(string) $locale->attr('data-locale'), $locale->filter('td')->eq(1)->text()]),
