@@ -61,14 +61,6 @@ final class ContentTypeFields
     }
 
     /**
-     * Whether the name is one of the fields of the subject's class
-     */
-    public function has(object $subject, string $name): bool
-    {
-        return isset($this->of($subject::class, $subject instanceof EntryTranslationInterface)[$name]);
-    }
-
-    /**
      * A field's value as the entry format stores it: a date as "2026-11-13", a date and time in UTC as
      * "2026-11-13T09:30:00Z", and everything else as the property holds it
      *
