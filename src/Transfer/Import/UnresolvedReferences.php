@@ -214,7 +214,7 @@ final readonly class UnresolvedReferences
             }
         };
 
-        $walk($tree->layout?->fields ?? []);
+        $walk($tree->layout->fields ?? []);
         foreach ($tree->allBlocks() as $block) {
             $walk($block->fields);
         }
