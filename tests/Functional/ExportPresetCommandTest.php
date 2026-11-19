@@ -85,6 +85,24 @@ final class ExportPresetCommandTest extends KernelTestCase
         self::assertSame([], glob($this->temporaryDirectory() . '/*.json'));
     }
 
+    /**
+     * @test
+     */
+    public function it_exits_non_zero_when_it_can_not_write_the_file(): void
+    {
+        self::save('Spring promo');
+        // A file where the directory would be made
+        $blocked = $this->temporaryDirectory() . '/presets';
+        touch($blocked);
+
+        $tester = self::command('setono:cms:preset:export', ['preset' => 'Spring promo', 'dir' => $blocked . '/spring']);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        // SymfonyStyle wraps a long path where it likes
+        self::assertStringContainsString(str_replace(' ', '', sprintf('The file %s/spring/spring_promo.json can\'t be written.', $blocked)), (string) preg_replace('/\s+/', '', $tester->getDisplay()));
+        self::assertFileDoesNotExist($blocked . '/spring/spring_promo.json');
+    }
+
     private static function save(string $name): Preset
     {
         self::bootKernel();
