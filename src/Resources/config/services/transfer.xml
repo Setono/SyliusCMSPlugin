@@ -130,5 +130,43 @@
             <argument type="service" id="setono_sylius_cms.storage"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface" alias="Setono\SyliusCMSPlugin\Transfer\Import\Importer"/>
+
+        <!--
+        Imports started in the admin run on the Messenger worker, from the uploaded zip kept in the media storage
+        (docs/spec/transfer.md#who-runs-it)
+        -->
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports" class="Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports">
+            <argument type="service" id="setono_sylius_cms.storage"/>
+            <argument type="service" id="logger"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportResultNormalizer" class="Setono\SyliusCMSPlugin\Transfer\Import\ImportResultNormalizer"/>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportQueue" class="Setono\SyliusCMSPlugin\Transfer\Import\ImportQueue">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports"/>
+            <argument type="service" id="setono_sylius_cms.factory.import"/>
+            <argument type="service" id="setono_sylius_cms.manager.import"/>
+            <argument type="service" id="sylius.event_bus"/>
+            <argument type="service" id="clock"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportQueueInterface" alias="Setono\SyliusCMSPlugin\Transfer\Import\ImportQueue"/>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\RunImportHandler" class="Setono\SyliusCMSPlugin\Transfer\Import\RunImportHandler">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportResultNormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports"/>
+            <argument type="service" id="setono_sylius_cms.manager.import"/>
+            <argument type="service" id="clock"/>
+
+            <tag name="messenger.message_handler" handles="Setono\SyliusCMSPlugin\Transfer\Import\RunImport"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\AbandonImportHandler" class="Setono\SyliusCMSPlugin\Transfer\Import\AbandonImportHandler">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportQueueInterface"/>
+
+            <tag name="messenger.message_handler" handles="Setono\SyliusCMSPlugin\Transfer\Import\AbandonImport"/>
+        </service>
     </services>
 </container>

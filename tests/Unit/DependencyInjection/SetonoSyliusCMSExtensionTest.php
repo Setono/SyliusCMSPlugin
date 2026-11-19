@@ -70,6 +70,8 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
+use Setono\SyliusCMSPlugin\Transfer\Import\AbandonImport;
+use Setono\SyliusCMSPlugin\Transfer\Import\RunImport;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
@@ -750,12 +752,17 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
-    public function it_routes_the_messages_that_run_a_scheduled_publish_and_delete_a_replaced_file_to_sylius_main_transport(): void
+    public function it_routes_the_messages_that_run_a_scheduled_publish_delete_a_replaced_file_and_run_or_abandon_an_admin_import_to_sylius_main_transport(): void
     {
         $this->load();
 
         $framework = $this->container->getExtensionConfig('framework');
-        self::assertSame([['messenger' => ['routing' => [ScheduledPublishDue::class => 'main', DeleteReplacedFile::class => 'main']]]], $framework);
+        self::assertSame([['messenger' => ['routing' => [
+            ScheduledPublishDue::class => 'main',
+            DeleteReplacedFile::class => 'main',
+            RunImport::class => 'main',
+            AbandonImport::class => 'main',
+        ]]]], $framework);
     }
 
     /**

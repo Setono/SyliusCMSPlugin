@@ -36,6 +36,8 @@ use Setono\SyliusCMSPlugin\Preset\CodePresetFiles;
 use Setono\SyliusCMSPlugin\Problem\PresetProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
+use Setono\SyliusCMSPlugin\Transfer\Import\AbandonImport;
+use Setono\SyliusCMSPlugin\Transfer\Import\RunImport;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -351,9 +353,11 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     }
 
     /**
-     * Routes the delayed message that runs a scheduled publish to Sylius's main transport, the way Sylius routes the
-     * messages that schedule catalog promotions, so the shop's Messenger worker runs it. Projects route it elsewhere in
-     * their own framework config. See "Scheduled publishes" in docs/spec/publishing.md
+     * Routes the plugin's messages to Sylius's main transport, the way Sylius routes the messages that schedule catalog
+     * promotions, so the shop's Messenger worker handles them: the delayed messages that run a scheduled publish and
+     * delete a replaced file, and those that run an import started in the admin and abandon one no one confirmed.
+     * Projects route them elsewhere in their own framework config. See "Scheduled publishes" in
+     * docs/spec/publishing.md, "Replacing a file" in docs/spec/media.md and "Who runs it" in docs/spec/transfer.md
      */
     private function prependMessenger(ContainerBuilder $container): void
     {
@@ -362,6 +366,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'routing' => [
                     ScheduledPublishDue::class => 'main',
                     DeleteReplacedFile::class => 'main',
+                    RunImport::class => 'main',
+                    AbandonImport::class => 'main',
                 ],
             ],
         ]);

@@ -47,6 +47,8 @@ use Setono\SyliusCMSPlugin\Model\FaqItemTranslation;
 use Setono\SyliusCMSPlugin\Model\FaqItemTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
+use Setono\SyliusCMSPlugin\Model\Import;
+use Setono\SyliusCMSPlugin\Model\ImportInterface;
 use Setono\SyliusCMSPlugin\Model\MediaFolder;
 use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
@@ -81,6 +83,7 @@ use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryReferenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
+use Setono\SyliusCMSPlugin\Repository\ImportRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
@@ -721,7 +724,8 @@ final class Configuration implements ConfigurationInterface
      * it open, its saves, its revisions, its old slugs, its scheduled publish, its share links, the channels a
      * page is the homepage of and a snippet's placements), the bestseller scores, the media usage index and the reference
      * table have no admin screens of their own, so they have no controller. Nor have the editor presets, whose Presets
-     * screen lists code presets too. The content types are Page and Snippet, the blog's Blog post and Blog category, and
+     * screen lists code presets too, nor the imports started in the admin, which the Transfer screen's own pages show. The
+     * content types are Page and Snippet, the blog's Blog post and Blog category, and
      * the FAQ's FAQ item and FAQ category.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
@@ -752,6 +756,7 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('editor_preset', EditorPreset::class, EditorPresetInterface::class, EditorPresetRepository::class))
                     ->append(self::resourceWithoutController('bestseller_score', BestsellerScore::class, BestsellerScoreInterface::class))
                     ->append(self::resourceWithoutController('placement', Placement::class, PlacementInterface::class, PlacementRepository::class, PlacementFactory::class))
+                    ->append(self::resourceWithoutController('import', Import::class, ImportInterface::class, ImportRepository::class))
                     ->append(self::contentTypeResource('page', Page::class, PageInterface::class, PageTranslation::class, PageTranslationInterface::class))
                     ->append(self::contentTypeResource(SnippetInterface::CONTENT_TYPE, Snippet::class, SnippetInterface::class, EntryTranslation::class, EntryTranslationInterface::class))
                     ->append(self::contentTypeResource(BlogPostInterface::CONTENT_TYPE, BlogPost::class, BlogPostInterface::class, BlogPostTranslation::class, BlogPostTranslationInterface::class))
