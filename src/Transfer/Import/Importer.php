@@ -36,6 +36,15 @@ final readonly class Importer implements ImporterInterface
             return ImportResult::invalid($e->getMessage());
         }
 
+        try {
+            return $this->importRead($export, $options);
+        } finally {
+            $export->cleanUp();
+        }
+    }
+
+    private function importRead(ReadExport $export, ImportOptions $options): ImportResult
+    {
         $plan = $this->planner->plan($export);
         if ($plan->isRefused($options->overwrite)) {
             return ImportResult::refused($plan);

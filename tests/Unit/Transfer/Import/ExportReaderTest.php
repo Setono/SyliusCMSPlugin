@@ -13,6 +13,11 @@ use Setono\SyliusCMSPlugin\Block\Snippet as SnippetBlock;
 use Setono\SyliusCMSPlugin\Block\Video;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\Layout\Page\Standard;
+use Setono\SyliusCMSPlugin\Media\CheckedFile;
+use Setono\SyliusCMSPlugin\Media\MediaFileCheckerInterface;
+use Setono\SyliusCMSPlugin\Media\MediaKind;
+use Setono\SyliusCMSPlugin\Media\RefusedFileException;
+use Setono\SyliusCMSPlugin\Media\UploadLimit;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -21,10 +26,12 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
+use Setono\SyliusCMSPlugin\Tests\Support\TemporaryDirectory;
 use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 use Setono\SyliusCMSPlugin\Transfer\Import\DirectorySource;
 use Setono\SyliusCMSPlugin\Transfer\Import\ExportReader;
 use Setono\SyliusCMSPlugin\Transfer\Import\ExportSourceInterface;
+use Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImportRefusal;
 use Setono\SyliusCMSPlugin\Upgrade\Kind;
 use Setono\SyliusCMSPlugin\Upgrade\NewerVersion;
@@ -39,6 +46,7 @@ use Setono\SyliusCMSPlugin\Upgrade\Upgraded;
 final class ExportReaderTest extends TestCase
 {
     use ProphecyTrait;
+    use TemporaryDirectory;
 
     private const FIXTURE = __DIR__ . '/../../../Fixture/export';
 
@@ -49,6 +57,13 @@ final class ExportReaderTest extends TestCase
     private const INNER_SNIPPET = '0193a5be-7256-7a01-8b2c-3d4e5f6a7b8c';
 
     private const PRESET = '0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a';
+
+    private const BANNER = '0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60';
+
+    /** A video, whose poster is POSTER */
+    private const VIDEO = '0193a5be-70ab-7c12-8e2d-1b2c3d4e5f61';
+
+    private const POSTER = '0193a5be-70ac-7c13-8e2d-1b2c3d4e5f62';
 
     /**
      * @test
@@ -74,7 +89,82 @@ final class ExportReaderTest extends TestCase
         self::assertSame('Autumn hero', $export->presets[self::PRESET]->label());
 
         self::assertCount(2, $export->mediaFolders);
-        self::assertCount(3, $export->mediaItems);
+        self::assertSame([self::BANNER, self::VIDEO, self::POSTER], array_keys($export->mediaItems));
+        self::assertFalse($export->mediaItems[self::BANNER]->picked);
+        self::assertSame('Autumn banner', $export->mediaItems[self::BANNER]->label());
+        // What the check read from the file, never what the JSON says
+        self::assertSame('image/webp', $export->mediaItems[self::BANNER]->file->mimeType);
+        self::assertSame(MediaKind::Video, $export->mediaItems[self::VIDEO]->file->kind);
+
+        $export->cleanUp();
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_a_media_item_the_manifest_picks_as_picked(): void
+    {
+        $export = $this->copyOfFixture();
+        file_put_contents($export . '/manifest.json', str_replace('"media": []', sprintf('"media": ["%s"]', self::BANNER), (string) file_get_contents($export . '/manifest.json')));
+
+        $read = $this->reader()->read(new DirectorySource($export));
+
+        self::assertTrue($read->mediaItems[self::BANNER]->picked);
+        self::assertFalse($read->mediaItems[self::POSTER]->picked);
+        $read->cleanUp();
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_export_that_holds_a_path_outside_its_root(): void
+    {
+        $export = $this->copyOfFixture();
+        symlink($this->temporaryFile('outside.png', 'Outside'), $export . '/media/evil.png');
+
+        $read = $this->reader()->read(new DirectorySource($export));
+
+        self::assertSame([[null, 'setono_sylius_cms.import.path_outside_root', ['%path%' => 'media/evil.png']]], self::refusals($read->refusals));
+        $read->cleanUp();
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_media_item_whose_file_fails_its_checks_naming_the_media_item(): void
+    {
+        $refused = RefusedFileException::notAllowed('lookbook.mp4', 'MP4', ['PNG'], 1000);
+
+        $export = $this->reader(refusedFiles: ['lookbook.mp4' => $refused])->read(new DirectorySource(self::FIXTURE));
+
+        self::assertSame([[self::VIDEO, 'setono_sylius_cms.import.media_refused', ['%name%' => 'lookbook', '%reason%' => $refused->reason]]], self::refusals($export->refusals));
+        self::assertSame([self::BANNER, self::POSTER], array_keys($export->mediaItems));
+        $export->cleanUp();
+    }
+
+    /**
+     * @test
+     */
+    public function it_cannot_read_a_media_item_in_a_folder_the_export_does_not_list(): void
+    {
+        $export = $this->copyOfFixture();
+        file_put_contents($export . '/media/folders.json', '[]');
+
+        $this->expectException(InvalidExportException::class);
+        $this->expectExceptionMessage('The media item 0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60 is in the folder 0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c, which media/folders.json doesn\'t list');
+        $this->reader()->read(new DirectorySource($export));
+    }
+
+    /**
+     * @test
+     */
+    public function it_cannot_read_a_media_item_whose_file_the_export_lacks(): void
+    {
+        $export = $this->copyOfFixture();
+        unlink($export . '/media/' . self::VIDEO . '/lookbook.mp4');
+
+        $this->expectException(InvalidExportException::class);
+        $this->reader()->read(new DirectorySource($export));
     }
 
     /**
@@ -135,12 +225,14 @@ final class ExportReaderTest extends TestCase
      * @param array<string, class-string> $blockTypes
      * @param array<string, array<string, class-string>> $layouts
      * @param list<string> $contentTypes
+     * @param array<string, RefusedFileException> $refusedFiles what the media library refuses, by filename
      */
     private function reader(
         array $blockTypes = ['heading' => Heading::class, 'image' => Image::class, 'video' => Video::class, 'snippet' => SnippetBlock::class],
         array $layouts = ['page' => ['standard' => Standard::class]],
         array $contentTypes = ['page', 'snippet'],
         ?NewerVersion $newer = null,
+        array $refusedFiles = [],
     ): ExportReader {
         $resources = [
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
@@ -154,13 +246,48 @@ final class ExportReaderTest extends TestCase
         $upgrader->upgradeEntry(Argument::type('array'))->will($upgraded);
         $upgrader->upgradeBlocks(Argument::type('array'))->will($upgraded);
 
+        // Reads each file as a WebP image or an MP4 video, whatever its JSON says, unless it's refused
+        $checker = $this->prophesize(MediaFileCheckerInterface::class);
+        $checker->check(Argument::type(\SplFileInfo::class), Argument::type('string'))->will(static function (array $args) use ($refusedFiles): CheckedFile {
+            [$file, $filename] = $args;
+            \assert($file instanceof \SplFileInfo && is_string($filename));
+            if (isset($refusedFiles[$filename])) {
+                throw $refusedFiles[$filename];
+            }
+
+            return str_ends_with($filename, '.mp4')
+                ? new CheckedFile(MediaKind::Video, 'video/mp4', 'mp4', $file->getPathname(), (int) $file->getSize(), null, null, str_repeat('b', 64))
+                : new CheckedFile(MediaKind::Image, 'image/webp', 'webp', $file->getPathname(), (int) $file->getSize(), 48, 20, str_repeat('a', 64));
+        });
+
         return new ExportReader(
             $registry,
             new LayoutRegistry($layouts, new FieldReader()),
             new BlockTypeRegistry($blockTypes, new FieldReader()),
             $upgrader->reveal(),
             new EntryDenormalizer($registry),
+            new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1_000_000)),
         );
+    }
+
+    /**
+     * A copy of the committed export to change, in the test's temporary directory
+     */
+    private function copyOfFixture(): string
+    {
+        $copy = $this->temporaryDirectory() . '/export';
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(self::FIXTURE, \FilesystemIterator::SKIP_DOTS));
+        foreach ($files as $file) {
+            \assert($file instanceof \SplFileInfo);
+            $path = $copy . substr($file->getPathname(), strlen(self::FIXTURE));
+            if (!is_dir(dirname($path))) {
+                mkdir(dirname($path), 0777, true);
+            }
+
+            copy($file->getPathname(), $path);
+        }
+
+        return $copy;
     }
 
     /**

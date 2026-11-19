@@ -21,6 +21,8 @@ use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
 use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Imports;
+use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Setono\SyliusCMSPlugin\Tests\Support\Revisions;
 use Setono\SyliusCMSPlugin\Tests\Support\ScheduledPublishes;
@@ -43,6 +45,8 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 final class ImportCommandTest extends KernelTestCase
 {
     use Entries;
+    use Imports;
+    use MediaItems;
     use Placements;
     use Revisions;
     use ScheduledPublishes;
@@ -549,40 +553,6 @@ final class ImportCommandTest extends KernelTestCase
         return $page;
     }
 
-    /**
-     * A copy of the committed export to change, in the test's temporary directory
-     */
-    private function copyOfFixture(): string
-    {
-        $copy = $this->temporaryDirectory() . '/export';
-        foreach (self::filesIn(self::FIXTURE) as $path) {
-            $directory = dirname($copy . '/' . $path);
-            if (!is_dir($directory)) {
-                mkdir($directory, 0777, true);
-            }
-
-            copy(self::FIXTURE . '/' . $path, $copy . '/' . $path);
-        }
-
-        return $copy;
-    }
-
-    /**
-     * @return list<string> the paths of the files in the directory, relative to it, sorted
-     */
-    private static function filesIn(string $directory): array
-    {
-        $files = [];
-        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS)) as $file) {
-            \assert($file instanceof \SplFileInfo);
-            $files[] = substr($file->getPathname(), strlen($directory) + 1);
-        }
-
-        sort($files, \SORT_STRING);
-
-        return $files;
-    }
-
     private static function entries(): EntryRepositoryInterface
     {
         self::entityManager()->clear();
@@ -611,37 +581,5 @@ final class ImportCommandTest extends KernelTestCase
         $eventDispatcher = self::getContainer()->get('event_dispatcher');
 
         return $eventDispatcher;
-    }
-
-    /**
-     * @param array<string, mixed> $input
-     * @param bool $boot false to run it in the kernel the test booted, with its listeners
-     */
-    private static function import(array $input, bool $boot = true): CommandTester
-    {
-        if ($boot || null === self::$kernel) {
-            self::bootKernel();
-        }
-
-        $tester = new CommandTester((new Application(self::$kernel))->find('setono:cms:import'));
-        $tester->execute($input, ['decorated' => false]);
-
-        return $tester;
-    }
-
-    /**
-     * The command's output on one line, as SymfonyStyle wraps it
-     */
-    private static function display(CommandTester $tester): string
-    {
-        return (string) preg_replace('/\s+/', ' ', $tester->getDisplay());
-    }
-
-    /**
-     * The command's output without any whitespace, for messages with a path SymfonyStyle may wrap anywhere
-     */
-    private static function squashed(CommandTester $tester): string
-    {
-        return (string) preg_replace('/\s+/', '', $tester->getDisplay());
     }
 }

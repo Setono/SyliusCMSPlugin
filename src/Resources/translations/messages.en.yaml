@@ -245,9 +245,16 @@ setono_sylius_cms:
             stale: '%title% changed here at %changed_at%, after the export''s copy from %exported_at%.'
             url_clash: '%title% would have the URL %url%, which %other% has in %channels%.'
         embed_code: 'Embed code is switched off in this shop, so %title% can''t bring in an Embed code block that isn''t published here with the same key and code.'
+        # Why a media item's file in an export is refused, before the checks an upload goes through. See "Media files"
+        # in docs/spec/transfer.md
+        media_file:
+            checksum: '%filename% doesn''t match its checksum, so it isn''t the file that was exported.'
+            filename: '"%filename%" isn''t a plain filename.'
+        media_refused: 'The media item %name% can''t be imported: %reason%'
         newer_version: '%title% can''t be imported: %reason%. Deploy the code first.'
         not_publishable: '%title% can''t be published: %reason%'
         other_content_type: '%title% has the UUID of an entry of the content type "%content_type%" here, so it can''t be imported.'
+        path_outside_root: 'The export holds %path%, which isn''t inside its folder: it''s an absolute path, a path with "..", or a link.'
         settings_refused: 'The settings of %title% can''t be saved: %reason%'
         unknown_block_type: '%title% has blocks of the type "%type%", which the code here doesn''t have. Deploy the code first.'
         unknown_content_type: '%title% is of the content type "%content_type%", which the code here doesn''t have. Deploy the code first.'

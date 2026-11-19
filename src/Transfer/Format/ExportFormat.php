@@ -240,9 +240,9 @@ final class ExportFormat
     }
 
     /**
-     * @return list<ExportedMediaFolder>
+     * @return list<ExportedMediaFolder> parents before their children, as the file lists them
      *
-     * @throws InvalidExportException
+     * @throws InvalidExportException when a folder's parent isn't listed before it, or a folder is listed twice
      */
     public function decodeMediaFolders(string $json): array
     {
@@ -254,11 +254,21 @@ final class ExportFormat
                 throw new InvalidExportException('A media folder must have a name');
             }
 
+            $uuid = self::uuid($folder['uuid'] ?? null, 'A media folder\'s UUID');
             $parent = $folder['parent'] ?? null;
-            $folders[] = new ExportedMediaFolder(self::uuid($folder['uuid'] ?? null, 'A media folder\'s UUID'), $name, null === $parent ? null : self::uuid($parent, 'A media folder\'s parent'));
+            $parent = null === $parent ? null : self::uuid($parent, 'A media folder\'s parent');
+            if (isset($folders[$uuid])) {
+                throw new InvalidExportException(sprintf('The media folder %s is listed twice', $uuid));
+            }
+
+            if (null !== $parent && !isset($folders[$parent])) {
+                throw new InvalidExportException(sprintf('The parent of the media folder %s must be listed before it', $uuid));
+            }
+
+            $folders[$uuid] = new ExportedMediaFolder($uuid, $name, $parent);
         }
 
-        return $folders;
+        return array_values($folders);
     }
 
     /**

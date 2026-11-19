@@ -29,12 +29,19 @@
         <service id="Setono\SyliusCMSPlugin\Transfer\ExporterInterface" alias="Setono\SyliusCMSPlugin\Transfer\Exporter"/>
 
         <!-- Imports: read, plan, apply all or nothing (docs/spec/transfer.md#what-an-import-does) -->
+        <!-- Every file of an export goes through the checks an upload does (docs/spec/transfer.md#media-files) -->
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker" class="Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaFileCheckerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader" class="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\TargetRecords" class="Setono\SyliusCMSPlugin\Transfer\Import\TargetRecords">

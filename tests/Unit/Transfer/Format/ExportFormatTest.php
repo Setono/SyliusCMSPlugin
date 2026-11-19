@@ -173,6 +173,9 @@ final class ExportFormatTest extends TestCase
             'a placement without a slot' => static fn () => $format->decodeEntry('{"changedAt": "2026-11-12T10:15:00Z", "settings": {}, "placements": [{"uuid": "0193a5be-7300-7b1c-8d2e-3f4a5b6c7d8e", "scope": [], "preceding": []}], "entry": {}}'),
             'a code preset' => static fn () => $format->decodePreset('{"format": 1, "name": "Hero", "category": null, "description": null, "thumbnail": null, "startingPoint": null, "blocks": []}'),
             'folders that are not a list' => static fn () => $format->decodeMediaFolders('{"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b"}'),
+            'a folder before its parent' => static fn () => $format->decodeMediaFolders('[{"uuid": "0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c", "name": "Autumn", "parent": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b"}, {"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b", "name": "Campaigns", "parent": null}]'),
+            'a folder whose parent is not listed' => static fn () => $format->decodeMediaFolders('[{"uuid": "0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c", "name": "Autumn", "parent": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b"}]'),
+            'a folder listed twice' => static fn () => $format->decodeMediaFolders('[{"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b", "name": "Campaigns", "parent": null}, {"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b", "name": "Campaigns", "parent": null}]'),
             'a media item of a kind there is none of' => static fn () => $format->decodeMediaItem(str_replace('"image"', '"sound"', self::fixture(ExportFormat::mediaItemPath(self::IMAGE)))),
             'a media item whose checksum is not one' => static fn () => $format->decodeMediaItem(str_replace('sha256:430515', 'md5:430515', self::fixture(ExportFormat::mediaItemPath(self::IMAGE)))),
         ];

@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Transfer\Import;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
+use Setono\SyliusCMSPlugin\Media\RefusedFileException;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preset\Preset;
@@ -17,8 +18,10 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Transfer\Format\ExportedEntry;
+use Setono\SyliusCMSPlugin\Transfer\Format\ExportedMediaFolder;
 use Setono\SyliusCMSPlugin\Transfer\Format\ExportFormat;
 use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
+use Setono\SyliusCMSPlugin\Transfer\Format\Manifest;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -32,9 +35,9 @@ use Symfony\Component\Translation\TranslatableMessage;
  * entries and editor presets, and checks that the code knows everything they use. A content type, layout or block type
  * the code doesn't have, or one saved with a newer version than the code's, is a reason to refuse, which the plan
  * lists. A disabled one imports like any other. What isn't in the export format makes the export one it can't read.
- * See "What an import does" and "Code the target must have" in docs/spec/transfer.md
- *
- * #280 checks the zip's paths and the media files here, beside the media items' JSON this reads
+ * It checks the export as untrusted input too: a path that doesn't resolve inside its root refuses it, and so does a
+ * media item's file that fails the checks an upload goes through (ImportedFileChecker), naming the media item. See
+ * "What an import does", "Code the target must have" and "Media files" in docs/spec/transfer.md
  */
 final readonly class ExportReader
 {
@@ -44,6 +47,7 @@ final readonly class ExportReader
         private BlockTypeRegistryInterface $blockTypes,
         private StoredDataUpgraderInterface $upgrader,
         private EntryDenormalizer $entryDenormalizer,
+        private ImportedFileChecker $files,
     ) {
     }
 
@@ -80,19 +84,60 @@ final readonly class ExportReader
             }
         }
 
-        $mediaItems = [];
-        foreach (self::uuids($source, 'media') as $uuid) {
-            $mediaItem = $format->decodeMediaItem($source->read(ExportFormat::mediaItemPath($uuid)));
-            if ($uuid !== $mediaItem->uuid) {
-                throw new InvalidExportException(sprintf('The file %s holds the media item %s', ExportFormat::mediaItemPath($uuid), $mediaItem->uuid));
-            }
-
-            $mediaItems[$uuid] = $mediaItem;
+        foreach ($source->pathsOutsideRoot() as $path) {
+            $refusals[] = new ImportRefusal(null, new TranslatableMessage('setono_sylius_cms.import.path_outside_root', ['%path%' => $path]));
         }
 
         $mediaFolders = $source->has(ExportFormat::MEDIA_FOLDERS) ? $format->decodeMediaFolders($source->read(ExportFormat::MEDIA_FOLDERS)) : [];
 
-        return new ReadExport($manifest, $entries, $presets, $mediaFolders, $mediaItems, $refusals);
+        return new ReadExport($manifest, $entries, $presets, $mediaFolders, $this->readMediaItems($source, $manifest, $mediaFolders, $refusals), $refusals);
+    }
+
+    /**
+     * Each media item with its file, checked as an upload is, or the reason to refuse it, which names it. A media item
+     * whose file is refused is left out, as an entry of a content type the code lacks is
+     *
+     * @param list<ExportedMediaFolder> $folders
+     * @param list<ImportRefusal> $refusals
+     *
+     * @return array<string, ReadMediaItem> by UUID
+     *
+     * @throws InvalidExportException
+     */
+    private function readMediaItems(ExportSourceInterface $source, Manifest $manifest, array $folders, array &$refusals): array
+    {
+        $format = new ExportFormat();
+        $listed = array_flip(array_map(static fn (ExportedMediaFolder $folder): string => $folder->uuid, $folders));
+        $picked = array_flip($manifest->media);
+
+        $mediaItems = [];
+
+        try {
+            foreach (self::uuids($source, 'media') as $uuid) {
+                $mediaItem = $format->decodeMediaItem($source->read(ExportFormat::mediaItemPath($uuid)));
+                if ($uuid !== $mediaItem->uuid) {
+                    throw new InvalidExportException(sprintf('The file %s holds the media item %s', ExportFormat::mediaItemPath($uuid), $mediaItem->uuid));
+                }
+
+                if (null !== $mediaItem->folder && !isset($listed[$mediaItem->folder])) {
+                    throw new InvalidExportException(sprintf('The media item %s is in the folder %s, which %s doesn\'t list', $uuid, $mediaItem->folder, ExportFormat::MEDIA_FOLDERS));
+                }
+
+                try {
+                    $mediaItems[$uuid] = $this->files->check($source, $mediaItem, isset($picked[$uuid]));
+                } catch (RefusedFileException $e) {
+                    $refusals[] = new ImportRefusal($uuid, new TranslatableMessage('setono_sylius_cms.import.media_refused', ['%name%' => $mediaItem->name, '%reason%' => $e->reason]));
+                }
+            }
+        } catch (\Throwable $e) {
+            foreach ($mediaItems as $mediaItem) {
+                $mediaItem->cleanUp();
+            }
+
+            throw $e;
+        }
+
+        return $mediaItems;
     }
 
     /**
