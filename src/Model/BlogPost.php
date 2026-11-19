@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Model;
 
 use Setono\SyliusCMSPlugin\Attribute\Allow;
+use Setono\SyliusCMSPlugin\Attribute\Card;
 use Setono\SyliusCMSPlugin\Attribute\ContentType;
 use Setono\SyliusCMSPlugin\Field\DateTime;
 use Setono\SyliusCMSPlugin\Field\Entries;
@@ -22,6 +23,10 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
     label: 'setono_sylius_cms.content_type.blog_post',
     prefix: 'blog',
     blocks: [new Allow('*')],
+    cards: [
+        new Card('grid', '@SetonoSyliusCMSPlugin/card/blog_post/grid.html.twig'),
+        new Card('carousel', '@SetonoSyliusCMSPlugin/card/blog_post/carousel.html.twig'),
+    ],
     order: ['publishedAt' => 'DESC'],
     categoryType: BlogCategory::class,
     descriptionField: 'excerpt',

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
+use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
+use Setono\SyliusCMSPlugin\Field\EntriesHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\ListFieldHandler;
 use Setono\SyliusCMSPlugin\Field\ProductHandler;
@@ -12,6 +14,8 @@ use Setono\SyliusCMSPlugin\Field\TaxonHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistry;
 use Setono\SyliusCMSPlugin\Rendering\ParamsHydrator;
@@ -64,6 +68,18 @@ final class Sources
         return new ListFieldHandler($registry, self::resolverOf($registry, self::fieldHandlers($registry)));
     }
 
+    /**
+     * Hydrates sources' parameters, with these choices providers, and Entries fields of these content types
+     *
+     * @param array<class-string, ChoicesProviderInterface> $choicesProviders by class
+     */
+    public static function paramsHydrator(array $choicesProviders = [], ?ContentTypeRegistryInterface $contentTypes = null): ParamsHydrator
+    {
+        $handlers = self::fieldHandlers(self::registry([]), $choicesProviders, $contentTypes);
+
+        return new ParamsHydrator($handlers, new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'))));
+    }
+
     private static function resolverOf(SourceRegistry $registry, FieldHandlerLocator $handlers): SourceResolver
     {
         $fallbackValues = new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US')));
@@ -71,12 +87,20 @@ final class Sources
         return new SourceResolver($registry, new ParamsHydrator($handlers, $fallbackValues), $handlers, $fallbackValues, new IdentityTranslator());
     }
 
-    private static function fieldHandlers(SourceRegistry $registry): FieldHandlerLocator
+    /**
+     * @param array<class-string, ChoicesProviderInterface> $choicesProviders by class
+     */
+    private static function fieldHandlers(SourceRegistry $registry, array $choicesProviders = [], ?ContentTypeRegistryInterface $contentTypes = null): FieldHandlerLocator
     {
         $handlers = null;
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
-            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator(), new ServiceLocator([])),
+            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator(), new ServiceLocator(array_map(static fn (ChoicesProviderInterface $provider): \Closure => static fn (): ChoicesProviderInterface => $provider, $choicesProviders))),
+            EntriesHandler::class => static function () use ($registry, &$handlers, $contentTypes): EntriesHandler {
+                \assert($handlers instanceof FieldHandlerLocator);
+
+                return new EntriesHandler(new ListFieldHandler($registry, self::resolverOf($registry, $handlers)), $contentTypes ?? new ContentTypeRegistry([]));
+            },
             ProductHandler::class => static fn (): ProductHandler => new ProductHandler(),
             TaxonHandler::class => static fn (): TaxonHandler => new TaxonHandler(),
             ListFieldHandler::class => static function () use ($registry, &$handlers): ListFieldHandler {

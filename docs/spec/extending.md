@@ -376,7 +376,7 @@ interface SourceInterface
 | `needs` | The context keys it needs. It's offered only where they're available. |
 | `params` | Its parameters class. |
 
-A source that needs `entry` and fits only some content types also implements `EntryContextAwareInterface::supportsEntryContentType(string $code): bool`. The builder offers it only for those types. "In this category" and "Related" do this.
+A source that needs `entry` and fits only some content types also implements `EntryContextAwareInterface::supportsEntryContentType(string $code): bool`. The builder offers it only for those types, publish refuses it in an entry of another, and a preset holding it is offered only in entries of them. A snippet's entry can be of any content type, so a snippet may hold it. "In this category" and "Related" do this.
 
 An entry source whose `of` is `EntryInterface::class` can say which content type it lists, so the Entries block can offer that type's [card displays](collections.md#the-entries-block):
 
@@ -390,7 +390,7 @@ interface ListedContentTypeAwareInterface
 }
 ```
 
-Without it, or when it returns `null`, the listed type is the one `of` names. When that's `EntryInterface::class` too, the block offers the displays that every content type with cards has. All three shipped entry sources implement it.
+Without it, or when it returns `null`, the listed type is the one `of` names. When that's `EntryInterface::class` too, the block can't tell, and offers every display any content type has cards for. All three shipped entry sources implement it.
 
 **A field that depends on another.** Field options are fixed in code, with one exception: `Entries(categoriesOf: 'contentType')` lists the categories of the content type that the named property of the same object holds. From a collection's `categories` parameter uses it. The builder clears the field when that property changes.
 
@@ -672,6 +672,7 @@ Every event that changes shopper output implements `StorefrontChangedInterface`,
 | --- | --- | --- |
 | `cms_field(subject, name)` | safe HTML | Prints a field of a block, a layout or an entry: hydrated, with fallback and bindings resolved, and rich text rendered. In preview mode it adds the marker that lets the builder type it in place. |
 | `cms_value(subject, name)` | the hydrated value | Reads a field without printing it, such as an `ItemList` to loop over. |
+| `cms_card(entry, display)` | safe HTML | Renders an entry through the card its content type declares for the display, as the Entries block does ([Cards](collections.md#cards)). The card template gets `entry` and `display`, and nothing else of the calling template's. Nothing for an entry whose content type has no card for the display. |
 | `cms_block(view)` | safe HTML | Renders one `BlockView`, with its markers in preview mode. |
 | `cms_blocks(views)` | safe HTML | Renders `BlockView`s in order. |
 | `cms_slot(id, context = {})` | safe HTML | Renders a slot from a template, passing host-page context by key ([Slots](slots.md#rendering-a-slot)). A slot the code doesn't declare throws in dev, and in production prints nothing and is logged at `error` with its identifier ([Rendering](rendering.md#failures)). |

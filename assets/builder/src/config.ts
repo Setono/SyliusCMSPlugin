@@ -75,6 +75,8 @@ export interface BuilderConfig {
         search?: string;
         /** How many items a source yields for a list field's parameters, under a preview token. Without it, no count shows. */
         sourceCount?: string;
+        /** The displays the Entries block offers for what its entries field holds, under a preview token. */
+        cardDisplays?: string;
         /** The blocks a snippet shows, with UUID_PLACEHOLDER for its UUID, which Detach to edit here copies. Without it, there's no Detach. */
         snippetBlocks?: string;
         /** Another entry's builder, with UUID_PLACEHOLDER for its UUID, which Edit snippet opens. Without it, there's no Edit snippet. */

@@ -6,17 +6,20 @@ namespace Setono\SyliusCMSPlugin\Context;
 
 use Setono\SyliusCMSPlugin\Field\ListField;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceMetadata;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
+use Setono\SyliusCMSPlugin\Source\EntryContextAwareInterface;
 use Setono\SyliusCMSPlugin\Source\StoredSource;
 use Setono\SyliusCMSPlugin\Tree\StoredValue;
 use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
- * The list fields, in a block or in the tree's layout, filled by a source that needs context keys, such as Same taxon.
+ * The list fields, in a block or in the tree's layout, filled by a source that needs context keys, such as Same taxon,
+ * with the content types a source that fits only some as the entry fits, such as In this category.
  * A disabled source keeps resolving, so it counts. One the code no longer has, or of another kind than the list,
  * yields nothing, so it needs nothing. A list filled per locale counts once. See "The contract" in
  * docs/spec/sources.md
@@ -54,7 +57,7 @@ final readonly class SourceDependencies implements ContextDependencyFinderInterf
             }
             $found[$where] = true;
 
-            yield new ContextDependency($this->name($value, $source), $source->needs, block: $block);
+            yield new ContextDependency($this->name($value, $source), $source->needs, block: $block, entryContentTypes: $this->entryContentTypes($source));
         }
     }
 
@@ -76,6 +79,23 @@ final readonly class SourceDependencies implements ContextDependencyFinderInterf
         $source = $this->sources->get($stored->code);
 
         return [] !== $source->needs && $source->lists($field->itemClass()) ? $source : null;
+    }
+
+    /**
+     * The content types whose entries a source that fits only some fits, such as the category content types for In this
+     * category, or null for one that fits any
+     *
+     * @return list<string>|null
+     */
+    private function entryContentTypes(SourceMetadata $source): ?array
+    {
+        if (!$source->source instanceof EntryContextAwareInterface) {
+            return null;
+        }
+
+        $codes = array_map(static fn (ContentTypeMetadata $contentType): string => $contentType->code, $this->contentTypes->all());
+
+        return array_values(array_filter($codes, $source->fitsEntryContentType(...)));
     }
 
     private function name(StoredValue $value, SourceMetadata $source): TranslatableMessage

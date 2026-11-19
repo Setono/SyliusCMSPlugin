@@ -20,6 +20,7 @@ import { SearchProvider } from './search/context';
 import { createSourcesApi, type SourcesApi } from './sources/api';
 import { PreviewSourcesProvider } from './sources/context';
 import type { SourceDefinition } from './sources/sources';
+import type { ContentTypeDefinition } from './types';
 import { createCancelSchedule, createDiscard, createPublish, createReload, createSchedule } from './publishing';
 import { createSettingsStore } from './settings';
 import { createSlugFollower, type SlugFollower } from './slugs';
@@ -66,7 +67,7 @@ function backHere(block: string, locale: string): string {
 type Phase =
     | { name: 'loading' }
     | { name: 'failed' }
-    | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[]; sources: SourceDefinition[]; bindableProperties: BindablePropertyDefinition[] };
+    | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[]; sources: SourceDefinition[]; contentTypes: ContentTypeDefinition[]; bindableProperties: BindablePropertyDefinition[] };
 
 /** Loads the registry and the entry, then opens the entry in the builder. */
 export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, mediaApi, searchApi, sourcesApi, snippetPreviewApi }: AppProps) {
@@ -82,7 +83,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
         [config, searchApi],
     );
     const sourcesEndpoint = useMemo(
-        () => sourcesApi ?? (config.endpoints.sourceCount === undefined ? null : createSourcesApi(config.endpoints.sourceCount)),
+        () => sourcesApi ?? (config.endpoints.sourceCount === undefined ? null : createSourcesApi(config.endpoints.sourceCount, undefined, config.endpoints.cardDisplays)),
         [config, sourcesApi],
     );
     const snippetPreviewEndpoints = useMemo(() => {
@@ -179,6 +180,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                     media: registry.media ?? null,
                     linkTargets: registry.linkTargets ?? [],
                     sources: registry.sources ?? [],
+                    contentTypes: registry.contentTypes,
                     bindableProperties: registry.bindableProperties ?? [],
                     session: {
                         store,
@@ -273,7 +275,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
     const shell = (
         <LinkTargetsProvider value={phase.linkTargets}>
             {/* List fields offer the sources, and count what they yield in the preview */}
-            <PreviewSourcesProvider sources={phase.sources} api={sourcesEndpoint}>
+            <PreviewSourcesProvider sources={phase.sources} api={sourcesEndpoint} contentTypes={phase.contentTypes}>
                 {/* Bindable fields offer the properties that fit the context the entry provides or the snippet declares */}
                 <BuilderBindingsProvider properties={phase.bindableProperties}>
                     <Shell />

@@ -40,6 +40,7 @@
             <argument type="tagged_iterator" tag="setono_sylius_cms.context_dependency_finder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
             <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Context\ContextCheckInterface" alias="Setono\SyliusCMSPlugin\Context\ContextCheck"/>
 

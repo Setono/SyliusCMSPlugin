@@ -1,0 +1,8 @@
+--TEST--
+cms_card() prints nothing for an entry whose content type has no card for the display, or no cards at all
+--TEMPLATE--
+[{{ cms_card(location, "carousel") }}][{{ cms_card(page, "grid") }}]
+--DATA--
+return $this->rendering(['location' => $this->location('Aarhus'), 'page' => $this->page(['en_US' => 'About'])])
+--EXPECT--
+[][]

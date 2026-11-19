@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { missingContext } from '../hostPageContext';
 import { useTranslator } from '../i18n';
 import { useSourceCount, useSources } from '../sources/context';
-import { filledBy, limitOf, offeredSources, withLimit, withSourceParam, type SourceDefinition, type SourceValue } from '../sources/sources';
+import { filledBy, fitsEntry, limitOf, offeredSources, paramSchema, withLimit, withSourceParam, type SourceDefinition, type SourceValue } from '../sources/sources';
 import type { FieldSchema, JsonValue } from '../types';
 import { FieldRow } from './FieldRow';
 import styles from './FilledBy.module.css';
@@ -23,18 +23,19 @@ export interface FilledByProps {
 
 /**
  * How a list field is filled: Hand-picked, first, or one of the sources the field offers whose needed context the entry
- * provides or the snippet declares, as the "Filled by" select picks it. A source's parameters are filled in inline, the number of items to show sits beside the select, starting at
+ * provides or the snippet declares, and that fits the entry's content type, as the "Filled by" select picks it. A source's parameters are filled in inline, the number of items to show sits beside the select, starting at
  * the field's limit, and how many items the source yields right now in the preview shows next to "Filled by". A source
  * the registry no longer gives, disabled or removed, stays picked and flagged until another way is picked. See
  * "Sources" in docs/spec/builder.md
  */
 export function FilledBy({ id, schema, source, onChange, locale, describedBy, children }: FilledByProps) {
     const t = useTranslator();
-    const { sources, provided } = useSources();
+    const { sources, provided, entryContentType, categoryTypes = {} } = useSources();
     const offered = offeredSources(schema)
         .map((code) => sources.find((definition) => definition.code === code))
         .filter((definition): definition is SourceDefinition => definition !== undefined)
-        .filter((definition) => provided === undefined || missingContext(definition.needs, provided).length === 0);
+        .filter((definition) => provided === undefined || missingContext(definition.needs, provided).length === 0)
+        .filter((definition) => fitsEntry(definition, entryContentType));
     const current = source === null ? undefined : sources.find(({ code }) => code === source.$source);
 
     const pick = (code: string): void => {
@@ -67,17 +68,22 @@ export function FilledBy({ id, schema, source, onChange, locale, describedBy, ch
             {source === null && children}
             {source !== null && current === undefined && <p className={styles.unavailable}>{t('setono_sylius_cms.builder.sources.unavailable_help')}</p>}
             {source !== null &&
-                current?.fields.map(({ name, schema: paramSchema }) => (
-                    <FieldRow
-                        key={`${source.$source}-${name}`}
-                        id={`${id}-${name}`}
-                        schema={paramSchema}
-                        locale={locale}
-                        value={source.$params[name]}
-                        onChange={(value) => onChange(withSourceParam(source, name, value))}
-                        languageBadge={false}
-                    />
-                ))}
+                current?.fields.map(({ name, schema: declared }) => {
+                    // From a collection's categories are the chosen collection's, and left out until one with categories is chosen
+                    const shown = paramSchema(declared, source.$params, categoryTypes);
+
+                    return shown === null ? null : (
+                        <FieldRow
+                            key={`${source.$source}-${name}`}
+                            id={`${id}-${name}`}
+                            schema={shown}
+                            locale={locale}
+                            value={source.$params[name]}
+                            onChange={(value) => onChange(withSourceParam(source, name, value, current.fields))}
+                            languageBadge={false}
+                        />
+                    );
+                })}
         </div>
     );
 }

@@ -15,6 +15,15 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <!-- cms_card(): an entry through its content type's card for a display -->
+        <service id="Setono\SyliusCMSPlugin\Twig\CardRuntime" class="Setono\SyliusCMSPlugin\Twig\CardRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\CardDisplays"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Twig\RenderContexts"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Twig\SlotRuntime" class="Setono\SyliusCMSPlugin\Twig\SlotRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface"/>
 

@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Context;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Block\Entries;
 use Setono\SyliusCMSPlugin\Block\Group;
 use Setono\SyliusCMSPlugin\Block\Products;
 use Setono\SyliusCMSPlugin\Block\Taxons;
 use Setono\SyliusCMSPlugin\Context\ContextDependency;
 use Setono\SyliusCMSPlugin\Context\SourceDependencies;
+use Setono\SyliusCMSPlugin\Model\BlogCategory;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogPost;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -17,6 +22,7 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\CategoryPosts;
 use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\LocalizedPicks;
 use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\Neighbours;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Showcase;
@@ -110,6 +116,21 @@ final class SourceDependenciesTest extends TestCase
         ], [...self::finder()->findIn($page)]);
     }
 
+    /**
+     * A source that fits only some content types as the entry, such as In this category, depends on the entry being of
+     * one of them (docs/spec/extending.md#sources)
+     *
+     * @test
+     */
+    public function it_finds_the_content_types_whose_entries_a_source_that_needs_the_entry_fits(): void
+    {
+        $page = self::page(new StoredBlock(self::OUTER, 'entries', 1, fields: ['entries' => self::stored('category_posts')]));
+
+        self::assertEquals([
+            new ContextDependency(self::inBlock('app.source.category_posts', 'setono_sylius_cms.block_type.entries'), ['entry'], block: self::OUTER, entryContentTypes: ['blog_category']),
+        ], [...self::finder()->findIn($page)]);
+    }
+
     private static function inLayout(string $source, string $field): TranslatableMessage
     {
         return new TranslatableMessage('setono_sylius_cms.context.layout_source', ['%source%' => new TranslatableMessage($source), '%field%' => new TranslatableMessage($field)], 'validators');
@@ -143,11 +164,15 @@ final class SourceDependenciesTest extends TestCase
     {
         return new SourceDependencies(
             new TreeValues(
-                new BlockTypeRegistry(['products' => Products::class, 'taxons' => Taxons::class, 'group' => Group::class, 'localized_picks' => LocalizedPicks::class], new FieldReader()),
+                new BlockTypeRegistry(['products' => Products::class, 'taxons' => Taxons::class, 'group' => Group::class, 'localized_picks' => LocalizedPicks::class, 'entries' => Entries::class], new FieldReader()),
                 new LayoutRegistry(['page' => ['showcase' => Showcase::class]], new FieldReader()),
             ),
-            new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
-            Sources::registry(['on_sale' => new OnSale(), 'product_taxons' => new ProductTaxons(), 'neighbours' => new Neighbours()], $disabled),
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'blog_post' => ['model' => BlogPost::class, 'translation' => BlogPostTranslation::class, 'resource' => 'setono_sylius_cms.blog_post'],
+                'blog_category' => ['model' => BlogCategory::class, 'translation' => BlogCategoryTranslation::class, 'resource' => 'setono_sylius_cms.blog_category'],
+            ]),
+            Sources::registry(['on_sale' => new OnSale(), 'product_taxons' => new ProductTaxons(), 'neighbours' => new Neighbours(), 'category_posts' => new CategoryPosts()], $disabled),
         );
     }
 }

@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Block\Button;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Builder\Search\SearchInterface;
+use Setono\SyliusCMSPlugin\Collection\CardDisplays;
 use Setono\SyliusCMSPlugin\Field\DateHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
@@ -45,12 +46,14 @@ use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGenerator;
 use Setono\SyliusCMSPlugin\Seo\MetaValues;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Location;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Faq;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\NotABlock;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Quote;
+use Setono\SyliusCMSPlugin\Twig\CardRuntime;
 use Setono\SyliusCMSPlugin\Twig\CMSExtension;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime;
@@ -158,6 +161,7 @@ final class CMSExtensionTest extends IntegrationTestCase
         $contentTypes = new ContentTypeRegistry([
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
+            'location' => ['model' => Location::class, 'translation' => null, 'resource' => 'app.location'],
         ]);
         $shopRoutes = new RouteCollection();
         $shopRoutes->add('setono_sylius_cms_shop_entry', new Route('/{_locale}/{path}', requirements: ['path' => '.+(?<!/)']));
@@ -171,6 +175,7 @@ final class CMSExtensionTest extends IntegrationTestCase
                 new EntryFieldValues($contentTypes, new ContentTypeFields(new FieldReader()), $fieldHandlers, $fallbackValues, new ReferenceLoader(new ServiceLocator([]))),
                 new PreviewContext($this->requestStack, self::signer(), $this->shareLinks(...)),
             ),
+            CardRuntime::class => fn (): CardRuntime => new CardRuntime($contentTypes, new CardDisplays($contentTypes), new RenderContexts($this->shopRenderContext())),
             HeadTagsRuntime::class => static fn (): HeadTagsRuntime => new HeadTagsRuntime(
                 new MetaValues($contentTypes, $fallbackValues),
                 $canonicalUrls,
@@ -427,6 +432,17 @@ final class CMSExtensionTest extends IntegrationTestCase
         }
 
         return $page;
+    }
+
+    /**
+     * A location, an entry of a project's own content type with a grid card, in a city
+     */
+    public function location(string $city): Location
+    {
+        $location = new Location();
+        $location->city = $city;
+
+        return $location;
     }
 
     /**

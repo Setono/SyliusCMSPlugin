@@ -26,11 +26,16 @@ final readonly class EntriesHandler implements FitCheckingFieldHandlerInterface
     {
         $schema = $this->listFieldHandler->schema($field);
 
-        $contentType = self::entries($field)->contentType;
+        $entries = self::entries($field);
+        $contentType = $entries->contentType;
 
         /** @var array<string, mixed> $options */
         $options = is_array($schema['x-cms-options'] ?? null) ? $schema['x-cms-options'] : [];
         $options['contentType'] = null === $contentType ? null : $this->contentTypes->getByClass($contentType)->code;
+        // The property whose collection's categories it lists, which the builder's picker searches
+        if (null !== $entries->categoriesOf) {
+            $options['categoriesOf'] = $entries->categoriesOf;
+        }
         $schema['x-cms-options'] = $options;
 
         return $schema;

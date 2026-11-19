@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Preset;
 
+use Setono\SyliusCMSPlugin\Context\ContextDependency;
 use Setono\SyliusCMSPlugin\Context\ContextDependencyFinderInterface;
 use Setono\SyliusCMSPlugin\Context\EntryContext;
 use Setono\SyliusCMSPlugin\Context\Needs;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
@@ -22,7 +24,8 @@ use Symfony\Component\Translation\TranslatableMessage;
 /**
  * Where a preset is offered: at a spot in an entry's tree, when every one of its top-level blocks is allowed there,
  * inserting it keeps the spot within the max of each block type, and the context its blocks need is available, which
- * is what the entry provides its tree, or what a snippet declares. What a preset needs is asked of every context
+ * is what the entry provides its tree, or what a snippet declares, and every source in it fits the entry's content type,
+ * as Related fits only entries of a collection with categories. What a preset needs is asked of every context
  * dependency finder, the same ones publish asks, so block types, condition kinds, sources, bindings and Snippet blocks
  * all count, and so does whatever a later finder adds. See "Where a preset is offered" in
  * docs/spec/layouts-and-presets.md
@@ -116,34 +119,49 @@ final readonly class PresetFitCheck
      */
     private function contextReasons(array $blocks, EntryInterface $workingCopy): array
     {
-        $missing = Needs::missing($this->needs($blocks), EntryContext::keys($workingCopy));
+        $dependencies = $this->dependencies($blocks);
+        $needs = array_values(array_unique(array_merge(...array_map(static fn (ContextDependency $dependency): array => $dependency->needs, $dependencies))));
+        $missing = Needs::missing($needs, EntryContext::keys($workingCopy));
 
-        return array_map(fn (string $key): TranslatableMessage => new TranslatableMessage('setono_sylius_cms.preset.fit.needs_context', ['%context%' => $this->contextKeys->labelOf($key)]), $missing);
+        $reasons = array_map(fn (string $key): TranslatableMessage => new TranslatableMessage('setono_sylius_cms.preset.fit.needs_context', ['%context%' => $this->contextKeys->labelOf($key)]), $missing);
+
+        // A source such as Related fits only entries of some content types. A snippet's entry can be of any
+        $contentType = $workingCopy instanceof SnippetInterface ? null : $this->contentTypes->getByEntry($workingCopy);
+        foreach ($dependencies as $dependency) {
+            if (null !== $contentType && null !== $dependency->entryContentTypes && !in_array($contentType->code, $dependency->entryContentTypes, true)) {
+                $reasons[] = new TranslatableMessage('setono_sylius_cms.preset.fit.wrong_entry', ['%content_type%' => new TranslatableMessage($contentType->label)]);
+
+                break;
+            }
+        }
+
+        return $reasons;
     }
 
     /**
-     * The context keys the blocks need, as the context dependency finders find them in an entry that holds them alone.
-     * That entry is a page, which no placement or Snippet block can depend on, so only what the blocks need is found
+     * What the blocks depend on, the context keys they need and the content types some fit, as the context dependency
+     * finders find them in an entry that holds them alone. That entry is a page, which no placement or Snippet block can
+     * depend on, so only what the blocks need is found
      *
      * @param list<StoredBlock> $blocks
      *
-     * @return list<string>
+     * @return list<ContextDependency>
      */
-    private function needs(array $blocks): array
+    private function dependencies(array $blocks): array
     {
         $class = $this->contentTypes->get(PageInterface::CONTENT_TYPE)->modelClass;
         /** @var EntryInterface $holder */
         $holder = new $class();
         $holder->setBlockTree(new StoredTree(null, $blocks));
 
-        $needs = [];
+        $dependencies = [];
         foreach ($this->finders as $finder) {
             foreach ($finder->findIn($holder) as $dependency) {
-                $needs = [...$needs, ...$dependency->needs];
+                $dependencies[] = $dependency;
             }
         }
 
-        return array_values(array_unique($needs));
+        return $dependencies;
     }
 
     /**
