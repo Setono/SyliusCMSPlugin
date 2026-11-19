@@ -24,7 +24,8 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\DomCrawler\Field\FileFormField;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 
 /**
@@ -125,12 +126,12 @@ final class ImportTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/cms/transfer');
         $token = $crawler->filter('form[data-cms-import-upload] input[name="_csrf_token"]')->attr('value');
 
-        $client->request('POST', '/admin/cms/transfer/imports', ['_csrf_token' => $token], ['export' => $this->uploadedFile($this->zipOf(self::exportFixture()))], ['HTTP_ACCEPT' => 'application/json']);
+        $client->request('POST', '/admin/cms/transfer/imports', ['_csrf_token' => $token], ['export' => self::zipUpload($this->zipOf(self::exportFixture()))], ['HTTP_ACCEPT' => 'application/json']);
 
         self::assertResponseIsSuccessful();
         self::assertSame(['url' => sprintf('/admin/cms/transfer/imports/%s', self::latestImport()->getUuid())], json_decode((string) $client->getResponse()->getContent(), true));
 
-        $client->request('POST', '/admin/cms/transfer/imports', ['_csrf_token' => $token], ['export' => $this->uploadedFile($this->temporaryFile('cms-export.zip', 'not a zip'))], ['HTTP_ACCEPT' => 'application/json']);
+        $client->request('POST', '/admin/cms/transfer/imports', ['_csrf_token' => $token], ['export' => self::zipUpload($this->temporaryFile('cms-export.zip', 'not a zip'))], ['HTTP_ACCEPT' => 'application/json']);
 
         self::assertSame(['url' => '/admin/cms/transfer'], json_decode((string) $client->getResponse()->getContent(), true));
         $client->request('GET', '/admin/cms/transfer');
@@ -144,7 +145,7 @@ final class ImportTest extends WebTestCase
     {
         $client = self::signedIn();
 
-        $client->request('POST', '/admin/cms/transfer/imports', ['_csrf_token' => 'wrong'], ['export' => $this->uploadedFile($this->zipOf(self::exportFixture()))]);
+        $client->request('POST', '/admin/cms/transfer/imports', ['_csrf_token' => 'wrong'], ['export' => self::zipUpload($this->zipOf(self::exportFixture()))]);
 
         self::assertResponseStatusCodeSame(403);
         self::assertSame([], self::imports()->findLatest(1));
@@ -330,7 +331,7 @@ final class ImportTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/cms/transfer');
 
         self::assertSame(
-            [[basename((string) $import->getFilename()), sprintf('/admin/cms/transfer/imports/%s', $import->getUuid())]],
+            [[$import->getFilename(), sprintf('/admin/cms/transfer/imports/%s', $import->getUuid())]],
             $crawler->filter('[data-cms-imports] a')->each(static fn (Crawler $link): array => [trim($link->text()), (string) $link->attr('href')]),
         );
     }
@@ -343,21 +344,23 @@ final class ImportTest extends WebTestCase
         $conflicts = $crawler->filter('[data-cms-import-conflicts] li')->each(static fn (Crawler $item): string => trim($item->text()));
         self::assertCount(2, $conflicts);
         self::assertSame('Autumn sale has unpublished changes here.', $conflicts[0]);
-        self::assertMatchesRegularExpression('/^Autumn sale changed here at [0-9T:Z-]+, after the export\'s copy from 2026-11-12T10:15:00Z\.$/', (string) $conflicts[1]);
+        self::assertMatchesRegularExpression('/^Autumn sale changed here at [0-9T:Z-]+, after the export\'s copy from 2026-11-12T10:15:00Z\.$/', $conflicts[1]);
     }
 
     private function upload(KernelBrowser $client, string $zip): Crawler
     {
         $crawler = $client->request('GET', '/admin/cms/transfer');
         $form = $crawler->filter('form[data-cms-import-upload]')->form();
-        $form['export']->upload($zip);
+        $field = $form['export'];
+        self::assertInstanceOf(FileFormField::class, $field);
+        $field->upload($zip);
 
         return $client->submit($form);
     }
 
-    private function uploadedFile(string $zip): \Symfony\Component\HttpFoundation\File\UploadedFile
+    private static function zipUpload(string $zip): UploadedFile
     {
-        return new \Symfony\Component\HttpFoundation\File\UploadedFile($zip, basename($zip), 'application/zip', null, true);
+        return new UploadedFile($zip, basename($zip), 'application/zip', null, true);
     }
 
     private static function signedIn(): KernelBrowser

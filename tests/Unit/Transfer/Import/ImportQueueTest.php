@@ -24,6 +24,7 @@ use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
+use Symfony\Component\Messenger\Stamp\StampInterface;
 
 final class ImportQueueTest extends TestCase
 {
@@ -148,8 +149,14 @@ final class ImportQueueTest extends TestCase
         $bus = $this->prophesize(MessageBusInterface::class);
         $dispatched = &$this->dispatched;
         $bus->dispatch(Argument::any(), Argument::any())->will(static function (array $arguments) use (&$dispatched): Envelope {
-            $stamps = $arguments[1] ?? [];
-            \assert(is_object($arguments[0]) && is_array($stamps));
+            \assert(is_object($arguments[0]));
+            $stamps = [];
+            foreach (is_array($arguments[1] ?? null) ? $arguments[1] : [] as $stamp) {
+                if ($stamp instanceof StampInterface) {
+                    $stamps[] = $stamp;
+                }
+            }
+
             $envelope = Envelope::wrap($arguments[0], $stamps);
             $dispatched[] = $envelope;
 
