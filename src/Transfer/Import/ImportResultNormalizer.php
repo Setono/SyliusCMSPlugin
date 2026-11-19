@@ -90,9 +90,15 @@ final readonly class ImportResultNormalizer
      */
     private static function denormalizePlan(array $data): ImportPlan
     {
+        $stored = self::array($data, 'records');
         $records = [];
         foreach (RecordKind::cases() as $kind) {
-            array_push($records, ...self::map(self::array($data, 'records'), $kind->value, static fn (array $record): PlannedRecord => self::denormalizeRecord($kind, $record)));
+            // A result stored before a record kind existed has no key for it, and planned none of its records
+            if (!array_key_exists($kind->value, $stored)) {
+                continue;
+            }
+
+            array_push($records, ...self::map($stored, $kind->value, static fn (array $record): PlannedRecord => self::denormalizeRecord($kind, $record)));
         }
 
         return new ImportPlan(

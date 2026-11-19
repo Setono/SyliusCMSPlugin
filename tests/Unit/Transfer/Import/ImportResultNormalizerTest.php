@@ -105,6 +105,26 @@ final class ImportResultNormalizerTest extends TestCase
     }
 
     /**
+     * A result stored before a record kind existed has no key for it, and must still read, so an admin import's page
+     * keeps showing after a later version adds a kind
+     *
+     * @test
+     */
+    public function it_reads_a_stored_result_without_a_record_kind_as_having_no_records_of_that_kind(): void
+    {
+        $plan = new ImportPlan([new PlannedRecord(RecordKind::Entry, 'a1', 'Autumn sale', true, ImportAction::Create, 'page')]);
+        $normalizer = new ImportResultNormalizer();
+        $data = $normalizer->normalize(ImportResult::applied($plan, false));
+        self::assertIsArray($data['plan']);
+        self::assertIsArray($data['plan']['records']);
+        unset($data['plan']['records']['media_item'], $data['plan']['records']['media_folder']);
+
+        $result = $normalizer->denormalize($data);
+
+        self::assertEquals($plan, $result->plan);
+    }
+
+    /**
      * @test
      */
     public function it_refuses_to_read_what_it_did_not_write(): void
