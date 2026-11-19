@@ -654,12 +654,13 @@ setono_sylius_cms:
         import:
             abandon: Cancel the import
             abandoned: This import was cancelled before it ran, and its zip deleted. Upload the export again to import it.
-            and: and
             action:
                 create: Create
                 left_alone: Left alone
                 unchanged: Unchanged
                 update: Update
+            # Joins the last two of a list, such as "1 entry and 2 media items created"
+            and: and
             came_along: Came along
             checked_help: Nothing has changed yet. Review what the import would do, then import it.
             conflicts: Conflicts
@@ -680,8 +681,8 @@ setono_sylius_cms:
             file: Export zip
             file_help: 'At most %limit%, the most the server takes in one upload. Import a bigger export with setono:cms:import.'
             help: Upload an export zip to see what the import would do. Nothing changes until you confirm it. Imported entries land in their drafts, to review and publish.
-            homepage_changes: Homepage changes
             homepage_becomes: '%channel%: %page% becomes its homepage'
+            homepage_changes: Homepage changes
             homepage_instead_of: '%channel%: %page% becomes its homepage, instead of %other%'
             homepage_stops: '%channel%: %page% stops being its homepage'
             import: Import

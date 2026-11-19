@@ -177,9 +177,11 @@ The original file sits beside it at `media/<uuid>/<filename>`.
 
 - **The CLI.** `setono:cms:export` and `setono:cms:import` run in the foreground, for developers and deploys ([Commands](#commands)).
 - **The admin.** Export downloads a zip. Import uploads one, shows the dry-run plan and asks for confirmation ([Admin](admin.md#transfer)). An import started in the admin runs on the Messenger worker that scheduled publishing already needs, and the admin shows its progress and result. Any admin user can import, because v2 has no editor roles.
-  - **The uploaded zip is kept in the plugin's Flysystem storage** (`media.storage`), not in a temporary file, so a worker on another server can read it. It's deleted when the import finishes or is abandoned.
+  - **The dry run runs on the worker too**, since it checks every media file. It runs as if overwriting, so the plan lists the conflicts and checks everything else. A dry run that refuses even so finishes the import with its reasons, and one that would apply waits for an admin user to confirm it, with the overwrite checkbox when the plan lists conflicts and the option to publish everything imported.
+  - **The uploaded zip is kept in the plugin's Flysystem storage** (`media.storage`), not in a temporary file, so a worker on another server can read it. It's written private, under a random path in `imports/`, since the default storage is a public directory. It's deleted when the import finishes or is abandoned: cancelled before it's confirmed, or left unconfirmed for a day.
+  - **The messages** `RunImport` (the dry run, and the confirmed import) and the delayed `AbandonImport` are sent on Sylius's event bus and routed to Sylius's `main` transport, like a scheduled publish's.
   - **A refused import is a result, not an error.** The handler records the refusal and its reasons for the admin and returns, so Messenger doesn't retry it. Only an unexpected error throws.
-- **The Sylius fixture** `setono_cms_import` loads an export folder, then publishes everything it imported, for demo and test data ([Extending](extending.md#fixture)).
+- **The Sylius fixture** `setono_cms_import` loads an export folder or zip, then publishes everything it imported, for demo and test data. An import that refuses fails the load with its reasons ([Extending](extending.md#fixture)).
 
 ## What an import does
 

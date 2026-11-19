@@ -837,7 +837,7 @@ A project caps a stock slot by setting `slots.<id>.cap`, moves a shipped content
 
 ## Fixture
 
-The Sylius fixture `setono_cms_import` imports an export folder and publishes everything in it, for demo and test data:
+The Sylius fixture `setono_cms_import` imports an export folder, or zip, and publishes everything it imported, for demo and test data. An import that refuses, such as for a conflict or a URL clash, fails the load with its reasons:
 
 ```yaml
 sylius_fixtures:
