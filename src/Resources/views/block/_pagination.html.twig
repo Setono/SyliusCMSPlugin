@@ -1,0 +1,20 @@
+{# The links to the pages of the entry's paginated Entries block, which crawlers follow: the previous page, the numbered
+   pages with a gap for those left out, and the next page. The current page's link has aria-current="page". It gets
+   pagination, a Setono\SyliusCMSPlugin\Collection\Pagination. See "The Entries block" in docs/spec/collections.md #}
+<nav class="cms-pagination" aria-label="{{ 'setono_sylius_cms.pagination.label'|trans }}">
+    {%- if pagination.previous is not null %}
+        <a class="cms-pagination__previous" href="{{ pagination.previous.url }}" rel="prev">{{ 'setono_sylius_cms.pagination.previous'|trans }}</a>
+    {%- endif %}
+    <ol class="cms-pagination__list">
+        {%- for link in pagination.links %}
+            {%- if link.page is null %}
+                <li class="cms-pagination__gap" aria-hidden="true">…</li>
+            {%- else %}
+                <li class="cms-pagination__item"><a class="cms-pagination__link{{ link.current ? ' cms-pagination__link--current' }}" href="{{ link.url }}"{% if link.current %} aria-current="page"{% endif %}>{{ link.page }}</a></li>
+            {%- endif %}
+        {%- endfor %}
+    </ol>
+    {%- if pagination.next is not null %}
+        <a class="cms-pagination__next" href="{{ pagination.next.url }}" rel="next">{{ 'setono_sylius_cms.pagination.next'|trans }}</a>
+    {%- endif %}
+</nav>

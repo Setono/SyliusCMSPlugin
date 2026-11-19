@@ -1,0 +1,8 @@
+--TEST--
+cms_pagination() gives nothing for a paginated Entries block in another entry's tree, such as a snippet's that the entry shows, because a snippet can't paginate
+--TEMPLATE--
+{{ cms_pagination(view) is null ? "nothing" : "a pagination" }}
+--DATA--
+return $this->onPageOfTheBlog(1, items: 12, limit: 5, inAnotherTree: true)
+--EXPECT--
+nothing

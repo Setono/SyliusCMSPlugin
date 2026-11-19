@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Shop;
 
+use Setono\SyliusCMSPlugin\Collection\PageNotFoundException;
 use Setono\SyliusCMSPlugin\Context\EntryContext;
 use Setono\SyliusCMSPlugin\Homepage\HomepageResolverInterface;
 use Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Decorates Sylius's homepage controller, sylius.controller.shop.homepage, so its route, sylius_shop_homepage, and
@@ -38,8 +40,20 @@ final readonly class HomepageAction
             return $this->renderStoreHomepage($request);
         }
 
-        // The tree in the page's layout, with the page as host-page context
-        return new Response($this->layoutRenderer->render($page, $this->renderContextFactory->create(EntryContext::objects($page))));
+        // The page of its paginated Entries block, whose URL without ?page is page 1
+        $redirect = RequestedPage::redirectFromPage1($request);
+        if (null !== $redirect) {
+            return $redirect;
+        }
+
+        $context = $this->renderContextFactory->create(EntryContext::objects($page))->withPage(RequestedPage::of($request));
+
+        // The tree in the page's layout, with the page as host-page context, once the page is known to exist
+        try {
+            return new Response($this->layoutRenderer->render($page, $context));
+        } catch (PageNotFoundException $e) {
+            throw new NotFoundHttpException($e->getMessage(), $e);
+        }
     }
 
     private function renderStoreHomepage(Request $request): Response
