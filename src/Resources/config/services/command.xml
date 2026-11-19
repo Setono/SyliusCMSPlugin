@@ -30,6 +30,13 @@
             <tag name="console.command"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Command\ExportCommand" class="Setono\SyliusCMSPlugin\Command\ExportCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\ExportPlannerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\ExporterInterface"/>
+
+            <tag name="console.command"/>
+        </service>
+
         <!-- RegisterProblemKindsPass hands it the problem kinds it reports -->
         <service id="Setono\SyliusCMSPlugin\Command\LintCommand" class="Setono\SyliusCMSPlugin\Command\LintCommand">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>

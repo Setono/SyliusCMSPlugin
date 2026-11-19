@@ -1,0 +1,23 @@
+{
+    "format": 1,
+    "uuid": "0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a",
+    "changedAt": "2026-11-10T08:00:00Z",
+    "name": "Autumn hero",
+    "category": "Campaigns",
+    "description": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "0193a5be-0000-7000-8000-000000000007",
+            "type": "image",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "image": "0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60"
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}
