@@ -46,6 +46,8 @@ use Setono\SyliusCMSPlugin\Model\FaqItemTranslation;
 use Setono\SyliusCMSPlugin\Model\FaqItemTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
+use Setono\SyliusCMSPlugin\Model\Import;
+use Setono\SyliusCMSPlugin\Model\ImportInterface;
 use Setono\SyliusCMSPlugin\Model\MediaFolder;
 use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
@@ -78,6 +80,7 @@ use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryReferenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
+use Setono\SyliusCMSPlugin\Repository\ImportRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
@@ -288,6 +291,14 @@ final class ConfigurationTest extends TestCase
                         'interface' => PlacementInterface::class,
                         'repository' => PlacementRepository::class,
                         'factory' => PlacementFactory::class,
+                    ],
+                ],
+                'import' => [
+                    'classes' => [
+                        'model' => Import::class,
+                        'interface' => ImportInterface::class,
+                        'repository' => ImportRepository::class,
+                        'factory' => Factory::class,
                     ],
                 ],
                 'page' => [
