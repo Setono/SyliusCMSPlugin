@@ -82,6 +82,20 @@ final class EntriesHandlerTest extends TestCase
     }
 
     /**
+     * From a collection's categories are the categories of the collection its contentType parameter holds, which the
+     * builder's picker searches, and clears when that parameter changes (docs/spec/extending.md#sources)
+     *
+     * @test
+     */
+    public function it_names_the_property_whose_content_type_s_categories_it_lists_among_its_options_in_its_schema(): void
+    {
+        self::assertSame(
+            ['max' => null, 'sources' => [], 'limit' => 8, 'contentType' => null, 'categoriesOf' => 'contentType'],
+            self::handler()->schema(new Entries(label: 'Categories', categoriesOf: 'contentType', sources: false))['x-cms-options'] ?? null,
+        );
+    }
+
+    /**
      * The references loaded before rendering hold only the entries the shopper may see
      *
      * @test

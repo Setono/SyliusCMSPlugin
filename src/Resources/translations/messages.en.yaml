@@ -41,6 +41,7 @@ setono_sylius_cms:
         columns: Columns
         downloads: Downloads
         embed_code: Embed code
+        entries: Entries
         first_match: First match
         group: Group
         heading: Heading
@@ -64,6 +65,10 @@ setono_sylius_cms:
             2: '2'
             3: '3'
             4: '4'
+        entries_display:
+            accordion: Accordion
+            carousel: Carousel
+            grid: Grid
         heading_level:
             h1: Heading 1
             h2: Heading 2
@@ -158,6 +163,15 @@ setono_sylius_cms:
         downloads:
             documents: Documents
             heading: Heading
+        entries:
+            display: Display
+            entries: Entries
+            paginate: Split into pages
+            paginate_help: Shows as many entries per page as the list shows, with numbered links to the other pages. It needs a source.
+        entries_from_collection_source:
+            categories: Categories
+            categories_help: Leave it empty to list the whole collection.
+            content_type: Collection
         entry_condition:
             entries: Entries
         entry_in_category_condition:
@@ -394,9 +408,12 @@ setono_sylius_cms:
     # The sources' labels. See "Sources" in docs/spec/sources.md
     source:
         bestsellers: Bestsellers
+        entries_from_collection: From a collection
+        entries_in_this_category: In this category
         newest_products: Newest
         product_associations: Associations
         products_in_taxon: In taxon
+        related_entries: Related
         same_taxon_products: Same taxon
         taxon_children: Children of a taxon
     # The Video block's embed, named to screen readers

@@ -1,0 +1,10 @@
+--TEST--
+cms_card() renders the card the entry's content type has for the display, which gets the entry and the display, and the render context its cms_* functions read, but none of the calling template's variables
+--TEMPLATE--
+<div class="cms-entries__item">{{ cms_card(entry, "grid") }}</div>
+--TEMPLATE(cms/card/location/grid.html.twig)--
+{#- The .test file starts each template on a new line -#}<article class="location-card location-card--{{ display }}">{{ entry.city }}, {{ cms_value(entry, "title") ?? "untitled" }}{{ block is defined ? " leaked" }}</article>
+--DATA--
+return $this->rendering(['entry' => $this->location('Aarhus'), 'block' => 'the Entries block'])
+--EXPECT--
+<div class="cms-entries__item"><article class="location-card location-card--grid">Aarhus, untitled</article></div>

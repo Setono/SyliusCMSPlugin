@@ -64,12 +64,16 @@
             <tag name="setono_sylius_cms.block_type"/>
         </service>
 
-        <!-- Commerce -->
+        <!-- Commerce, and lists of entries -->
         <service id="Setono\SyliusCMSPlugin\Block\Products" class="Setono\SyliusCMSPlugin\Block\Products">
             <tag name="setono_sylius_cms.block_type"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Block\Taxons" class="Setono\SyliusCMSPlugin\Block\Taxons">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Block\Entries" class="Setono\SyliusCMSPlugin\Block\Entries">
             <tag name="setono_sylius_cms.block_type"/>
         </service>
 

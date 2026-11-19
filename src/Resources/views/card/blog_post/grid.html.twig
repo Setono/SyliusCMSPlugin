@@ -1,0 +1,24 @@
+{#
+ # Blog post's grid card: its featured image, its date, its title linking to the post, and its excerpt, each left out
+ # when it has none. The link stretches over the whole card. It gets entry and display, which is also its modifier.
+ # See "Cards" in docs/spec/collections.md
+ #}
+{%- set url = cms_url(entry) -%}
+{%- set published_at = cms_value(entry, 'publishedAt') -%}
+{%- set excerpt = cms_value(entry, 'excerpt') -%}
+<article class="cms-blog-post-card cms-blog-post-card--{{ display }}">
+    {{- cms_image(cms_value(entry, 'featuredImage'), {'width': 640, 'aspect_ratio': 1.5, 'picture_class': 'cms-blog-post-card__image'}) -}}
+    {%- if published_at is not null %}
+    <time class="cms-blog-post-card__date" datetime="{{ published_at|date('c') }}">{{ published_at|format_date('long') }}</time>
+    {%- endif %}
+    <h3 class="cms-blog-post-card__title">
+        {%- if url is not null -%}
+            <a class="cms-blog-post-card__link" href="{{ url }}">{{ cms_field(entry, 'title') }}</a>
+        {%- else -%}
+            {{ cms_field(entry, 'title') }}
+        {%- endif -%}
+    </h3>
+    {%- if excerpt is not empty %}
+    <p class="cms-blog-post-card__excerpt">{{ excerpt }}</p>
+    {%- endif %}
+</article>

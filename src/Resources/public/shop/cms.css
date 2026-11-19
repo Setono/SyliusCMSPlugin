@@ -302,19 +302,22 @@
     /* Products and Taxons: a grid of the shop's product cards or of taxon tiles, as many to a row as fit at
        --cms-grid-item-min-width. A row that isn't full keeps its cards at the width of a full row's */
     .cms-products--grid,
-    .cms-taxons {
+    .cms-taxons,
+    .cms-entries--grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(min(var(--cms-grid-item-min-width), 100%), 1fr));
         gap: var(--cms-gap);
     }
 
-    /* A product card fills its item, so the cards of a row are as tall as each other */
-    .cms-products__item {
+    /* A product card, or an entry's, fills its item, so the cards of a row are as tall as each other */
+    .cms-products__item,
+    .cms-entries__item {
         display: flex;
         min-width: 0;
     }
 
-    .cms-products__item > * {
+    .cms-products__item > *,
+    .cms-entries__item > * {
         flex: 1;
         min-width: 0;
     }
@@ -496,6 +499,33 @@
         display: block;
         width: 100%;
         height: auto;
+    }
+
+    /* Blog post's card: its image above its date, its title and its excerpt. The title's link stretches over the whole
+       card, so the card is one link, which reads as its title */
+    .cms-blog-post-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .cms-blog-post-card__image img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: var(--cms-radius);
+    }
+
+    .cms-blog-post-card__title,
+    .cms-blog-post-card__excerpt {
+        margin: 0;
+    }
+
+    .cms-blog-post-card__link::after {
+        position: absolute;
+        inset: 0;
+        content: "";
     }
 
     /* Blog category's Standard layout: the title and the description above the tree */

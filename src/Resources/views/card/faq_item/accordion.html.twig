@@ -1,0 +1,9 @@
+{#
+ # FAQ item's accordion card: the question as the summary of a <details> and the answer as its content, with the
+ # Accordion item's classes, so a list of FAQ items looks and works like an Accordion. It gets entry and display.
+ # See "Cards" in docs/spec/collections.md
+ #}
+<details class="cms-accordion-item">
+    <summary class="cms-accordion-item__title">{{ cms_field(entry, 'title') }}</summary>
+    <div class="cms-accordion-item__content">{{ cms_field(entry, 'answer') }}</div>
+</details>
