@@ -52,7 +52,7 @@ v2.0 covers:
 
 - **Migrating v1 data to v2.** v2 is a clean break. Migration tooling would be a separate, later effort.
 - **Sylius 2.x support.** A separate port after v2 ships on Sylius 1.14.
-- **Admin-editable Twig.** Ruled out for security, UX and maintainability. The `BlockRendererInterface` seam lets a sandboxed code block be added later ([Extending](extending.md#block-renderers)). Raw HTML is a separate, opt-in block ([ADR 0018](../adr/0018-raw-html-is-an-opt-in-embed-code-block.md)).
+- **Admin-editable Twig.** Ruled out for security, UX and maintainability. A sandboxed code block, with a renderer of its own, may be added later ([Extending](extending.md#block-templates)). Raw HTML is a separate, opt-in block ([ADR 0018](../adr/0018-raw-html-is-an-opt-in-embed-code-block.md)).
 - **AI assist.** No AI generation, rewriting or translation. The per-field translation state is the seam a future translator fills ([Extending](extending.md#translation-state)).
 - **Translation export and import**, such as XLIFF or CSV for translation agencies.
 - **Editor roles and permissions.** Sylius 1.x OSS has no RBAC to build on, so every admin user can do everything.

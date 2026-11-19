@@ -10,7 +10,7 @@ The developer-facing API: attributes, field types, interfaces, events, Twig func
 Everything a developer adds is a PHP class registered by attribute: block types, layouts, content types, sources, condition kinds, bindable properties, link targets, context resolvers and upgraders. Where one of these has settings that editors fill in, each setting is a typed property with a [field attribute](#field-types). Symfony Validator constraints sit on the same properties.
 
 - **Discovery.** Classes with these attributes are registered through Symfony autoconfiguration, so in an app they only need to be under a resource the app's `services.yaml` loads. A bundle registers them as services. Block types and layouts are registered as metadata, not as shared services, because they're hydrated per use.
-- **Services.** Sources, condition kinds, bindable properties, link targets, context resolvers, upgraders, field type handlers and block renderers are services and can take constructor dependencies.
+- **Services.** Sources, condition kinds, bindable properties, link targets, context resolvers, upgraders and field type handlers are services and can take constructor dependencies.
 - **Parameters.** A source, condition kind or bindable property with parameters names a parameters class in its attribute (`params:`). That class's typed properties carry field attributes, and the plugin passes a hydrated instance to the service's method. Without `params:`, the method gets an instance of `Setono\SyliusCMSPlugin\Attribute\NoParams`.
 - **Codes are unique per kind.** Two block types with the same code fail the container build, and so on for every kind. Codes match `^[a-z][a-z0-9_]*$` and never change once content uses them. Projects should prefix theirs, such as `app_hero`.
 - **Labels** are translation keys, translated in the admin user's locale.
@@ -54,13 +54,12 @@ final class Hero
 | `code` | `string` | required | Stored in each block's `type`. |
 | `label` | `string` | required | Shown in the picker and the tree. |
 | `version` | `int` | `1` | Bumped with an upgrader when stored data can't be read as it is ([Content model](content-model.md#schema-changes)). |
-| `template` | `string` | required | The Twig template the default renderer renders. |
+| `template` | `string` | required | The Twig template that renders the block ([Block templates](#block-templates)). |
 | `children` | `list<Allow>` | `[]` | Which block types the block may hold. Empty means none. |
 | `parents` | `list<class-string>\|null` | `null` | The only block types this one may sit inside. `null` means anywhere a parent allows it. |
 | `needs` | `list<string>` | `[]` | The context keys the block type needs ([Slots](slots.md#context-keys)). |
 | `styles` | `list<Style>` | `[]` | The block styles it offers. Projects add more in config. |
 | `thumbnail` | `string\|null` | `null` | A public path to the picker's preview image. |
-| `renderer` | `class-string<BlockRendererInterface>\|null` | `null` | A renderer other than the default ([Block renderers](#block-renderers)). |
 
 - `Allow(string $type, ?int $min = null, ?int $max = null)`: `$type` is a block type class, or `'*'` for any block type whose `parents` allows it.
 - `Style(string $code, string $label, string $class)`: the code is stored in the block's `style`, and `$class` is added to the block's root element.
@@ -80,18 +79,7 @@ A block template gets these variables:
 
 Templates print fields with `cms_field()` so the builder can type them in place ([Twig](#twig)). They put `view.styleClass` on their root element.
 
-### Block renderers
-
-```php
-namespace Setono\SyliusCMSPlugin\Rendering;
-
-interface BlockRendererInterface
-{
-    public function render(BlockView $view, RenderContext $context): string;
-}
-```
-
-The default renderer renders the block type's `template`. `#[BlockType(renderer: …)]` names another one. This is the seam for a future sandboxed code block, whose renderer would render a template stored in one of its fields through Twig's sandbox.
+A per-block-type renderer may come with a future sandboxed code block, which would render a template stored in one of its fields through Twig's sandbox.
 
 ## Layouts
 

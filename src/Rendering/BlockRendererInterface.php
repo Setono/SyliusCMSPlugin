@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Rendering;
 
 /**
- * Renders one block. The default renderer renders the block type's template.
- * See "Block renderers" in docs/spec/extending.md
+ * Renders one block through its block type's template. It's internal, not an extension point: a block type has no
+ * renderer of its own, though one may come with a future sandboxed code block. See "Block templates" in
+ * docs/spec/extending.md
  */
 interface BlockRendererInterface
 {

@@ -14,7 +14,7 @@ final readonly class BlockType
     /**
      * @param string $code stored in each block's "type"; matches ^[a-z][a-z0-9_]*$ and never changes
      * @param string $label a translation key, shown in the picker and the tree
-     * @param string $template the Twig template the default renderer renders
+     * @param string $template the Twig template that renders the block
      * @param int $version bumped with an upgrader when stored data can't be read as it is
      * @param list<Allow> $children which block types the block may hold; empty means none
      * @param list<class-string>|null $parents the only block types this one may sit inside; null means anywhere a parent allows it

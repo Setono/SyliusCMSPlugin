@@ -46,7 +46,7 @@ The same steps render an entry's tree, a snippet in a slot, a referenced snippet
 2. **Load references.** One pass over the tree collects every reference its fields and its blocks' visibility conditions' parameters hold, through the field type handlers, and loads every media item, entry, product and taxon with one query per kind, through `ReferenceLoaderInterface` ([Extending](extending.md#rendering-services)). Referenced snippets' trees are included in the same pass. So a project's condition kind can take a product, a taxon or a media item as a parameter, hydrated as a field's value is.
 3. **Visibility conditions run before a block's template.** A block whose conditions don't match isn't rendered, and neither are its children. The template gets only the visible children, so a carousel's slide count and its dots are always right.
 4. **Context flows down.** Each block template gets the host-page context of the entry or slot it renders in ([Extending](extending.md#block-templates)).
-5. **Render.** Each block renders through its block type's renderer ([Extending](extending.md#block-renderers)).
+5. **Render.** Each block renders through its block type's template ([Extending](extending.md#block-templates)).
 
 - **Sources resolve lazily**, when a template first reads the list field. A list that doesn't paginate takes the first slice and never counts ([Sources](sources.md)).
 - **A snippet that would render inside itself**, directly or through other snippets, is skipped the second time, and the admin flags the reference.
