@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tree;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 
@@ -47,6 +48,24 @@ final readonly class ReferenceFinder
     public function inEntry(EntryInterface $entry, ContentTypeMetadata $contentType): \Generator
     {
         yield from $this->in($this->treeValues->inEntry($entry, $contentType));
+    }
+
+    /**
+     * The references in a preset's blocks, and for a starting point in its layout's values too, which are those of its
+     * content type's layout
+     *
+     * @return \Generator<FoundReference>
+     */
+    public function inPreset(Preset $preset): \Generator
+    {
+        $startingPoint = $preset->startingPoint;
+        if (null === $startingPoint) {
+            yield from $this->inBlocks($preset->blocks);
+
+            return;
+        }
+
+        yield from $this->inTree(new StoredTree($startingPoint->layout, $preset->blocks), $startingPoint->contentType);
     }
 
     /**

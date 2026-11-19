@@ -18,7 +18,6 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\FoundReference;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
-use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Resource\Factory\FactoryInterface;
 
 /**
@@ -97,9 +96,7 @@ final readonly class MediaUsageIndexer
             return new MediaUsageChanges();
         }
 
-        $startingPoint = $content->startingPoint;
-        $found = null === $startingPoint ? $this->referenceFinder->inBlocks($content->blocks) : $this->referenceFinder->inTree(new StoredTree($startingPoint->layout, $content->blocks), $startingPoint->contentType);
-        $uses = array_fill_keys(self::mediaItems($found), true);
+        $uses = array_fill_keys(self::mediaItems($this->referenceFinder->inPreset($content)), true);
 
         $removed = [];
         foreach ($rows as $row) {

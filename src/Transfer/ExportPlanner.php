@@ -17,7 +17,6 @@ use Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tree\FoundReference;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
-use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
  * Picks the records a selection names, then follows what they use: the references the field type handlers mark as
@@ -171,10 +170,7 @@ final readonly class ExportPlanner implements ExportPlannerInterface
      */
     private function inPreset(EditorPresetInterface $preset): \Generator
     {
-        $content = (new EditorPresetContent())->read($preset);
-        $startingPoint = $content->startingPoint;
-
-        return null === $startingPoint ? $this->referenceFinder->inBlocks($content->blocks) : $this->referenceFinder->inTree(new StoredTree($startingPoint->layout, $content->blocks), $startingPoint->contentType);
+        return $this->referenceFinder->inPreset((new EditorPresetContent())->read($preset));
     }
 
     /**

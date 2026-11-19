@@ -11,6 +11,8 @@ use Setono\SyliusCMSPlugin\Field\MediaListHandler;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
+use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -95,6 +97,21 @@ final class ReferenceFinderTest extends TestCase
             new FoundReference(new Reference('media_item', self::HERO, true), null, 'image', null),
             new FoundReference(new Reference('media_item', self::COVER, true), self::A, 'cover', null),
         ], [...$this->finder()->inTree($tree, 'page')]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_finds_the_references_of_a_block_presets_blocks_and_of_a_starting_points_layout_too(): void
+    {
+        $blocks = [new StoredBlock(self::A, 'gallery', 1, fields: ['cover' => self::COVER])];
+        $cover = new FoundReference(new Reference('media_item', self::COVER, true), self::A, 'cover', null);
+
+        self::assertEquals([$cover], [...$this->finder()->inPreset(new Preset('Gallery', $blocks))]);
+        self::assertEquals([
+            new FoundReference(new Reference('media_item', self::HERO, true), null, 'image', null),
+            $cover,
+        ], [...$this->finder()->inPreset(new Preset('Hero page', $blocks, startingPoint: new StartingPoint('page', new StoredLayout('hero', 1, ['image' => self::HERO]))))]);
     }
 
     /**

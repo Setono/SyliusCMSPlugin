@@ -89,13 +89,11 @@ final readonly class UnresolvedReferences
         }
 
         foreach ($presets as $preset) {
-            $startingPoint = $preset->preset->startingPoint;
-            $found = null === $startingPoint ? $this->referenceFinder->inBlocks($preset->preset->blocks) : $this->referenceFinder->inTree(new StoredTree($startingPoint->layout, $preset->preset->blocks), $startingPoint->contentType);
-            foreach (ReferenceFinder::references($found) as $reference) {
+            foreach (ReferenceFinder::references($this->referenceFinder->inPreset($preset->preset)) as $reference) {
                 $held[] = [$preset->uuid(), $preset->label(), $reference->type, $reference->id];
             }
 
-            foreach (self::boundAttributes(new StoredTree($startingPoint?->layout, $preset->preset->blocks)) as $code) {
+            foreach (self::boundAttributes(new StoredTree($preset->preset->startingPoint?->layout, $preset->preset->blocks)) as $code) {
                 $held[] = [$preset->uuid(), $preset->label(), UnresolvedReference::PRODUCT_ATTRIBUTE, $code];
             }
         }
