@@ -32,6 +32,18 @@ final class CodePresetFilesTest extends TestCase
     }
 
     /**
+     * Only a file is a code preset, so a directory whose name ends in .json is passed over, even when it isn't a code
+     *
+     * @test
+     */
+    public function it_passes_over_a_directory_named_like_a_json_file(): void
+    {
+        $bundle = $this->directory('bundle', ['hero.json', 'Old-presets.json/promo.json']);
+
+        self::assertSame(['hero' => $bundle . '/hero.json'], CodePresetFiles::inDirectory($bundle));
+    }
+
+    /**
      * @test
      */
     public function it_finds_a_directory_given_twice_once(): void

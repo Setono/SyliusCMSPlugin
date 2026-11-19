@@ -106,6 +106,26 @@ final class ValidatePresetsCommandTest extends KernelTestCase
     }
 
     /**
+     * A directory with a file it can't tell the code of is an error of the directory, as its files can't be listed
+     *
+     * @test
+     */
+    public function it_exits_non_zero_for_a_directory_with_a_file_not_named_by_a_code(): void
+    {
+        $this->temporaryFile('Big-hero.json', (string) file_get_contents(dirname(__DIR__) . '/Application/config/cms/presets/column_pair.json'));
+        $directory = (string) realpath($this->temporaryDirectory());
+
+        $tester = self::validate([$directory]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        $display = (string) preg_replace('/\s+/', '', $tester->getDisplay());
+        // SymfonyStyle wraps a long path where it likes
+        self::assertStringContainsString('✘' . $directory, $display);
+        self::assertStringContainsString(str_replace(' ', '', sprintf('The code preset file %s/Big-hero.json must be named by its code', $directory)), $display);
+        self::assertStringContainsString('[ERROR] 1 of 1 preset file has errors.', self::display($tester));
+    }
+
+    /**
      * @param list<string> $paths
      */
     private static function validate(array $paths): CommandTester
