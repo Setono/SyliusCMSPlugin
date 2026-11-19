@@ -86,6 +86,22 @@ final class ImportFixtureTest extends TestCase
     }
 
     /**
+     * The options node requires a path, but takes any scalar, such as a number
+     *
+     * @test
+     */
+    public function it_fails_the_load_without_the_path_of_an_export(): void
+    {
+        $importer = $this->prophesize(ImporterInterface::class);
+        $importer->import(Argument::cetera())->shouldNotBeCalled();
+        $fixture = new ImportFixture($importer->reveal(), new IdentityTranslator());
+
+        $this->expectExceptionObject(new \InvalidArgumentException('The fixture setono_cms_import needs the path of an export folder'));
+
+        $fixture->load(['path' => 42]);
+    }
+
+    /**
      * @test
      */
     public function it_fails_the_load_for_a_path_that_is_not_an_export(): void
