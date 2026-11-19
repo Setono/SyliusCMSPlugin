@@ -235,6 +235,9 @@ final class PresetSerializerTest extends TestCase
         yield 'a thumbnail that is a number' => [str_replace('"thumbnail": null', '"thumbnail": 1', self::HERO), 'The thumbnail of the preset must be a string or null'];
         yield 'an unknown key' => [str_replace('"thumbnail": null,', '"thumbnail": null, "colour": "red",', self::HERO), 'The preset has a key the format doesn\'t know: "colour"'];
         yield 'a starting point without a content type' => [str_replace('"startingPoint": null', '"startingPoint": {"layout": null, "default": false}', self::HERO), 'The starting point must have a content type code'];
+        yield 'an empty starting point' => [str_replace('"startingPoint": null', '"startingPoint": {}', self::HERO), 'The starting point must have a content type code'];
+        yield 'a starting point that is a list' => [str_replace('"startingPoint": null', '"startingPoint": ["page"]', self::HERO), 'The starting point must be a JSON object'];
+        yield 'a starting point whose layout has no code' => [str_replace('"startingPoint": null', '"startingPoint": {"contentType": "page", "layout": {"version": 1}, "default": false}', self::HERO), 'The starting point is invalid: The layout must have a code'];
         yield 'a starting point whose default is not a toggle' => [str_replace('"startingPoint": null', '"startingPoint": {"contentType": "page", "layout": null, "default": "yes"}', self::HERO), 'The starting point\'s default must be true or false'];
         yield 'blocks that are not a list' => [(string) preg_replace('/"blocks": \[.*\]/s', '"blocks": {}', self::HERO), 'The preset must have a list of blocks'];
         yield 'an invalid block' => [str_replace('"version": 1,', '"version": 0,', self::HERO), 'The block "0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f" must have a version of 1 or more'];

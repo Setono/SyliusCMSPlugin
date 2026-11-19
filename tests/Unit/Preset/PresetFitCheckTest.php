@@ -88,6 +88,19 @@ final class PresetFitCheckTest extends TestCase
     /**
      * @test
      */
+    public function it_does_not_offer_a_preset_inside_a_block_of_a_type_the_code_no_longer_has(): void
+    {
+        $removed = new StoredBlock(self::COLUMNS, 'removed_type', 1, children: [self::block('heading')]);
+
+        $fit = self::check()->at([self::block('heading')], self::page([$removed]), self::COLUMNS);
+
+        self::assertFalse($fit->fits());
+        self::assertEquals([new TranslatableMessage('setono_sylius_cms.preset.fit.not_allowed', ['%block%' => new TranslatableMessage('setono_sylius_cms.block_type.heading')])], $fit->reasons);
+    }
+
+    /**
+     * @test
+     */
     public function it_does_not_offer_a_preset_whose_blocks_need_context_the_entry_does_not_provide_naming_it(): void
     {
         $badge = self::block('heading', [self::block('product_badge')]);
