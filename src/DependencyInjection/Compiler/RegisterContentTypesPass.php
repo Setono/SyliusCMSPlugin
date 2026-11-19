@@ -116,12 +116,12 @@ final class RegisterContentTypesPass implements CompilerPassInterface
             ;
         }
 
-        self::assertCategoryTypes($categoryTypes, $contentTypes);
+        $categoryCodes = self::categoryCodes($categoryTypes, $contentTypes);
 
         $container->getDefinition(ContentTypeRegistry::class)
             ->replaceArgument(0, $contentTypes)
             ->setArgument(1, self::configuredPrefixes($container, $prefixes))
-            ->setArgument(2, self::disabled($container, $contentTypes))
+            ->setArgument(2, self::disabled($container, $contentTypes, $categoryCodes))
         ;
         $container->getDefinition(DiscriminatorMapListener::class)->replaceArgument(0, $contentTypes);
         foreach ([ColumnPrefixListener::class, RootAssociationsListener::class] as $listener) {
@@ -213,10 +213,13 @@ final class RegisterContentTypesPass implements CompilerPassInterface
      *
      * @param array<string, class-string> $categoryTypes the category content type each content type names, by code
      * @param array<string, array{model: class-string, translation: class-string|null, resource: string}> $contentTypes
+     *
+     * @return array<string, string> the code of the category content type each content type names, by code
      */
-    private static function assertCategoryTypes(array $categoryTypes, array $contentTypes): void
+    private static function categoryCodes(array $categoryTypes, array $contentTypes): array
     {
         $models = array_values(array_column($contentTypes, 'model'));
+        $codes = [];
         foreach ($categoryTypes as $code => $categoryType) {
             $categoryModel = self::modelNamedBy($categoryType, $models);
             if (null === $categoryModel) {
@@ -231,7 +234,11 @@ final class RegisterContentTypesPass implements CompilerPassInterface
             if (1 !== count($categoryFields)) {
                 throw new \LogicException(sprintf('The content type "%s" names %s in categoryType, so it must have one Entries field of its own with that contentType and indexed: true, which holds its categories', $code, $categoryType));
             }
+
+            $codes[$code] = (string) array_search($categoryModel, array_map(static fn (array $contentType): string => $contentType['model'], $contentTypes), true);
         }
+
+        return $codes;
     }
 
     /**
@@ -259,13 +266,15 @@ final class RegisterContentTypesPass implements CompilerPassInterface
 
     /**
      * The codes of the content types switched off in setono_sylius_cms.disabled.content_types. Any content type but
-     * the built-in ones can be, such as the shipped collections' blog_post or faq_item
+     * the built-in ones can be, such as the shipped collections' blog_post or faq_item. A collection is switched off as a
+     * whole, its entries' content type with its categories', or else the other would be a collection of its own
      *
      * @param array<string, mixed> $contentTypes by code
+     * @param array<string, string> $categoryCodes the code of the category content type each content type names, by code
      *
      * @return list<string>
      */
-    private static function disabled(ContainerBuilder $container, array $contentTypes): array
+    private static function disabled(ContainerBuilder $container, array $contentTypes, array $categoryCodes): array
     {
         /** @var list<string> $disabled */
         $disabled = $container->hasParameter(self::DISABLED_PARAMETER) ? $container->getParameter(self::DISABLED_PARAMETER) : [];
@@ -277,6 +286,18 @@ final class RegisterContentTypesPass implements CompilerPassInterface
 
             if (!isset($contentTypes[$code])) {
                 throw new \LogicException(sprintf('setono_sylius_cms.disabled.content_types switches off "%s", which is no content type', $code));
+            }
+        }
+
+        foreach ($categoryCodes as $code => $categoryCode) {
+            $entriesOff = in_array($code, $disabled, true);
+            $categoriesOff = in_array($categoryCode, $disabled, true);
+            if ($entriesOff && !$categoriesOff) {
+                throw new \LogicException(sprintf('setono_sylius_cms.disabled.content_types switches off "%s" but not "%s", its collection\'s categories. A collection is switched off as a whole, so add "%2$s" too', $code, $categoryCode));
+            }
+
+            if ($categoriesOff && !$entriesOff) {
+                throw new \LogicException(sprintf('setono_sylius_cms.disabled.content_types switches off "%s", the categories of the collection "%s", but not "%2$s". A collection is switched off as a whole, so add "%2$s" too', $categoryCode, $code));
             }
         }
 

@@ -24,7 +24,7 @@ setono_sylius_cms:
 | `layouts` | Editors no longer pick the layout, and its entries render in their content type's default layout, which can't be switched off. |
 | `sources` | Editors aren't offered the source. Lists already filled by it keep resolving through it. |
 | `presets` | Editors aren't offered the code preset. |
-| `content_types` | The content type is hidden from the admin, the builder, sources and routing, and its columns stay mapped. Page and Snippet can't be switched off. Switch off a collection's entries and its categories together, such as `blog_post` and `blog_category`. |
+| `content_types` | The content type is hidden from the admin, the builder, sources and routing, and its columns stay mapped. Page and Snippet can't be switched off. A collection is switched off as a whole: its entries and its categories together, such as `blog_post` and `blog_category`, or the container build fails naming the one to add. |
 
 The codes of the shipped block types, sources and code presets are listed in [Blocks](../spec/blocks.md#block-types),
 [Sources](../spec/sources.md) and [Shipped code presets](../spec/layouts-and-presets.md#shipped-code-presets). A

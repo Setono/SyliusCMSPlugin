@@ -137,7 +137,7 @@ final class Configuration implements ConfigurationInterface
                             ->scalarPrototype()->end()
                         ->end()
                         ->arrayNode('content_types')
-                            ->info('Content type codes, such as blog_post, blog_category, faq_item and faq_category. They\'re hidden from the admin, the builder, sources and routing, and their columns stay mapped. Page and Snippet can\'t be switched off')
+                            ->info('Content type codes, such as blog_post with blog_category, or faq_item with faq_category: a collection is switched off as a whole. They\'re hidden from the admin, the builder, sources and routing, and their columns stay mapped. Page and Snippet can\'t be switched off')
                             ->scalarPrototype()->end()
                         ->end()
                     ->end()

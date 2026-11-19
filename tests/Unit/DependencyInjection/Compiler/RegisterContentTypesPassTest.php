@@ -337,6 +337,55 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
     }
 
     /**
+     * A collection is switched off as a whole: its entries' content type with the category content type it names
+     *
+     * @test
+     */
+    public function it_hands_the_registry_a_collection_switched_off_as_a_whole(): void
+    {
+        $this->setParameter('sylius.resources', [
+            'app.location' => ['classes' => ['model' => Location::class], 'translation' => ['classes' => ['model' => EntryTranslation::class]]],
+            'app.recipe' => ['classes' => ['model' => SeasonalRecipe::class]],
+        ]);
+        $this->setParameter(RegisterContentTypesPass::DISABLED_PARAMETER, ['recipe', 'location']);
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 2, ['recipe', 'location']);
+    }
+
+    /**
+     * Switching off one would leave the other a collection of its own, such as the blog's categories listed as
+     * "Categories" without their posts
+     *
+     * @test
+     *
+     * @dataProvider providePartsOfACollection
+     */
+    public function it_fails_the_build_for_switching_off_some_but_not_all_of_a_collections_content_types(string $code, string $message): void
+    {
+        $this->setParameter('sylius.resources', [
+            'app.location' => ['classes' => ['model' => Location::class], 'translation' => ['classes' => ['model' => EntryTranslation::class]]],
+            'app.recipe' => ['classes' => ['model' => SeasonalRecipe::class]],
+        ]);
+        $this->setParameter(RegisterContentTypesPass::DISABLED_PARAMETER, [$code]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage($message);
+
+        $this->compile();
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function providePartsOfACollection(): iterable
+    {
+        yield 'its entries' => ['location', 'setono_sylius_cms.disabled.content_types switches off "location" but not "recipe", its collection\'s categories. A collection is switched off as a whole, so add "recipe" too'];
+        yield 'its categories' => ['recipe', 'setono_sylius_cms.disabled.content_types switches off "recipe", the categories of the collection "location", but not "location". A collection is switched off as a whole, so add "location" too'];
+    }
+
+    /**
      * @test
      *
      * @dataProvider provideContentTypesThatCannotBeSwitchedOff

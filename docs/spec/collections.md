@@ -8,7 +8,7 @@ The Blog and the FAQ, categories, and how a collection's entries are listed thro
 ## What ships
 
 - **The Blog and the FAQ ship, and both are on after install.** Store locations don't ship: they need coordinates, opening hours and a map provider, so agencies build them as their own collection.
-- **Disabling.** `setono_sylius_cms.disabled.content_types` switches off any of `blog_post`, `blog_category`, `faq_item` and `faq_category`. That hides the content type from the admin, the builder, sources and routing. Its columns stay mapped either way, so the schema never depends on the setting ([Extending](extending.md#content-types)).
+- **Disabling.** `setono_sylius_cms.disabled.content_types` switches off a collection as a whole: `blog_post` with `blog_category`, or `faq_item` with `faq_category`. That hides its content types from the admin, the builder, sources and routing. Switching off some but not all of a collection's content types fails the container build, naming the one to add, since the other would otherwise be listed as a collection of its own. Its columns stay mapped either way, so the schema never depends on the setting ([Extending](extending.md#content-types)).
 - **Extending.** A project that wants more on a shipped content type, such as an author on blog posts, extends its model ([Extending](extending.md#content-types)). There's no author in v2.0.
 - **Not in v2.0:** date archives, RSS feeds and tags.
 

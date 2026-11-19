@@ -215,7 +215,7 @@ class StoreLocation extends Entry
                   classes:
                       model: App\Entity\PageTranslation
   ```
-- **Disabling a shipped content type** with `disabled.content_types` hides it from the admin, the builder, sources and routing. Its columns stay mapped.
+- **Disabling a shipped content type** with `disabled.content_types` hides it from the admin, the builder, sources and routing. Its columns stay mapped. A collection is switched off as a whole: its entries' content type with the category content type it names, or the build fails.
 
 ### Shipped content types
 
@@ -745,7 +745,7 @@ setono_sylius_cms:
         sources: []          # source codes
         presets: []          # code preset codes
         layouts: []          # "<content type code>.<layout code>", such as page.standard
-        content_types: []    # blog_post, blog_category, faq_item, faq_category
+        content_types: []    # a collection as a whole: blog_post with blog_category, faq_item with faq_category
 
     embed_code: false        # true enables the Embed code block (ADR 0018)
     assets: true             # false stops loading the shipped stylesheet and carousel script
