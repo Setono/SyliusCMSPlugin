@@ -261,6 +261,35 @@ final class StartingPointsTest extends WebTestCase
     }
 
     /**
+     * A block saved by a newer version of the code than this store runs can't be upgraded, so the dialog shows the
+     * starting point disabled, and refuses it when it's posted anyway
+     *
+     * @test
+     */
+    public function it_refuses_a_starting_point_with_a_block_saved_with_a_newer_version_than_the_codes(): void
+    {
+        $client = self::signedInClient();
+        $newer = self::saveStartingPoint('Newer page', 'page', null, blocks: [new StoredBlock(self::BLOCK, 'heading', 9, fields: ['text' => ['en_US' => 'Welcome']])]);
+
+        $crawler = $client->request('GET', '/admin/cms/entries/page/new');
+        self::assertNotNull($crawler->filter(sprintf('input[name="setono_sylius_cms_create_entry[startingPoint]"][value="%s"]', $newer))->attr('disabled'));
+        $form = $crawler->selectButton('Create')->form();
+        $values = $form->getPhpValues();
+        self::assertIsArray($values['setono_sylius_cms_create_entry']);
+        $values['setono_sylius_cms_create_entry'] = ['title' => 'About us', 'slug' => 'about-us', 'startingPoint' => $newer] + $values['setono_sylius_cms_create_entry'];
+        $crawler = $client->request('POST', $form->getUri(), $values);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(
+            ['This starting point can\'t be used until a developer fixes it. Pick another.'],
+            $crawler->filter('fieldset[data-cms-create-entry-starting-points] .sylius-validation-error')->each(static fn (Crawler $error): string => trim($error->text())),
+        );
+        /** @var RepositoryInterface<PageInterface> $repository */
+        $repository = self::getContainer()->get('setono_sylius_cms.repository.page');
+        self::assertSame([], $repository->findAll());
+    }
+
+    /**
      * @param list<StoredBlock> $blocks
      *
      * @return string the starting point's UUID
