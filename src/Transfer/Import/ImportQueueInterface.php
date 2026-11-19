@@ -8,7 +8,7 @@ use Setono\SyliusCMSPlugin\Model\ImportInterface;
 use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 
 /**
- * The imports started in the admin, which run on the Messenger worker: an uploaded zip is kept in the media storage and
+ * The imports started in the admin, which run on the Messenger worker: an uploaded zip is kept in the transfer storage and
  * gets its dry run, an admin user confirms its plan, and the worker imports it (RunImportHandler). One no one confirms
  * is abandoned, and its zip deleted. See "Transfer" in docs/spec/admin.md and "Who runs it" in docs/spec/transfer.md
  */
@@ -20,7 +20,7 @@ interface ImportQueueInterface
     public const ABANDONED_AFTER = 'P1D';
 
     /**
-     * Keeps the uploaded zip in the media storage, records the import, and has the worker run its dry run
+     * Keeps the uploaded zip in the transfer storage, records the import, and has the worker run its dry run
      *
      * @param string $filename the name it was uploaded with
      *

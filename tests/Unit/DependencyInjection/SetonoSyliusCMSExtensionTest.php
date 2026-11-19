@@ -72,6 +72,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
 use Setono\SyliusCMSPlugin\Transfer\Import\AbandonImport;
 use Setono\SyliusCMSPlugin\Transfer\Import\RunImport;
+use Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
@@ -567,7 +568,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
                 'visibility' => 'public',
                 'directory_visibility' => 'public',
             ],
-        ]]], $this->container->getExtensionConfig('flysystem'));
+        ]], self::transferStorage()], $this->container->getExtensionConfig('flysystem'));
         self::assertFalse($this->container->has('setono_sylius_cms.storage'), 'The plugin defines no storage of its own');
         self::assertFalse($this->container->hasDefinition('setono_sylius_cms.media.storage') || $this->container->hasAlias('setono_sylius_cms.media.storage'), 'The storage goes by one name');
     }
@@ -582,7 +583,49 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['media' => ['storage' => 'app.s3_storage']]);
 
         $this->assertContainerBuilderHasAlias('setono_sylius_cms.storage', 'app.s3_storage');
-        self::assertSame([], $this->container->getExtensionConfig('flysystem'), 'No local storage is defined');
+        self::assertSame([self::transferStorage()], $this->container->getExtensionConfig('flysystem'), 'No local media storage is defined');
+    }
+
+    /**
+     * The web server serves the media storage's directory, so the export zips uploaded on the Transfer screen wait for
+     * the worker in a private directory outside it
+     *
+     * @test
+     */
+    public function it_keeps_uploaded_export_zips_in_a_private_local_storage_of_their_own_by_default(): void
+    {
+        $this->load();
+
+        self::assertContains(self::transferStorage(), $this->container->getExtensionConfig('flysystem'));
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(UploadedExports::class, 0, new Reference('setono_sylius_cms.transfer_storage'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_uploaded_export_zips_in_the_storage_a_project_configures_under_the_one_name(): void
+    {
+        $this->container->loadFromExtension('setono_sylius_cms', ['transfer' => ['storage' => 'app.shared_storage']]);
+
+        $this->load(['transfer' => ['storage' => 'app.shared_storage']]);
+
+        $this->assertContainerBuilderHasAlias('setono_sylius_cms.transfer_storage', 'app.shared_storage');
+        self::assertNotContains(self::transferStorage(), $this->container->getExtensionConfig('flysystem'));
+    }
+
+    /**
+     * @return array{storages: array<string, array<string, mixed>>}
+     */
+    private static function transferStorage(): array
+    {
+        return ['storages' => [
+            'setono_sylius_cms.transfer_storage' => [
+                'adapter' => 'local',
+                'options' => ['directory' => '%kernel.project_dir%/private/cms'],
+                'visibility' => 'private',
+                'directory_visibility' => 'private',
+            ],
+        ]];
     }
 
     /**

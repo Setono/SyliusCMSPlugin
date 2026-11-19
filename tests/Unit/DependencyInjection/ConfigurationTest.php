@@ -140,6 +140,7 @@ final class ConfigurationTest extends TestCase
             'bestsellers' => ['window' => 'P30D'],
             'builder' => ['scripts' => []],
             'presets' => ['paths' => []],
+            'transfer' => ['storage' => 'setono_sylius_cms.transfer_storage'],
             'resources' => [
                 'entry' => [
                     'classes' => [
@@ -399,6 +400,16 @@ final class ConfigurationTest extends TestCase
                 ],
             ],
         ]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_keep_uploaded_export_zips_in_a_storage_of_its_own(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['transfer' => ['storage' => 'app.shared_storage']],
+        ], ['transfer' => ['storage' => 'app.shared_storage']], 'transfer');
     }
 
     /**

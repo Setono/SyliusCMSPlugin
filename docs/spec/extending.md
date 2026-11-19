@@ -780,6 +780,9 @@ setono_sylius_cms:
     presets:
         paths: []            # directories of code preset files; bundles prepend theirs, and the plugin its shipped presets' src/Resources/presets
 
+    transfer:
+        storage: 'setono_sylius_cms.transfer_storage'  # a Flysystem storage service uploaded export zips wait in for the worker; the default writes to %kernel.project_dir%/private/cms, outside the web root, so a worker on another server needs a storage both share
+
     media:
         storage: 'setono_sylius_cms.storage'     # a Flysystem storage service; the default writes to %kernel.project_dir%/public/media/cms, served at /media/cms; another needs MediaUrlGeneratorInterface aliased (Images)
         liip:

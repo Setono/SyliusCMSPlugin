@@ -136,7 +136,7 @@
         (docs/spec/transfer.md#who-runs-it)
         -->
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports" class="Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports">
-            <argument type="service" id="setono_sylius_cms.storage"/>
+            <argument type="service" id="setono_sylius_cms.transfer_storage"/>
             <argument type="service" id="logger"/>
         </service>
 

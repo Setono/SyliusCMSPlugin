@@ -63,6 +63,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     /** The directory the default storage writes to, which the web server serves at MediaUrlGenerator::BASE_URL */
     public const STORAGE_DIRECTORY = '%kernel.project_dir%/public/media/cms';
 
+    /** The service id of the storage uploaded export zips wait for the worker in, which transfer.storage defaults to */
+    public const TRANSFER_STORAGE = 'setono_sylius_cms.transfer_storage';
+
+    /** The directory the default transfer storage writes to: private, outside the web root, as Sylius's plugins keep invoices */
+    public const TRANSFER_STORAGE_DIRECTORY = '%kernel.project_dir%/private/cms';
+
     /** The name of the plugin's own Liip loader and resolver, which media.liip defaults to */
     public const LIIP_NAME = 'setono_sylius_cms';
 
@@ -85,7 +91,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>, presets: list<string>, content_types: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, bindable_properties: array<string, array<string, array{label: string, type: string, path: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, presets: array{paths: list<string>}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>, presets: list<string>, content_types: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, bindable_properties: array<string, array<string, array{label: string, type: string, path: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, presets: array{paths: list<string>}, transfer: array{storage: string}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         // The Embed code block is switched off like a disabled block type until a project opts in (ADR 0018)
@@ -134,6 +140,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         // prepend() defines, unless a project configures another, which then goes by that one name
         if (self::STORAGE !== $config['media']['storage']) {
             $container->setAlias(self::STORAGE, $config['media']['storage']);
+        }
+
+        // The Flysystem storage uploaded export zips wait in: the plugin's own private local one, which prepend() defines,
+        // unless a project configures another, such as one a worker on another server shares
+        if (self::TRANSFER_STORAGE !== $config['transfer']['storage']) {
+            $container->setAlias(self::TRANSFER_STORAGE, $config['transfer']['storage']);
         }
 
         // Made variants are looked for with a file check only where the plugin's Liip resolver caches them in the default
@@ -243,10 +255,14 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
             'presets' => ['paths' => [self::PRESETS_DIRECTORY]],
         ]);
 
-        /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}, slots: array<string, array{template_event?: array{name: string, priority: int}}>} $config */
+        /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}, transfer: array{storage: string}, slots: array<string, array{template_event?: array{name: string, priority: int}}>} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
 
         $this->prependSlotBlocks($container, $config['slots']);
+
+        if (self::TRANSFER_STORAGE === $config['transfer']['storage']) {
+            $this->prependTransferStorage($container);
+        }
 
         if (self::STORAGE === $config['media']['storage']) {
             $this->prependStorage($container);
@@ -337,6 +353,27 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'options' => ['directory' => self::STORAGE_DIRECTORY],
                     'visibility' => 'public',
                     'directory_visibility' => 'public',
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * The plugin's own storage for the export zips uploaded on the Transfer screen, setono_sylius_cms.transfer_storage: a
+     * local private directory outside the web root, since the media storage's is served. A zip waits there for the
+     * Messenger worker, which must run on the same server to read it, and is deleted once its import is done. A project
+     * with a worker on another server names a storage both share in transfer.storage. See "Who runs it" in
+     * docs/spec/transfer.md
+     */
+    private function prependTransferStorage(ContainerBuilder $container): void
+    {
+        $container->prependExtensionConfig('flysystem', [
+            'storages' => [
+                self::TRANSFER_STORAGE => [
+                    'adapter' => 'local',
+                    'options' => ['directory' => self::TRANSFER_STORAGE_DIRECTORY],
+                    'visibility' => 'private',
+                    'directory_visibility' => 'private',
                 ],
             ],
         ]);

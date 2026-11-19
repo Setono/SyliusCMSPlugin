@@ -134,11 +134,21 @@ directory `public/media/cms`, which the web server serves at `/media/cms`, besid
 - **It holds the only copy of every file**, so keep `public/media/cms` across deploys, such as in a deploy tool's shared
   directories or on a persistent volume, as you keep `public/media/image`. The image variants are cached under
   `public/media/cms/cache`.
-- **Exports uploaded for an import in the admin** are kept in the same storage until the import finishes or is
-  abandoned: under `imports/`, written private, with a random name.
-- **The Messenger worker needs the same storage** as the web servers, because it reads those uploads and the media files.
-  On one server that's the same directory. With several servers, or a worker on another one, put the storage somewhere
-  they share, such as S3.
+- **The Messenger worker needs the same storage** as the web servers, because an import stores media files in it. On one
+  server that's the same directory. With several servers, or a worker on another one, put the storage somewhere they
+  share, such as S3.
+
+Exports uploaded for an import in the admin wait for the worker in a storage of their own, `setono_sylius_cms.transfer_storage`,
+which is the private local directory `private/cms`, outside the web root, so the web server never serves them. Each is
+deleted once its import is done. The worker reads them from there, so it must run on the same server. A worker on
+another server needs a storage both share: define one in your `flysystem` config, written private, and name it in
+`setono_sylius_cms.transfer.storage`:
+
+```yaml
+setono_sylius_cms:
+    transfer:
+        storage: 'app.cms_transfer_storage'
+```
 
 To store media elsewhere, define a Flysystem storage in your own `flysystem` config, name it in
 `setono_sylius_cms.media.storage`, and point `Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface` at a service
@@ -218,7 +228,7 @@ These are the plugin's messages, all dispatched on `sylius.event_bus`:
   anyone confirmed it. Set the DSN in `SYLIUS_MESSENGER_TRANSPORT_MAIN_DSN`.
 - **The plugin routes them in its own config.** To send them elsewhere, route them in your own
   `framework.messenger.routing`.
-- **The worker needs** the same media storage as the web servers ([above](#7-keep-the-media-storage)), the `zip`
+- **The worker needs** the same media and transfer storages as the web servers ([above](#7-keep-the-media-storage)), the `zip`
   extension, and room in PHP's temporary directory for a copy of an uploaded zip and of each media file it checks.
 - **Without a worker**, scheduled publishes don't run, and the admin warns about each one five minutes after its time.
   Imports started in the admin wait, and replaced files are never deleted.

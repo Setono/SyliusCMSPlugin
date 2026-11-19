@@ -164,6 +164,7 @@ final class Configuration implements ConfigurationInterface
         $this->addBestsellersSection($rootNode);
         $this->addBuilderSection($rootNode);
         $this->addPresetsSection($rootNode);
+        $this->addTransferSection($rootNode);
         $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
@@ -497,6 +498,28 @@ final class Configuration implements ConfigurationInterface
                                 ->validate()->always(self::assertScript(...))->end()
                             ->end()
                             ->validate()->always(self::eachOnce(...))->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * Where the export zips uploaded on the Transfer screen wait for the Messenger worker to import them. See "Who runs it"
+     * in docs/spec/transfer.md
+     */
+    private function addTransferSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('transfer')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('storage')
+                            ->info('A Flysystem storage service the uploaded export zips are kept in until their import finishes. The default writes to %kernel.project_dir%/private/cms, outside the web root, which a Messenger worker on another server can\'t read: give such a worker a storage both servers share')
+                            ->defaultValue(SetonoSyliusCMSExtension::TRANSFER_STORAGE)
+                            ->cannotBeEmpty()
                         ->end()
                     ->end()
                 ->end()

@@ -29,7 +29,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 
 /**
- * The Transfer screen's import: the uploaded zip is kept in the plugin's media storage, the Messenger worker runs its
+ * The Transfer screen's import: the uploaded zip is kept in the plugin's transfer storage, the Messenger worker runs its
  * dry run, an admin user reviews the plan and confirms it, and the worker imports it and records its result, a refusal
  * included. See "Transfer" in docs/spec/admin.md and "Who runs it" in docs/spec/transfer.md
  */
@@ -77,11 +77,16 @@ final class ImportTest extends WebTestCase
         self::assertSame(basename($zip), $import->getFilename());
         self::assertResponseRedirects(sprintf('/admin/cms/transfer/imports/%s', $import->getUuid()));
 
-        // In the storage, not in a temporary file, so a worker on another server reads it
+        // In the transfer storage, not in a temporary file, so the worker reads it, and by default in a private directory
+        // outside the web root, which the web server doesn't serve as it serves the media storage's
         $path = (string) $import->getPath();
         self::assertMatchesRegularExpression('#^imports/[0-9a-f]{32}\.zip$#', $path);
         self::assertSame(file_get_contents($zip), self::storage()->read($path));
         self::assertSame('private', self::storage()->visibility($path));
+        $projectDirectory = self::projectDirectory();
+        self::assertFileExists($projectDirectory . '/private/cms/' . $path);
+        self::assertFileDoesNotExist($projectDirectory . '/public/media/cms/' . $path);
+        self::assertSame([], glob($projectDirectory . '/public/media/cms/imports/*') ?: []);
 
         // The worker runs its dry run now, and abandons it in a day if no one confirms it
         $messages = self::sentMessages();
@@ -427,9 +432,17 @@ final class ImportTest extends WebTestCase
     private static function storage(): FilesystemOperator
     {
         /** @var FilesystemOperator $storage */
-        $storage = self::getContainer()->get('setono_sylius_cms.storage');
+        $storage = self::getContainer()->get('setono_sylius_cms.transfer_storage');
 
         return $storage;
+    }
+
+    private static function projectDirectory(): string
+    {
+        $directory = self::getContainer()->getParameter('kernel.project_dir');
+        \assert(is_string($directory));
+
+        return $directory;
     }
 
     /**

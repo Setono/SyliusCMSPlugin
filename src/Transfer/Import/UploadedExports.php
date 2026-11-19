@@ -9,10 +9,12 @@ use League\Flysystem\FilesystemOperator;
 use Psr\Log\LoggerInterface;
 
 /**
- * The export zips uploaded on the Transfer screen, kept in the plugin's media storage rather than a temporary file, so a
- * Messenger worker on another server can read them. Each is kept private, under a random path in "imports", since the
- * default storage is a public directory. An import reads one from a local copy, as Transfer\Import\ZipSource reads
- * files, and deletes it once it finishes or is abandoned. See "Who runs it" in docs/spec/transfer.md
+ * The export zips uploaded on the Transfer screen, kept in the plugin's transfer storage (transfer.storage) rather than
+ * a temporary file, so the Messenger worker reads them. By default that's a private local directory outside the web
+ * root, and a project with a worker on another server names a storage both share. Each is kept private, under a random
+ * path in "imports", in case that storage is a public one. An import reads one from a local copy, as
+ * Transfer\Import\ZipSource reads files, and deletes it once it finishes, fails or is abandoned. See "Who runs it" in
+ * docs/spec/transfer.md
  */
 final readonly class UploadedExports
 {
@@ -20,7 +22,7 @@ final readonly class UploadedExports
     public const DIRECTORY = 'imports';
 
     /**
-     * @param FilesystemOperator $storage the plugin's media storage
+     * @param FilesystemOperator $storage the plugin's transfer storage
      */
     public function __construct(
         private FilesystemOperator $storage,
@@ -102,7 +104,7 @@ final readonly class UploadedExports
         try {
             $this->storage->delete($path);
         } catch (FilesystemException $e) {
-            $this->logger->warning(sprintf('The uploaded export %s couldn\'t be deleted from the media storage: %s', $path, $e->getMessage()), ['exception' => $e]);
+            $this->logger->warning(sprintf('The uploaded export %s couldn\'t be deleted from the transfer storage: %s', $path, $e->getMessage()), ['exception' => $e]);
         }
     }
 

@@ -186,7 +186,7 @@ final class RunImportHandlerTest extends TestCase
 
         $result = (new ImportResultNormalizer())->denormalize($import->getResult() ?? []);
         self::assertSame(ImportStatus::Invalid, $result->status);
-        self::assertSame('The uploaded cms-export.zip is no longer in the media storage.', $result->invalid);
+        self::assertSame('The uploaded cms-export.zip is no longer in the transfer storage.', $result->invalid);
     }
 
     /**

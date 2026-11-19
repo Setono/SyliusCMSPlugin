@@ -11,7 +11,7 @@ use Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface;
 use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 
 /**
- * Runs an import started in the admin on the Messenger worker, from a local copy of the zip kept in the media storage.
+ * Runs an import started in the admin on the Messenger worker, from a local copy of the zip kept in the transfer storage.
  * An uploaded zip gets its dry run, as if overwriting, so the plan shows its conflicts and checks everything else: one
  * that would apply waits for an admin user to confirm it, and one that refuses even so is finished. A confirmed import
  * runs with the options it was confirmed with. Either way the result is recorded, a refusal included, and the handler
@@ -66,7 +66,7 @@ final readonly class RunImportHandler
     private function run(string $path, string $filename, ImportOptions $options): ImportResult
     {
         if (!$this->uploadedExports->has($path)) {
-            return ImportResult::invalid(sprintf('The uploaded %s is no longer in the media storage.', $filename));
+            return ImportResult::invalid(sprintf('The uploaded %s is no longer in the transfer storage.', $filename));
         }
 
         return $this->uploadedExports->read($path, function (string $file) use ($filename, $options): ImportResult {
