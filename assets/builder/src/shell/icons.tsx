@@ -108,6 +108,14 @@ export function CopyIcon() {
     );
 }
 
+export function StarIcon() {
+    return (
+        <Icon>
+            <path d="m8 1.75 1.9 3.9 4.3.6-3.1 3 .75 4.25L8 11.5l-3.85 2 .75-4.25-3.1-3 4.3-.6z" />
+        </Icon>
+    );
+}
+
 export function GripIcon() {
     return (
         <Icon>

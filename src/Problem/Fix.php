@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Problem;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Preset\Preset;
 
 /**
  * Where a problem is fixed: a link to an admin page, such as the builder at the block. The admin turns it into a URL
@@ -49,5 +50,17 @@ final readonly class Fix
     public static function inPlacements(EntryInterface $entry): self
     {
         return new self('setono_sylius_cms.ui.fix_in_placements', 'setono_sylius_cms_admin_entry_show', ['uuid' => $entry->getUuid(), '_fragment' => 'cms-section-placements']);
+    }
+
+    /**
+     * Goes to the editor preset on the Presets screen, in its tab. Its blocks are fixed by inserting it in the builder,
+     * fixing them there and saving over it
+     */
+    public static function onPresetsScreen(Preset $preset): self
+    {
+        return new self('setono_sylius_cms.ui.fix_in_presets', 'setono_sylius_cms_admin_preset_index', [
+            'tab' => null === $preset->startingPoint ? 'block_presets' : 'starting_points',
+            '_fragment' => 'cms-preset-' . $preset->id(),
+        ]);
     }
 }

@@ -25,6 +25,8 @@ export interface PreviewProps {
     className?: string | undefined;
     /** Takes the editor to the selected block's settings, from the toolbar in the preview. */
     onOpenSettings?: (() => void) | undefined;
+    /** ★ in the toolbar: opens Save as preset for the blocks with these keys. Without it, the toolbar has no ★. */
+    onSavePreset?: ((keys: readonly string[]) => void) | undefined;
 }
 
 /**
@@ -35,7 +37,7 @@ export interface PreviewProps {
  * instead, because the entry has no page there. An entry whose content type has no URL of its own, other than a
  * snippet, such as a FAQ item, has no page at all, so the pane says so and no preview is asked for.
  */
-export function Preview({ className, onOpenSettings }: PreviewProps) {
+export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProps) {
     const t = useTranslator();
     const { store, preview, createPreviewUrl, renderPreview, leave, placements, hasOwnUrl } = useBuilder();
     const channel = usePreviewState((state) => state.channel);
@@ -64,6 +66,9 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
     const sync = useRef<PreviewSync | null>(null);
     const openSettings = useRef(onOpenSettings);
     openSettings.current = onOpenSettings;
+    const savePreset = useRef(onSavePreset);
+    savePreset.current = onSavePreset;
+    const canSavePresets = onSavePreset !== undefined;
 
     useEffect(() => {
         const created = createPreviewSync({
@@ -83,6 +88,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
                 underline: t('setono_sylius_cms.builder.rich_text.underline'),
                 strike: t('setono_sylius_cms.builder.rich_text.strike'),
                 code: t('setono_sylius_cms.builder.rich_text.code'),
+                ...(canSavePresets ? { savePreset: t('setono_sylius_cms.builder.save_as_preset') } : {}),
             },
             render: (token, blocks) => renderPreview(token, blocks),
             reload: () => setReloads((count) => count + 1),
@@ -99,6 +105,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
                 setPicker({ spot, x: (box?.left ?? 0) + at.x, y: (box?.top ?? 0) + at.y });
             },
             openSettings: () => openSettings.current?.(),
+            savePreset: (keys) => savePreset.current?.(keys),
             leave,
             flagUnresolvedLinks: (keys) => preview.getState().setUnresolvedLinks(keys),
         });
@@ -108,7 +115,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             created.dispose();
             sync.current = null;
         };
-    }, [store, preview, renderPreview, leave, t]);
+    }, [store, preview, renderPreview, leave, t, canSavePresets]);
 
     useEffect(() => {
         if (channel === null || pageless) {

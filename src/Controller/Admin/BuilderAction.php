@@ -118,6 +118,11 @@ final readonly class BuilderAction
                     // insert, with UUID_PLACEHOLDER for the preset's id, a code preset's code or an editor preset's UUID
                     'presets' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preset_index', ['entry' => $entry->getUuid()]),
                     'presetInsert' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preset_insert', ['preset' => self::UUID_PLACEHOLDER]),
+                    // ★ saves blocks as an editor preset, and an editor preset is replaced, renamed, deleted and
+                    // downloaded, with UUID_PLACEHOLDER for its UUID
+                    'presetCreate' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preset_create'),
+                    'preset' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preset_update', ['uuid' => self::UUID_PLACEHOLDER]),
+                    'presetExport' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preset_export', ['uuid' => self::UUID_PLACEHOLDER]),
                 ],
                 'channels' => array_map(static fn (array $channel): array => [
                     'code' => $channel['channel']->getCode(),

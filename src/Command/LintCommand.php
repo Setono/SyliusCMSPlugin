@@ -25,7 +25,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * its draft apart, each upgraded as it's read, and exits non-zero on any problem, for CI and deploys. Content that can't
  * be read at all is reported as a problem of its own, and the rest is checked. Revisions are
  * history that nobody edits, so they're left out: one restored brings its content into the draft, which is checked.
- * Editor presets (#271) join with their ticket. See "Console commands" in docs/spec/extending.md
+ * Editor presets aren't linted: the Presets screen and the Presets tab flag their invalid blocks, and Needs attention
+ * lists their problems. See "Console commands" in docs/spec/extending.md
  */
 #[AsCommand(name: 'setono:cms:lint', description: 'Reports stored CMS values that don\'t fit their field type and blocks of unknown types')]
 final class LintCommand extends Command

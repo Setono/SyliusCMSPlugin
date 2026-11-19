@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
+use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
+use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\BrokenPresetsKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -53,5 +56,25 @@ final class PresetProblemsTest extends WebTestCase
         $content = $crawler->filter('.sylius-admin-menu a[href="/admin/cms"]');
         self::assertSame('1', $content->attr('data-cms-problem-count'));
         self::assertSame('warning', $content->attr('data-cms-problems'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_lists_an_editor_preset_with_blocks_of_removed_types_with_a_link_to_it_on_the_presets_screen(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        /** @var EditorPresetSaverInterface $saver */
+        $saver = self::getContainer()->get(EditorPresetSaverInterface::class);
+        $preset = $saver->save(new Preset('Old gallery', [new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'gallery', 1)]));
+
+        $crawler = $client->request('GET', '/admin/cms');
+
+        $problem = $crawler->filter(sprintf('[data-panel="needs_attention"] [data-preset="%s"]', (string) $preset->uuid));
+        self::assertSame(['Old gallery', 'It has blocks of the type "gallery", which the code no longer has, so inserting it leaves them out.'], [$problem->filter('.header')->text(), $problem->filter('.description')->text()]);
+        self::assertSame(sprintf('/admin/cms/presets?tab=block_presets#cms-preset-%s', (string) $preset->uuid), $problem->filter('a')->attr('href'));
+        self::assertSame('Open in Presets', trim($problem->filter('a')->text()));
+        self::assertSame('2', $crawler->filter('.sylius-admin-menu a[href="/admin/cms"]')->attr('data-cms-problem-count'));
     }
 }

@@ -16,6 +16,6 @@ final class MediaItemInUseException extends \RuntimeException
      */
     public function __construct(public readonly string $uuid, public readonly array $uses)
     {
-        parent::__construct(sprintf('The media item %s is used in %d entries, so it can\'t be deleted', $uuid, count($uses)));
+        parent::__construct(sprintf('The media item %s is used in %d entries and editor presets, so it can\'t be deleted', $uuid, count($uses)));
     }
 }

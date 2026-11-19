@@ -67,6 +67,27 @@ export interface PresetListing {
     blocks: StoredBlock[];
 }
 
+/** The block presets at a spot, and the categories in use, of every preset, which editors are suggested when they save one. */
+export interface PresetIndex {
+    presets: PresetListing[];
+    categories: string[];
+}
+
+/** What editors organise a preset by. An empty category or description is none. */
+export interface PresetDetails {
+    name: string;
+    category: string | null;
+    description: string | null;
+}
+
+/** An editor preset as the server saved it. */
+export interface SavedPreset extends PresetDetails {
+    /** Its UUID. */
+    id: string;
+    /** When it last changed, in UTC. */
+    changedAt: string;
+}
+
 /** A preset's blocks ready to insert, and what the editor is told, such as the blocks of removed types left out. */
 export interface InsertedPreset {
     blocks: StoredBlock[];

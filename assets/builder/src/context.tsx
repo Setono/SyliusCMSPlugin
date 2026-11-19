@@ -9,7 +9,7 @@ import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
 import type { SnippetPreviewApi } from './snippetPreview';
-import type { FieldDefinition, InsertedPreset, PresetListing, StoredBlock } from './types';
+import type { FieldDefinition, InsertedPreset, PresetDetails, PresetIndex, SavedPreset, StoredBlock } from './types';
 import type { BuilderState, BuilderStore } from './store';
 import type { UrlsState, UrlsStore } from './urls';
 import type { ValidationState, ValidationStore } from './validation';
@@ -82,12 +82,30 @@ export interface BuilderSession {
     titleChanged: (locale: string, before: string | null) => void;
 }
 
-/** What the Presets tab asks the server. */
+/** What the Presets tab and ★ ask the server. */
 export interface PresetsSession {
-    /** The block presets at the top level, or in a block's children, as the server sees the working copy once the unsaved changes are sent. */
-    list(parent: string | null): Promise<PresetListing[]>;
+    /**
+     * The block presets at the top level, or in a block's children, as the server sees the working copy once the unsaved
+     * changes are sent, and the categories in use.
+     */
+    list(parent: string | null): Promise<PresetIndex>;
     /** A preset's blocks ready to insert into the entry. */
     insert(id: string): Promise<InsertedPreset>;
+    /** Saving blocks as presets, and changing editor presets. Null without their endpoints. */
+    editing: PresetEditing | null;
+}
+
+/** What ★ and the Presets tab do with editor presets. Each takes effect at once. See "Editor presets" in docs/spec/layouts-and-presets.md */
+export interface PresetEditing {
+    /** Saves the blocks with these keys as a new editor preset, once the unsaved changes are sent. */
+    create(blocks: readonly string[], details: PresetDetails): Promise<SavedPreset>;
+    /** Replaces an editor preset's blocks with the blocks with these keys, once the unsaved changes are sent. */
+    replace(id: string, blocks: readonly string[]): Promise<SavedPreset>;
+    /** Renames or recategorises an editor preset, or changes its description. */
+    update(id: string, details: Partial<PresetDetails>): Promise<SavedPreset>;
+    remove(id: string): Promise<void>;
+    /** Where the editor preset downloads as a code preset file. */
+    exportUrl(id: string): string;
 }
 
 const BuilderContext = createContext<BuilderSession | null>(null);

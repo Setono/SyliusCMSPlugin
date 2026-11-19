@@ -26,7 +26,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * for the children of a block, or none for the top level. Each comes with its name, category and description in the
  * admin user's locale, whether it's from code, whether it's offered at the spot and why not, why it's marked invalid,
  * and the blocks it would insert, which the tab renders live under the preview's token. It reads the working copy as
- * the server has it, so the builder sends its unsaved changes first. It changes nothing, so it needs no CSRF token.
+ * the server has it, so the builder sends its unsaved changes first. It changes nothing, so it needs no CSRF token. The
+ * answer also has the categories in use, of every preset, which editors are suggested when they save one.
  * Starting points are offered when an entry is created, not here. See "Where a preset is offered" in
  * docs/spec/layouts-and-presets.md and "Block picker" in docs/spec/builder.md
  */
@@ -55,14 +56,23 @@ final readonly class PresetIndexAction
         $parent = is_string($parent) && '' !== $parent ? $parent : null;
         $locales = self::localesOf($workingCopy);
 
-        $presets = [];
+        $presets = $categories = [];
         foreach ($this->presets->all() as $preset) {
             if (null === $preset->startingPoint) {
                 $presets[] = $this->describe($preset, $workingCopy, $parent, $locales);
             }
+
+            $category = $this->text($preset->category);
+            if (null !== $category) {
+                $categories[$category] = true;
+            }
         }
 
-        return new JsonResponse(CanonicalJson::encode(new ListedObject(['presets' => $presets])), json: true);
+        // The categories in use, of every preset, which editors are suggested when they save one
+        $categories = array_map(strval(...), array_keys($categories));
+        sort($categories, \SORT_NATURAL | \SORT_FLAG_CASE);
+
+        return new JsonResponse(CanonicalJson::encode(new ListedObject(['presets' => $presets, 'categories' => $categories])), json: true);
     }
 
     /**

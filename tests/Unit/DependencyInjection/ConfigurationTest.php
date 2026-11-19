@@ -24,6 +24,8 @@ use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
 use Setono\SyliusCMSPlugin\Model\BlogPostTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EditorPreset;
+use Setono\SyliusCMSPlugin\Model\EditorPresetInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
@@ -71,6 +73,7 @@ use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
+use Setono\SyliusCMSPlugin\Repository\EditorPresetRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryReferenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
@@ -260,6 +263,14 @@ final class ConfigurationTest extends TestCase
                         'model' => EntryReference::class,
                         'interface' => EntryReferenceInterface::class,
                         'repository' => EntryReferenceRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'editor_preset' => [
+                    'classes' => [
+                        'model' => EditorPreset::class,
+                        'interface' => EditorPresetInterface::class,
+                        'repository' => EditorPresetRepository::class,
                         'factory' => Factory::class,
                     ],
                 ],

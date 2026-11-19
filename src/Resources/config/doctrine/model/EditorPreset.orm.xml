@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    A preset an editor saved: the whole preset in the preset file format, with its UUID and changedAt, which are also
+    columns, so a preset is looked up by its UUID and an import compares its changedAt without reading the content
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\EditorPreset" table="setono_sylius_cms__editor_preset">
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="uuid" type="guid" unique="true"/>
+
+        <!-- Text, not a database JSON type: MySQL's JSON type reorders keys, and the column holds canonical JSON -->
+        <field name="content" type="text"/>
+
+        <field name="createdAt" column="created_at" type="datetime_immutable"/>
+        <field name="changedAt" column="changed_at" type="datetime_immutable"/>
+    </mapped-superclass>
+</doctrine-mapping>

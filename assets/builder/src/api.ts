@@ -1,6 +1,6 @@
 import type { Change } from './changeSet';
 import { withUuid, type BuilderConfig, type ShownToAndDate } from './config';
-import type { EntryResponse, EntrySettings, EntryStatus, EntryUrlsResponse, InsertedPreset, PresenceResponse, PresetListing, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
+import type { EntryResponse, EntrySettings, EntryStatus, EntryUrlsResponse, InsertedPreset, PresenceResponse, PresetDetails, PresetIndex, PresetListing, Registry, SavedPreset, SaveResponse, StoredBlock, ValidationError } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
 export interface BuilderApi {
@@ -41,10 +41,26 @@ export interface BuilderApi {
     renderPreview(token: string, blocks: readonly StoredBlock[]): Promise<Record<string, string>>;
     /** The blocks a snippet shows, from its published content, which Detach to edit here copies. Absent without its endpoint. */
     snippetBlocks?(snippet: string): Promise<StoredBlock[]>;
-    /** The block presets at a spot in the working copy as the server has it: the top level, or a block's children. Absent without its endpoint. */
-    presets?(parent: string | null): Promise<PresetListing[]>;
+    /**
+     * The block presets at a spot in the working copy as the server has it, the top level or a block's children, and the
+     * categories in use. Absent without its endpoint.
+     */
+    presets?(parent: string | null): Promise<PresetIndex>;
     /** A preset's blocks ready to insert into the entry. Fails with an ApiError of status 422 and why when it refuses. Absent without its endpoint. */
     insertPreset?(id: string): Promise<InsertedPreset>;
+    /**
+     * Saves blocks of the working copy as the server has it, by their keys, as a new editor preset. Fails with an ApiError
+     * of status 400 and why when the server refuses, such as for no name. Absent without the editor presets' endpoints.
+     */
+    createPreset?(blocks: readonly string[], details: PresetDetails): Promise<SavedPreset>;
+    /** Replaces an editor preset's blocks with blocks of the working copy, by their keys. Absent without the editor presets' endpoints. */
+    replacePreset?(id: string, blocks: readonly string[]): Promise<SavedPreset>;
+    /** Renames or recategorises an editor preset, or changes its description. Absent without the editor presets' endpoints. */
+    updatePreset?(id: string, details: Partial<PresetDetails>): Promise<SavedPreset>;
+    /** Deletes an editor preset. Absent without the editor presets' endpoints. */
+    deletePreset?(id: string): Promise<void>;
+    /** Where an editor preset downloads as a code preset file. Absent without the editor presets' endpoints. */
+    presetExportUrl?(id: string): string;
 }
 
 /** What the preview shows the working copy in, to whom and when, and for a snippet, where and with which sample object. */
@@ -226,6 +242,48 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch):
 
         ...(config.endpoints.snippetBlocks === undefined ? {} : { snippetBlocks: snippetBlocksOf(fetchFn, config.endpoints.snippetBlocks) }),
         ...presetsOf(fetchFn, config.entryUuid, config.endpoints.presets, config.endpoints.presetInsert),
+        ...editorPresetsOf(fetchFn, config),
+    };
+}
+
+/**
+ * The editor presets' endpoints, all or none: ★ saves blocks as a preset, "Replace <name>" saves over one, and the
+ * Presets tab renames, recategorises, deletes and downloads them. Each change needs the CSRF token.
+ */
+function editorPresetsOf(fetchFn: Fetch, config: BuilderConfig): Pick<BuilderApi, 'createPreset' | 'replacePreset' | 'updatePreset' | 'deletePreset' | 'presetExportUrl'> {
+    const { presetCreate, preset, presetExport } = config.endpoints;
+    if (presetCreate === undefined || preset === undefined || presetExport === undefined) {
+        return {};
+    }
+
+    const headers = { 'X-CSRF-Token': config.csrfToken, 'Content-Type': 'application/json' };
+    const saved = (body: unknown): SavedPreset => {
+        const answer = isObject(body) ? body.preset : undefined;
+        if (!isObject(answer) || typeof answer.id !== 'string') {
+            throw new ApiError('The answer has no preset.', 200);
+        }
+
+        return answer as unknown as SavedPreset;
+    };
+
+    return {
+        async createPreset(blocks, details) {
+            return saved(await send(fetchFn, presetCreate, { method: 'POST', headers, body: JSON.stringify({ entry: config.entryUuid, blocks, ...details }) }));
+        },
+
+        async replacePreset(id, blocks) {
+            return saved(await send(fetchFn, withUuid(preset, id), { method: 'PUT', headers, body: JSON.stringify({ entry: config.entryUuid, blocks }) }));
+        },
+
+        async updatePreset(id, details) {
+            return saved(await send(fetchFn, withUuid(preset, id), { method: 'PATCH', headers, body: JSON.stringify(details) }));
+        },
+
+        async deletePreset(id) {
+            await send(fetchFn, withUuid(preset, id), { method: 'DELETE', headers: { 'X-CSRF-Token': config.csrfToken } });
+        },
+
+        presetExportUrl: (id) => withUuid(presetExport, id),
     };
 }
 
@@ -243,7 +301,9 @@ function presetsOf(fetchFn: Fetch, entry: string, index: string | undefined, ins
                 throw new ApiError('The answer has no presets.', 200);
             }
 
-            return presets as PresetListing[];
+            const categories = isObject(body) && Array.isArray(body.categories) ? body.categories.filter((category): category is string => typeof category === 'string') : [];
+
+            return { presets: presets as PresetListing[], categories };
         },
 
         async insertPreset(id) {

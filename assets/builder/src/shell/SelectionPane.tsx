@@ -14,16 +14,21 @@ import { translatedValues } from '../bindings';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import { blockHint, blockLabel } from './BlockTreePane';
-import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlusIcon, TrashIcon } from './icons';
+import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlusIcon, StarIcon, TrashIcon } from './icons';
 import styles from './SelectionPane.module.css';
 import { SettingsPane } from './SettingsPane';
 import { VisibilityConditions } from './VisibilityConditions';
+
+export interface SelectionPaneProps {
+    /** ★: opens Save as preset for the blocks with these keys. Without it, there's no ★. */
+    onSavePreset?: ((keys: readonly string[]) => void) | undefined;
+}
 
 /**
  * The right pane: the selected block's path, its actions, its block style when its block type offers any, its fields,
  * rendered from their schemas, its children and its visibility conditions, or the entry's settings. With several blocks selected, the actions for all of them.
  */
-export function SelectionPane() {
+export function SelectionPane({ onSavePreset }: SelectionPaneProps = {}) {
     const t = useTranslator();
     const { store, locales } = useBuilder();
     const block = useBuilderState((state) => (state.selectedKey === null ? undefined : findBlock(state.entry.tree.blocks, state.selectedKey)));
@@ -39,7 +44,7 @@ export function SelectionPane() {
             <div className={styles.pane}>
                 <h2 className={styles.heading}>{t('setono_sylius_cms.builder.blocks_selected', { '%count%': String(selection.length) })}</h2>
                 <fieldset className={styles.locked} disabled={locked}>
-                    <Actions keys={selection} />
+                    <Actions keys={selection} onSavePreset={onSavePreset} />
                 </fieldset>
             </div>
         );
@@ -59,7 +64,7 @@ export function SelectionPane() {
             {blockType === undefined && <p className={styles.unknown}>{t('setono_sylius_cms.builder.unknown_block_type_help')}</p>}
             <BlockErrors blockKey={block.key} />
             <fieldset className={styles.locked} disabled={locked}>
-            <Actions keys={[block.key]} />
+            <Actions keys={[block.key]} onSavePreset={onSavePreset} />
             {isSnippetBlock(block) && <SharedSnippet block={block} />}
             {blockType !== undefined && blockType.styles.length > 0 && <StylePicker block={block} styles={blockType.styles} />}
             <div key={block.key} className={styles.fields}>
@@ -191,8 +196,11 @@ function Path({ block }: { block: StoredBlock }) {
     );
 }
 
-/** Move, duplicate and delete, for the selected blocks. A block inside another selected block counts once. */
-function Actions({ keys }: { keys: readonly string[] }) {
+/**
+ * Move, duplicate, save as preset (★) and delete, for the selected blocks. A block inside another selected block counts
+ * once.
+ */
+function Actions({ keys, onSavePreset }: { keys: readonly string[]; onSavePreset: SelectionPaneProps['onSavePreset'] }) {
     const t = useTranslator();
     const { store } = useBuilder();
     const canMoveUp = useBuilderState((state) => canShift(state.entry.tree.blocks, keys, 'up'));
@@ -208,6 +216,7 @@ function Actions({ keys }: { keys: readonly string[] }) {
         { label: t('setono_sylius_cms.builder.move_up'), icon: <ArrowUpIcon />, enabled: canMoveUp, act: () => store.getState().shiftBlocks(keys, 'up') },
         { label: t('setono_sylius_cms.builder.move_down'), icon: <ArrowDownIcon />, enabled: canMoveDown, act: () => store.getState().shiftBlocks(keys, 'down') },
         { label: t('setono_sylius_cms.builder.duplicate'), icon: <CopyIcon />, enabled: duplicable, act: () => store.getState().duplicateBlocks(keys) },
+        ...(onSavePreset === undefined ? [] : [{ label: t('setono_sylius_cms.builder.save_as_preset'), icon: <StarIcon />, enabled: true, act: () => onSavePreset(keys) }]),
         { label: t('setono_sylius_cms.builder.delete_block'), icon: <TrashIcon />, enabled: true, act: () => store.getState().removeBlocks(keys) },
     ];
 

@@ -6,7 +6,8 @@ import type { MediaUse } from './types';
 
 /**
  * A media item's Used in list, as the usage index has it: each entry that uses it, linked to its overview page, with
- * its content type and whether its published content or only its draft uses it. See "Usage index" in docs/spec/media.md.
+ * its content type and whether its published content or only its draft uses it, and each editor preset that uses it,
+ * linked to the Presets screen. See "Usage index" in docs/spec/media.md.
  */
 export function UsedIn({ uuid }: { uuid: string }) {
     const t = useTranslator();
@@ -27,9 +28,10 @@ export function UsedIn({ uuid }: { uuid: string }) {
             {uses?.list !== undefined && uses.list !== null && uses.list.length > 0 && (
                 <ul className={styles.uses} aria-labelledby={id}>
                     {uses.list.map((use) => (
-                        <li key={use.entry}>
+                        <li key={use.entry ?? use.preset}>
                             <a href={use.url}>{use.title ?? t('setono_sylius_cms.builder.media.untitled')}</a>
-                            <span className={styles.help}>{`${use.contentType} · ${whereUsed(t, use)}`}</span>
+                            {/* A preset has no draft, and isn't published */}
+                            <span className={styles.help}>{use.preset === null ? `${use.contentType} · ${whereUsed(t, use)}` : use.contentType}</span>
                         </li>
                     ))}
                 </ul>

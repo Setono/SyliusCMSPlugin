@@ -87,6 +87,12 @@ export interface BuilderConfig {
         presets?: string;
         /** A preset's blocks ready to insert, with UUID_PLACEHOLDER for its id. Without it, there's no Presets tab. */
         presetInsert?: string;
+        /** Saves blocks as a new editor preset. Without it, or the next two, blocks can't be saved as presets, nor presets changed. */
+        presetCreate?: string;
+        /** An editor preset, with UUID_PLACEHOLDER for its UUID: PUT replaces its blocks, PATCH renames it and DELETE deletes it. */
+        preset?: string;
+        /** An editor preset as a code preset file to download, with UUID_PLACEHOLDER for its UUID. */
+        presetExport?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];
