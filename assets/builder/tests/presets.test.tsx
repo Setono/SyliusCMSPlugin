@@ -223,3 +223,16 @@ describe('the Presets tab', () => {
         expect(within(screen.getByRole('navigation', { name: 'Blocks' })).queryByRole('button', { name: 'Heading Winter sale' })).toBeNull();
     });
 });
+
+describe('creating from a starting point', () => {
+    it('should tell the editor once the builder opens what creating left out, until the editor dismisses it', async () => {
+        render(<App config={{ ...config, notices: ["Spacer blocks are switched off, so the preset's were left out."] }} api={fakeApi([], async () => ({ blocks: [], notices: [] }))} autosaveDelay={10} />);
+        await screen.findByRole('heading', { level: 1 });
+
+        const notice = screen.getByText("Spacer blocks are switched off, so the preset's were left out.");
+        expect(notice.closest('[role="status"]')).not.toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: 'setono_sylius_cms.builder.dismiss' }));
+        expect(screen.queryByText("Spacer blocks are switched off, so the preset's were left out.")).toBeNull();
+    });
+});

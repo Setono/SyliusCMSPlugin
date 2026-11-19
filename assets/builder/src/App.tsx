@@ -190,6 +190,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                         leaving,
                         overviewUrl: config.overviewUrl,
                         placements: config.placements ?? null,
+                        notices: config.notices ?? [],
                         snippetPreview: snippetPreviewEndpoints,
                         editSnippet:
                             builderEndpoint === undefined

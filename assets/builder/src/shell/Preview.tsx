@@ -8,6 +8,7 @@ import { createPreviewSync, type PreviewSync } from '../previewSync';
 import type { BlockSpot } from '../tree';
 import { BlockPickerAt, soleBlockType } from './BlockPicker';
 import styles from './Preview.module.css';
+import { NoticesBanner } from './NoticesBanner';
 import { ScheduleBanner } from './ScheduleBanner';
 import { TranslationBanner } from './TranslationBanner';
 
@@ -195,6 +196,7 @@ export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProp
 
     return (
         <main className={[className, styles.preview].filter(Boolean).join(' ')} data-width={width}>
+            <NoticesBanner />
             <ScheduleBanner />
             <TranslationBanner />
             {frame.state === 'loaded' && <iframe ref={iframe} key={frame.page} className={styles.frame} title={t('setono_sylius_cms.builder.preview')} src={frame.url} />}

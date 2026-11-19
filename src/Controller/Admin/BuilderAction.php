@@ -24,6 +24,7 @@ use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -36,6 +37,9 @@ final readonly class BuilderAction
 {
     /** What the endpoints that name another entry hold in place of its UUID, which the builder replaces */
     public const UUID_PLACEHOLDER = '00000000-0000-4000-8000-000000000000';
+
+    /** The flash type of what the builder tells the editor once it opens, such as what creating from a starting point left out */
+    public const NOTICES = 'setono_sylius_cms_builder_notice';
 
     /** A path and query of URL characters only (RFC 3986) */
     private const URL_CHARACTERS = '#^[A-Za-z0-9\-._~!$&\'()*+,;=:@/%?]*\z#';
@@ -86,6 +90,8 @@ final readonly class BuilderAction
                 'locale' => $this->editedLocale($request, $entry, $locales),
                 // The block it opens at, such as where a problem is fixed, which the app selects when the tree has it
                 'block' => self::query($request, 'block'),
+                // What creating the entry from a starting point left out, which the app tells the editor once
+                'notices' => self::notices($request),
                 'csrfToken' => $this->csrfToken->value(),
                 'backUrl' => $this->backUrl($request, $entry),
                 'overviewUrl' => $this->urlGenerator->generate('setono_sylius_cms_admin_entry_show', ['uuid' => $entry->getUuid()]),
@@ -249,6 +255,21 @@ final readonly class BuilderAction
             'label' => null === $placed->slot ? $placed->placement->getSlot() : $this->translator->trans($placed->slot->label),
             'removed' => null === $placed->slot,
         ], $section->placements);
+    }
+
+    /**
+     * The notices waiting for the builder, which are read once
+     *
+     * @return list<string>
+     */
+    private static function notices(Request $request): array
+    {
+        $session = $request->hasSession() ? $request->getSession() : null;
+        if (!$session instanceof FlashBagAwareSessionInterface) {
+            return [];
+        }
+
+        return array_values(array_filter($session->getFlashBag()->get(self::NOTICES), is_string(...)));
     }
 
     private static function query(Request $request, string $name): ?string

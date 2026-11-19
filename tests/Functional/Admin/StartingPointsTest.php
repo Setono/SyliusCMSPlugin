@@ -167,6 +167,37 @@ final class StartingPointsTest extends WebTestCase
     }
 
     /**
+     * Creating from a starting point copies its blocks as inserting does: blocks of a disabled type, here Spacer, are
+     * left out with a notice, which the builder shows once the entry is created
+     *
+     * @test
+     */
+    public function it_tells_the_editor_in_the_builder_which_blocks_of_the_starting_point_creating_left_out(): void
+    {
+        $client = self::signedInClient();
+        $withSpacer = self::saveStartingPoint('Spaced page', 'page', null, blocks: [self::heading(self::BLOCK, 'Welcome'), new StoredBlock('0193a5be-0000-7000-8000-00000000e002', 'spacer', 1)]);
+
+        $client->request('GET', '/admin/cms/entries/page/new');
+        $client->submitForm('Create', [
+            'setono_sylius_cms_create_entry[title]' => 'About us',
+            'setono_sylius_cms_create_entry[slug]' => 'about-us',
+            'setono_sylius_cms_create_entry[startingPoint]' => $withSpacer,
+        ]);
+
+        self::assertSame(['heading'], array_map(static fn (StoredBlock $block): string => $block->type, self::onlyPage()->getBlockTree()->blocks));
+        $crawler = $client->followRedirect();
+        /** @var array{notices?: list<string>} $config */
+        $config = json_decode((string) $crawler->filter('#cms-builder')->attr('data-config'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(['Spacer blocks are switched off, so the preset\'s were left out.'], $config['notices'] ?? null);
+
+        // Once
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s/builder', self::onlyPage()->getUuid()));
+        /** @var array{notices?: list<string>} $config */
+        $config = json_decode((string) $crawler->filter('#cms-builder')->attr('data-config'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame([], $config['notices'] ?? null);
+    }
+
+    /**
      * @test
      */
     public function it_creates_an_entry_of_any_content_type_with_a_block_tree_from_a_starting_point_preselecting_blank_without_a_default(): void

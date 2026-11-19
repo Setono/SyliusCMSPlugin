@@ -37,6 +37,8 @@ export interface BuilderSession {
     overviewUrl: string;
     /** A snippet's placements, which are managed on its overview page, or null for an entry that isn't a snippet. */
     placements: SnippetPlacement[] | null;
+    /** What the server tells the editor once the builder opens, such as what creating from a starting point left out. */
+    notices: string[];
     /** What the top bar shows of a snippet's preview and the sample objects it can show it with. Null without the endpoints. */
     snippetPreview: SnippetPreviewApi | null;
     /**

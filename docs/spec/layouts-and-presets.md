@@ -101,7 +101,7 @@ A preset can be a **starting point** for one content type. It then also remember
 - **Creating an entry** offers Blank plus the content type's starting points, shipped and saved by editors ([Admin](admin.md#create-dialog)).
 - **The default.** A developer can mark one code preset as the content type's default starting point (`"default": true`), which the create dialog preselects. Without one, Blank is preselected. Editors can't change the default in v2.0, and editor presets are never the default.
 - **Entry fields start empty**, such as the title, the slug and the SEO fields. The entry's channels, audience and other settings start as for any new entry.
-- **The blocks are copied as inserting copies them** ([What inserting copies](#what-inserting-copies)). The entry's locales are those of the channels it's created in, so their values are kept and translation keys resolve in each of them.
+- **The blocks are copied as inserting copies them** ([What inserting copies](#what-inserting-copies)). The entry's locales are those of the channels it's created in, so their values are kept and translation keys resolve in each of them. What inserting would leave out with a notice, such as blocks of a disabled type, is left out, and the builder shows the notices when it opens the new entry.
 - **The layout** from the starting point is used, with its field values, which are copied like a block's. When that layout no longer exists or is disabled, the content type's default layout is used and the layout field values are dropped. The create dialog's layout cards only apply to Blank.
 
 A starting point is a role a preset plays, not a term of its own.

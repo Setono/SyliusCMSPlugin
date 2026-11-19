@@ -25,6 +25,8 @@ final class StartingPointsKernel extends FixtureKernel
 
         $container->loadFromExtension('setono_sylius_cms', [
             'presets' => ['paths' => [__DIR__ . '/presets/starting_points']],
+            // So a starting point's Spacer is left out, as inserting leaves out blocks of a disabled type
+            'disabled' => ['block_types' => ['spacer']],
         ]);
     }
 }

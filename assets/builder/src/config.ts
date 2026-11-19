@@ -106,6 +106,8 @@ export interface BuilderConfig {
     preview?: ShownToAndDate;
     /** A snippet's placements, by slot, which the More tab lists. Null or absent for an entry that isn't a snippet. */
     placements?: SnippetPlacement[] | null;
+    /** What the server tells the editor once the builder opens, such as what creating from a starting point left out. Optional. */
+    notices?: string[];
     /** UI strings needed before the registry arrives, such as the loading text. Optional. */
     strings?: Record<string, string>;
     /**

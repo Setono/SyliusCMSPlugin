@@ -19,6 +19,7 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.discard_changes'
     | 'setono_sylius_cms.builder.discarding'
     | 'setono_sylius_cms.builder.discard_failed'
+    | 'setono_sylius_cms.builder.dismiss'
     | 'setono_sylius_cms.builder.also_editing'
     | 'setono_sylius_cms.builder.clash'
     | 'setono_sylius_cms.builder.clash_count'

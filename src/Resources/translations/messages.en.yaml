@@ -1015,6 +1015,7 @@ setono_sylius_cms:
         discard_changes: Discard changes
         discard_failed: Couldn't discard the changes
         discarding: Discarding…
+        dismiss: Dismiss
         drop_refused: '%block% can''t go there'
         duplicate: Duplicate
         enabled: Enabled
