@@ -28,8 +28,9 @@ final class InvalidPresetsTest extends BuilderApiTestCase
 
         $presets = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid()));
 
-        // The fixture kernel's directory comes first, as a bundle's prepended one does
-        self::assertSame(['future', 'misfit', 'retired', 'column_pair', 'hero'], array_keys($presets));
+        // The fixture kernel's directory comes after the plugin's shipped presets and before the project's, as another
+        // bundle's prepended one does
+        self::assertSame(['future', 'misfit', 'retired', 'column_pair', 'sale_hero'], array_slice(array_keys($presets), -5));
 
         self::assertSame(['It has blocks of the type "gallery", which the code no longer has, so inserting it leaves them out.'], $presets['retired']['issues']);
         // What's left of it can be inserted
@@ -48,7 +49,7 @@ final class InvalidPresetsTest extends BuilderApiTestCase
         ], $presets['misfit']['issues']);
         // Other problems are inserted and flagged like any invalid block
         self::assertTrue($presets['misfit']['fits']);
-        self::assertSame([], $presets['hero']['issues']);
+        self::assertSame([], $presets['sale_hero']['issues']);
     }
 
     /**

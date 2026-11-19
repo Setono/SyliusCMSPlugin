@@ -778,7 +778,7 @@ setono_sylius_cms:
         scripts: []          # field control scripts, as asset paths, such as build/app/cms/controls.js, public paths or absolute http(s) URLs, each resolved through asset(), loaded as ES modules in this order
 
     presets:
-        paths: []            # directories of code preset files; bundles prepend theirs
+        paths: []            # directories of code preset files; bundles prepend theirs, and the plugin its shipped presets' src/Resources/presets
 
     media:
         storage: 'setono_sylius_cms.storage'     # a Flysystem storage service; the default writes to %kernel.project_dir%/public/media/cms, served at /media/cms; another needs MediaUrlGeneratorInterface aliased (Images)

@@ -8,7 +8,7 @@ use Playwright\Assertions\Expect;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
- * An editor finds the test application's Hero code preset in the block picker's Presets tab, sees it rendered live, and
+ * An editor finds the test application's Sale hero code preset in the block picker's Presets tab, sees it rendered live, and
  * inserts it, which puts its blocks in the tree with the texts its translation keys resolve to. See "Presets" in
  * docs/spec/layouts-and-presets.md and "Block picker" in docs/spec/builder.md
  */
@@ -33,18 +33,18 @@ final class PresetsTest extends UITestCase
         // The presets that fit a page's top level, by category, and the one that needs a product page, with why
         Expect::locator($picker->getByRole('group', ['name' => 'Banners']))->toBeVisible();
         Expect::locator($picker->getByText('Product spotlight'))->toBeVisible();
-        Expect::locator($picker->getByText('Needs: Product page'))->toBeVisible();
+        Expect::locator($picker->locator('li:has-text("Product spotlight")')->getByText('Needs: Product page'))->toBeVisible();
 
         $picker->getByRole('searchbox', ['name' => 'Search presets'])->fill('introduction');
-        self::assertTexts(['HeroFrom code'], $picker->getByRole('heading', ['level' => 4]));
+        self::assertTexts(['Sale heroFrom code'], $picker->getByRole('heading', ['level' => 4]));
         Expect::locator($picker->getByText('Product spotlight'))->toHaveCount(0);
 
         // Rendered live in the preview's channel and locale, with the texts its translation keys resolve to
-        $render = $browser->frameLocator('iframe[title="Preview of Hero"]');
+        $render = $browser->frameLocator('iframe[title="Preview of Sale hero"]');
         Expect::locator($render->locator('h2.cms-heading'))->toHaveText('Winter sale');
         Expect::locator($render->locator('.cms-rich-text strong'))->toHaveText('50%');
 
-        $picker->getByRole('button', ['name' => 'Insert Hero'])->click();
+        $picker->getByRole('button', ['name' => 'Insert Sale hero'])->click();
 
         Expect::locator($picker)->toHaveCount(0);
         $tree = $browser->getByRole('navigation', ['name' => 'Blocks']);

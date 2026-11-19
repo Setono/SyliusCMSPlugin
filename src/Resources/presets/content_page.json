@@ -1,0 +1,53 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.content_page.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.pages"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.content_page.description"
+    },
+    "thumbnail": "/bundles/setonosyliuscmsplugin/thumbnail/preset/content_page.svg",
+    "startingPoint": {
+        "contentType": "page",
+        "layout": {
+            "code": "standard",
+            "version": 1,
+            "fields": {},
+            "translated": {}
+        },
+        "default": false
+    },
+    "blocks": [
+        {
+            "key": "01a1f161-50a6-7e60-9a0d-012b5f280566",
+            "type": "heading",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "text": {
+                    "$trans": "setono_sylius_cms.preset.content_page.heading"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        },
+        {
+            "key": "01a1f161-50a6-7e60-9a0d-012b60217c3a",
+            "type": "rich_text",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "content": {
+                    "$trans": "setono_sylius_cms.preset.content_page.text"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

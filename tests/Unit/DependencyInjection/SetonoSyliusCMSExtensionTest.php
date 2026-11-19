@@ -801,6 +801,23 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     }
 
     /**
+     * See "Shipped code presets" in docs/spec/layouts-and-presets.md
+     *
+     * @test
+     */
+    public function it_prepends_its_own_presets_directory_to_the_presets_paths_as_a_bundle_does(): void
+    {
+        $this->load();
+
+        $presets = $this->container->getExtensionConfig('setono_sylius_cms')[0]['presets'] ?? null;
+        self::assertIsArray($presets);
+        self::assertIsArray($presets['paths'] ?? null);
+        self::assertCount(1, $presets['paths']);
+        self::assertIsString($presets['paths'][0] ?? null);
+        self::assertSame(dirname(__DIR__, 3) . '/src/Resources/presets', realpath($presets['paths'][0]));
+    }
+
+    /**
      * @test
      */
     public function it_hands_the_bestsellers_window_to_the_default_calculator_which_the_calculator_interface_aliases(): void

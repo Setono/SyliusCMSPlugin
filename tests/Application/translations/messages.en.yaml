@@ -9,11 +9,11 @@ app:
         condition_kind:
             product_available: Product is available
         greeting: Hello
-        # The test application's code preset hero.json, as a plugin ships its presets' texts
+        # The test application's code preset sale_hero.json, as a plugin ships its presets' texts
         preset:
-            hero:
+            sale_hero:
                 heading: Winter sale
-                name: Hero
+                name: Sale hero
                 text: '<p>Up to <strong>50%</strong> off.</p>'
         preset_category:
             banners: Banners
