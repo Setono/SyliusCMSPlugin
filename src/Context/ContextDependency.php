@@ -36,4 +36,13 @@ final readonly class ContextDependency
         public ?array $entryContentTypes = null,
     ) {
     }
+
+    /**
+     * Whether it fits an entry of the content type as the entry it needs: one of its entryContentTypes, or any when it
+     * names none. A snippet's entry, null here, is the host page's, which can be of any
+     */
+    public function fitsEntryOf(?string $contentType): bool
+    {
+        return null === $contentType || null === $this->entryContentTypes || in_array($contentType, $this->entryContentTypes, true);
+    }
 }

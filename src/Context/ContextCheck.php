@@ -53,8 +53,8 @@ final readonly class ContextCheck implements ContextCheckInterface
                 $errors[] = new ValidationError($dependency->block, null === $dependency->block ? self::FIELD : null, null, $this->message('setono_sylius_cms.context.does_not_provide', $dependency, $unprovided));
             }
 
-            if (null !== $contentType && null !== $dependency->entryContentTypes && !in_array($contentType, $dependency->entryContentTypes, true)) {
-                $errors[] = new ValidationError($dependency->block, null === $dependency->block ? self::FIELD : null, null, $this->entryMessage($dependency, $dependency->entryContentTypes));
+            if (!$dependency->fitsEntryOf($contentType)) {
+                $errors[] = new ValidationError($dependency->block, null === $dependency->block ? self::FIELD : null, null, $this->entryMessage($dependency));
             }
         }
 
@@ -124,13 +124,13 @@ final readonly class ContextCheck implements ContextCheckInterface
     }
 
     /**
-     * @param list<string> $contentTypes
+     * That the dependency needs an entry of one of its content types
      */
-    private function entryMessage(ContextDependency $dependency, array $contentTypes): string
+    private function entryMessage(ContextDependency $dependency): string
     {
         return (new TranslatableMessage('setono_sylius_cms.context.needs_entry_of', [
             '%what%' => $dependency->name,
-            '%content_types%' => implode(', ', array_map(fn (string $code): string => sprintf('"%s"', $this->contentTypes->has($code) ? $this->translator->trans($this->contentTypes->get($code)->label) : $code), $contentTypes)),
+            '%content_types%' => implode(', ', array_map(fn (string $code): string => sprintf('"%s"', $this->contentTypes->has($code) ? $this->translator->trans($this->contentTypes->get($code)->label) : $code), $dependency->entryContentTypes ?? [])),
         ], 'validators'))->trans($this->translator);
     }
 

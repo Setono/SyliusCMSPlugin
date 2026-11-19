@@ -51,4 +51,23 @@ final readonly class SourceMetadata
     {
         return !$this->source instanceof EntryContextAwareInterface || $this->source->supportsEntryContentType($code);
     }
+
+    /**
+     * The codes of the content types, of those given, whose entries it fits as the host page's entry, or null when it
+     * fits any, which the builder offers it by and a ContextDependency holds an entry's content type against
+     *
+     * @param list<ContentTypeMetadata> $contentTypes
+     *
+     * @return list<string>|null
+     */
+    public function entryContentTypes(array $contentTypes): ?array
+    {
+        if (!$this->source instanceof EntryContextAwareInterface) {
+            return null;
+        }
+
+        $codes = array_map(static fn (ContentTypeMetadata $contentType): string => $contentType->code, $contentTypes);
+
+        return array_values(array_filter($codes, $this->fitsEntryContentType(...)));
+    }
 }

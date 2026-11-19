@@ -134,7 +134,7 @@ final readonly class PresetFitCheck
         // A source such as Related fits only entries of some content types. A snippet's entry can be of any
         $contentType = $workingCopy instanceof SnippetInterface ? null : $this->contentTypes->getByEntry($workingCopy);
         foreach ($dependencies as $dependency) {
-            if (null !== $contentType && null !== $dependency->entryContentTypes && !in_array($contentType->code, $dependency->entryContentTypes, true)) {
+            if (null !== $contentType && !$dependency->fitsEntryOf($contentType->code)) {
                 $reasons[] = new TranslatableMessage('setono_sylius_cms.preset.fit.wrong_entry', ['%content_type%' => new TranslatableMessage($contentType->label)]);
 
                 break;

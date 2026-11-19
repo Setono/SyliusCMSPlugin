@@ -33,7 +33,6 @@ use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceMetadata;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface;
-use Setono\SyliusCMSPlugin\Source\EntryContextAwareInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -243,26 +242,9 @@ final readonly class RegistryExporter
             'label' => $this->translator->trans($source->label),
             'needs' => $source->needs,
             // The content types whose entries it fits as the entry, such as categories for In this category, or null for any
-            'entryContentTypes' => $this->entryContentTypes($source),
+            'entryContentTypes' => $source->entryContentTypes($this->contentTypes->enabled()),
             'fields' => $this->sharedFields($source->fields),
         ], $sources));
-    }
-
-    /**
-     * The codes of the content types editors edit whose entries a source that fits only some fits, or null for one that
-     * fits any
-     *
-     * @return list<string>|null
-     */
-    private function entryContentTypes(SourceMetadata $source): ?array
-    {
-        if (!$source->source instanceof EntryContextAwareInterface) {
-            return null;
-        }
-
-        $codes = array_map(static fn (ContentTypeMetadata $contentType): string => $contentType->code, $this->contentTypes->enabled());
-
-        return array_values(array_filter($codes, $source->fitsEntryContentType(...)));
     }
 
     /**
