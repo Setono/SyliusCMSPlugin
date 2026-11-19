@@ -95,6 +95,8 @@ setono_sylius_cms:
     content_type:
         blog_category: Blog category
         blog_post: Blog post
+        faq_category: FAQ category
+        faq_item: FAQ item
         page: Page
         snippet: Snippet
     # The context keys' labels, naming the pages that provide them. See "Context keys" in docs/spec/slots.md
@@ -106,11 +108,14 @@ setono_sylius_cms:
     content_type_plural:
         blog_category: Categories
         blog_post: Posts
+        faq_category: Categories
+        faq_item: Questions
         page: Pages
         snippet: Snippets
     # A collection is named by its content type's code here, in the hub and its list, or else by its plural or its label
     collection:
         blog_post: Blog
+        faq_item: FAQ
     field:
         accordion_item:
             content: Content
@@ -160,6 +165,9 @@ setono_sylius_cms:
         embed_code:
             code: Code
             code_help: 'HTML, scripts included, such as a review widget or a newsletter form. It runs in the shop as it is, but not in the builder''s preview.'
+        faq_item:
+            answer: Answer
+            categories: Categories
         group:
             full_width: Full width
         heading:
@@ -881,6 +889,7 @@ setono_sylius_cms:
         no_group: Signed in without a group
         no_matching_block_types: No block types match
         no_placements: It shows in no slot yet. Placements are managed on the overview page.
+        no_preview: This entry has no page of its own to preview. It shows where it's listed, such as in an Entries block.
         noindex: Hide from search engines
         noindex_help: Asks search engines not to list this page, in every language. It takes effect when you publish.
         no_style: None

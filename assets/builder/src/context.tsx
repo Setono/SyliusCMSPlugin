@@ -69,6 +69,11 @@ export interface BuilderSession {
     homepage: boolean;
     /** Whether the entry's content type has a block tree. Without one, the tree pane is hidden. */
     hasBlockTree: boolean;
+    /**
+     * Whether the entry's content type has a URL of its own. Without one, an entry other than a snippet, such as a FAQ
+     * item, has no page to preview.
+     */
+    hasOwnUrl: boolean;
     /** The content type's own fields, which the Settings tab renders, shared ones and translatable ones. */
     entryFields: FieldDefinition[];
     /** The warnings about the entry's URLs and the URLs of its old slugs, as the server has them. */

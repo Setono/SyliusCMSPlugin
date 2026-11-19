@@ -34,11 +34,12 @@ export interface PreviewProps {
  * new preview token when the channel, the locale, Shown to or Date changes, or whether the page is the channel's
  * homepage, which moves it to the channel's root, and a snippet's when its placement or sample object changes. Edits are patched into the page by the bridge in it, and the
  * page reloads only for what the bridge can't patch in. In a locale the entry has no translation in, a banner shows
- * instead, because the entry has no page there.
+ * instead, because the entry has no page there. An entry whose content type has no URL of its own, other than a
+ * snippet, such as a FAQ item, has no page at all, so the pane says so and no preview is asked for.
  */
 export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProps) {
     const t = useTranslator();
-    const { store, preview, createPreviewUrl, renderPreview, leave, placements } = useBuilder();
+    const { store, preview, createPreviewUrl, renderPreview, leave, placements, hasOwnUrl } = useBuilder();
     const channel = usePreviewState((state) => state.channel);
     const width = usePreviewState((state) => state.width);
     const shownTo = usePreviewState((state) => state.shownTo);
@@ -47,6 +48,8 @@ export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProp
     const sample = usePreviewState((state) => state.sample);
     // A snippet shows on the host page of a placement, with a sample object
     const snippet = placements !== null;
+    // Any other entry shows on its own page, which an entry without a URL doesn't have
+    const pageless = !hasOwnUrl && !snippet;
     const locale = useBuilderState((state) => state.locale);
     const translated = useBuilderState((state) => hasTranslation(state.entry, state.locale));
     // A page lives at its channel's root while it's the channel's homepage, so the preview moves when that changes
@@ -115,7 +118,7 @@ export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProp
     }, [store, preview, renderPreview, leave, t, canSavePresets]);
 
     useEffect(() => {
-        if (channel === null) {
+        if (channel === null || pageless) {
             return undefined;
         }
 
@@ -145,7 +148,7 @@ export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProp
         return () => {
             active = false;
         };
-    }, [createPreviewUrl, channel, locale, shownTo, date, snippet, placement, sample, translated, homepage, reloads]);
+    }, [createPreviewUrl, channel, locale, shownTo, date, snippet, pageless, placement, sample, translated, homepage, reloads]);
 
     // Sources count what they yield under the token of the page shown, so in its channel, locale, Shown to and Date
     useEffect(() => {
@@ -200,6 +203,7 @@ export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProp
                     {t('setono_sylius_cms.builder.preview_failed')}
                 </p>
             )}
+            {pageless && <p className={styles.noPreview}>{t('setono_sylius_cms.builder.no_preview')}</p>}
             <BlockPickerAt spot={picker?.spot ?? null} onClose={() => setPicker(null)}>
                 <span className={styles.pickerAnchor} style={{ left: picker?.x ?? 0, top: picker?.y ?? 0 }} />
             </BlockPickerAt>

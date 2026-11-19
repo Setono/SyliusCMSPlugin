@@ -38,6 +38,12 @@ use Setono\SyliusCMSPlugin\Model\EntryReference;
 use Setono\SyliusCMSPlugin\Model\EntryReferenceInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\FaqCategory;
+use Setono\SyliusCMSPlugin\Model\FaqCategoryInterface;
+use Setono\SyliusCMSPlugin\Model\FaqItem;
+use Setono\SyliusCMSPlugin\Model\FaqItemInterface;
+use Setono\SyliusCMSPlugin\Model\FaqItemTranslation;
+use Setono\SyliusCMSPlugin\Model\FaqItemTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\MediaFolder;
@@ -343,6 +349,38 @@ final class ConfigurationTest extends TestCase
                         'classes' => [
                             'model' => BlogCategoryTranslation::class,
                             'interface' => BlogCategoryTranslationInterface::class,
+                            'controller' => ResourceController::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'faq_item' => [
+                    'classes' => [
+                        'model' => FaqItem::class,
+                        'interface' => FaqItemInterface::class,
+                        'controller' => ResourceController::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => FaqItemTranslation::class,
+                            'interface' => FaqItemTranslationInterface::class,
+                            'controller' => ResourceController::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'faq_category' => [
+                    'classes' => [
+                        'model' => FaqCategory::class,
+                        'interface' => FaqCategoryInterface::class,
+                        'controller' => ResourceController::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => EntryTranslation::class,
+                            'interface' => EntryTranslationInterface::class,
                             'controller' => ResourceController::class,
                             'factory' => Factory::class,
                         ],
