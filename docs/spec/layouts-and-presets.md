@@ -99,7 +99,8 @@ A preset can be a **starting point** for one content type. It then also remember
 - **Creating an entry** offers Blank plus the content type's starting points, shipped and saved by editors ([Admin](admin.md#create-dialog)).
 - **The default.** A developer can mark one code preset as the content type's default starting point (`"default": true`), which the create dialog preselects. Without one, Blank is preselected. Editors can't change the default in v2.0, and editor presets are never the default.
 - **Entry fields start empty**, such as the title, the slug and the SEO fields. The entry's channels, audience and other settings start as for any new entry.
-- **The layout** from the starting point is used, with its field values. When that layout no longer exists or is disabled, the content type's default layout is used and the layout field values are dropped.
+- **The blocks are copied as inserting copies them** ([What inserting copies](#what-inserting-copies)). The entry's locales are those of the channels it's created in, so their values are kept and translation keys resolve in each of them.
+- **The layout** from the starting point is used, with its field values, which are copied like a block's. When that layout no longer exists or is disabled, the content type's default layout is used and the layout field values are dropped. The create dialog's layout cards only apply to Blank.
 
 A starting point is a role a preset plays, not a term of its own.
 
@@ -198,7 +199,7 @@ Editors save their own presets from the builder ([Builder](builder.md)).
 
 A preset can hold blocks that are no longer valid, such as after a block type was removed from code or a field changed.
 
-- **The Presets tab, the Presets screen and the create dialog mark the preset** and say why. A starting point with blocks of removed types is disabled in the create dialog.
+- **The Presets tab, the Presets screen and the create dialog mark the preset** and say why. A starting point with blocks of removed types is disabled in the create dialog, and so is one saved with a newer block-type or layout version than the code's, which inserting would refuse.
 - **On insert, blocks of a type the code no longer has are left out**, with a notice. So is a disabled block type's block, which can't be added.
 - **Other problems are inserted and flagged** like any invalid block, and publish refuses until they're fixed ([Publishing](publishing.md)).
 

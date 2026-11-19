@@ -100,7 +100,7 @@ Creating an entry from the Overview, All entries or a list:
 1. **Content type**, when creating from the Overview or All entries.
 2. **Title** and, for a content type with its own URL, **slug**, generated from the title until the editor changes it ([URLs and SEO](urls-and-seo.md)).
 3. **Layout**, from wireframe cards, when the content type has more than one ([Layouts and presets](layouts-and-presets.md)).
-4. **Starting point:** Blank, or one of the content type's starting points, shipped or saved by an editor. The default starting point is preselected, otherwise Blank. A starting point with blocks of types that no longer exist is disabled and shows why.
+4. **Starting point:** Blank, or one of the content type's starting points, shipped or saved by an editor, as cards with their thumbnails. The default starting point is preselected, otherwise Blank. A starting point with blocks of types that no longer exist, or saved with a newer version than the code's, is disabled and shows why. A starting point brings its own layout, so the layout cards are hidden while one is picked and only apply to Blank. A content type without a block tree, or without starting points, has no step.
 5. **Channels**, all preselected. The picker is hidden in a store with one channel.
 6. **Create and open the builder.** The entry starts never published.
 
