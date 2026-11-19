@@ -31,7 +31,8 @@ final readonly class ContentTypeMetadata
      * @param string|null $descriptionField the property of its translations the meta description falls back to
      * @param EntryOrder|null $order the order sources list its entries in, or null for the default, newest first
      * @param list<Card> $cards how its entries look listed among others, one per display
-     * @param class-string|null $categoryType the category content type of its collection
+     * @param string|null $categoryType the code of its collection's category content type, which the registry resolves
+     *                                  from the class #[ContentType(categoryType:)] names
      * @param bool $disabled switched off in setono_sylius_cms.disabled.content_types: hidden from the admin, the
      *                       builder, sources and routing, while its entries keep their rows
      */

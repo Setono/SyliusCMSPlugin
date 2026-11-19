@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeModels;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\EntryOrder;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
@@ -218,50 +219,27 @@ final class RegisterContentTypesPass implements CompilerPassInterface
      */
     private static function categoryCodes(array $categoryTypes, array $contentTypes): array
     {
-        $models = array_values(array_column($contentTypes, 'model'));
+        $models = array_map(static fn (array $contentType): string => $contentType['model'], $contentTypes);
         $codes = [];
         foreach ($categoryTypes as $code => $categoryType) {
-            $categoryModel = self::modelNamedBy($categoryType, $models);
+            $categoryModel = ContentTypeModels::namedBy($categoryType, $models);
             if (null === $categoryModel) {
                 throw new \LogicException(sprintf('The content type "%s" names %s in categoryType, which must be the model of a content type, or a class or interface one extends', $code, $categoryType));
             }
 
             $categoryFields = array_filter(
                 (new FieldReader())->readContentType($contentTypes[$code]['model'], false),
-                static fn (FieldMetadata $field): bool => $field->field instanceof Entries && $field->field->indexed && null !== $field->field->contentType && $categoryModel === self::modelNamedBy($field->field->contentType, $models),
+                static fn (FieldMetadata $field): bool => $field->field instanceof Entries && $field->field->indexed && null !== $field->field->contentType && $categoryModel === ContentTypeModels::namedBy($field->field->contentType, $models),
             );
 
             if (1 !== count($categoryFields)) {
                 throw new \LogicException(sprintf('The content type "%s" names %s in categoryType, so it must have one Entries field of its own with that contentType and indexed: true, which holds its categories', $code, $categoryType));
             }
 
-            $codes[$code] = (string) array_search($categoryModel, array_map(static fn (array $contentType): string => $contentType['model'], $contentTypes), true);
+            $codes[$code] = (string) ContentTypeModels::codeNamedBy($categoryType, $models);
         }
 
         return $codes;
-    }
-
-    /**
-     * The model a class names, as the content type registry finds it: the model that's the class, or else the first
-     * that extends or implements it
-     *
-     * @param list<class-string> $models
-     *
-     * @return class-string|null
-     */
-    private static function modelNamedBy(string $class, array $models): ?string
-    {
-        if (in_array($class, $models, true)) {
-            return $class;
-        }
-
-        foreach ($models as $model) {
-            if (is_a($model, $class, true)) {
-                return $model;
-            }
-        }
-
-        return null;
     }
 
     /**

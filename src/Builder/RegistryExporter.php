@@ -33,7 +33,6 @@ use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceMetadata;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface;
-use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
 use Setono\SyliusCMSPlugin\Source\EntryContextAwareInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -176,7 +175,7 @@ final readonly class RegistryExporter
             // null when it has no URL of its own, so no slug
             'prefix' => $contentType->prefix,
             // The code of its collection's category content type, whose entries From a collection's categories picker searches
-            'categoryType' => $this->categoryType($contentType),
+            'categoryType' => $contentType->categoryType,
             // Whether its entries can be a channel's homepage, which only pages can, so the settings offer "Homepage of"
             'homepage' => is_a($contentType->modelClass, PageInterface::class, true),
             // The context keys its entries provide their tree, or null for a snippet, whose context field declares them
@@ -264,19 +263,6 @@ final readonly class RegistryExporter
         $codes = array_map(static fn (ContentTypeMetadata $contentType): string => $contentType->code, $this->contentTypes->enabled());
 
         return array_values(array_filter($codes, $source->fitsEntryContentType(...)));
-    }
-
-    private function categoryType(ContentTypeMetadata $contentType): ?string
-    {
-        if (null === $contentType->categoryType) {
-            return null;
-        }
-
-        try {
-            return $this->contentTypes->getByClass($contentType->categoryType)->code;
-        } catch (UnknownContentTypeException) {
-            return null;
-        }
     }
 
     /**

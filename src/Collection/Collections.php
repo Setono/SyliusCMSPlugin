@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Collection;
 
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
-use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
 
 /**
  * The collections the admin lists, each with its categories: every content type that isn't switched off and isn't a
@@ -82,11 +81,7 @@ final readonly class Collections
             return null;
         }
 
-        try {
-            $categories = $this->contentTypes->getByClass($contentType->categoryType);
-        } catch (UnknownContentTypeException) {
-            return null;
-        }
+        $categories = $this->contentTypes->get($contentType->categoryType);
 
         return $categories->disabled ? null : $categories;
     }

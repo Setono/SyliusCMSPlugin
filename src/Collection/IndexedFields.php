@@ -59,13 +59,8 @@ final readonly class IndexedFields
      */
     public function categoryField(ContentTypeMetadata $contentType): ?FieldMetadata
     {
-        if (null === $contentType->categoryType) {
-            return null;
-        }
-
-        try {
-            $categoryType = $this->contentTypes->getByClass($contentType->categoryType)->code;
-        } catch (UnknownContentTypeException) {
+        $categoryType = $contentType->categoryType;
+        if (null === $categoryType) {
             return null;
         }
 

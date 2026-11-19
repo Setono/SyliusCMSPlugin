@@ -18,6 +18,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeModels;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
@@ -200,13 +201,9 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
 
         $categoryType = AttributeReader::contentType($class)?->categoryType;
         if (null !== $categoryType) {
+            /** @var array<string, class-string> $discriminatorMap */
             $discriminatorMap = array_diff_key($this->getClassMetadata()->discriminatorMap, array_flip($hiddenContentTypes));
-            // The category content type's model is the class it names, or a project's subclass of it
-            $categoryClass = in_array($categoryType, $discriminatorMap, true) ? $categoryType : null;
-            foreach ($discriminatorMap as $model) {
-                $categoryClass ??= is_a($model, $categoryType, true) ? $model : null;
-            }
-
+            $categoryClass = ContentTypeModels::namedBy($categoryType, $discriminatorMap);
             if (null !== $categoryClass) {
                 $classes[] = $categoryClass;
             }

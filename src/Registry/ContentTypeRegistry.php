@@ -44,7 +44,7 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
             throw new UnknownContentTypeException(sprintf('There is no content type with the code "%s"', $code));
         }
 
-        return $this->contentTypes[$code] ??= self::read($this->resources[$code], $this->prefixes[$code] ?? null, in_array($code, $this->disabled, true));
+        return $this->contentTypes[$code] ??= $this->read($this->resources[$code], $this->prefixes[$code] ?? null, in_array($code, $this->disabled, true));
     }
 
     public function getByEntry(EntryInterface $entry): ContentTypeMetadata
@@ -60,19 +60,9 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
 
     public function getByClass(string $class): ContentTypeMetadata
     {
-        foreach ($this->resources as $code => $resource) {
-            if ($class === $resource['model']) {
-                return $this->get($code);
-            }
-        }
+        $code = ContentTypeModels::codeNamedBy($class, $this->models());
 
-        foreach ($this->resources as $code => $resource) {
-            if (is_a($resource['model'], $class, true)) {
-                return $this->get($code);
-            }
-        }
-
-        throw new UnknownContentTypeException(sprintf('No content type\'s model is or extends %s', $class));
+        return null === $code ? throw new UnknownContentTypeException(sprintf('No content type\'s model is or extends %s', $class)) : $this->get($code);
     }
 
     public function all(): array
@@ -86,10 +76,20 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
     }
 
     /**
+     * @return array<string, class-string<EntryInterface>> by code
+     */
+    private function models(): array
+    {
+        return array_map(static fn (array $resource): string => $resource['model'], $this->resources);
+    }
+
+    /**
+     * The content type's attribute, with the category content type it names in categoryType resolved to its code, once
+     *
      * @param array{model: class-string<EntryInterface>, translation: class-string|null, resource: string} $resource
      * @param string|null $prefix the prefix the project set, or null for the attribute's
      */
-    private static function read(array $resource, ?string $prefix, bool $disabled): ContentTypeMetadata
+    private function read(array $resource, ?string $prefix, bool $disabled): ContentTypeMetadata
     {
         $attribute = AttributeReader::contentType($resource['model']) ?? throw new \LogicException(sprintf('The class %s must carry #[ContentType]', $resource['model']));
 
@@ -105,7 +105,7 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
             $attribute->descriptionField,
             EntryOrder::parse($attribute->order),
             $attribute->cards,
-            $attribute->categoryType,
+            null === $attribute->categoryType ? null : ContentTypeModels::codeNamedBy($attribute->categoryType, $this->models()),
             $disabled,
         );
     }

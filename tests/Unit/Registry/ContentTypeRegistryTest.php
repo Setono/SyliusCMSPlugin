@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Location;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\OutletLocation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\SeasonalRecipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untagged;
 use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\Post;
 use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\PostTranslation;
@@ -50,13 +51,13 @@ final class ContentTypeRegistryTest extends TestCase
      */
     public function it_reads_the_cards_the_order_and_the_category_type_of_a_content_type_from_the_nearest_class_that_has_the_attribute(): void
     {
-        $location = (new ContentTypeRegistry(['location' => ['model' => OutletLocation::class, 'translation' => null, 'resource' => 'app.location']]))->get('location');
+        $location = (new ContentTypeRegistry(['location' => ['model' => OutletLocation::class, 'translation' => null, 'resource' => 'app.location'], 'recipe' => ['model' => SeasonalRecipe::class, 'translation' => null, 'resource' => 'app.recipe']]))->get('location');
 
         self::assertSame('location', $location->code);
         self::assertSame(2, $location->version);
         self::assertEquals([new Card('grid', 'cms/card/location/grid.html.twig')], $location->cards);
         self::assertSame(['city' => 'ASC'], $location->order->fields);
-        self::assertSame(Recipe::class, $location->categoryType);
+        self::assertSame('recipe', $location->categoryType, 'By its code, resolved once');
     }
 
     /**
