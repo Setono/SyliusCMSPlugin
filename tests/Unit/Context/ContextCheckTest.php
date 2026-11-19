@@ -9,8 +9,12 @@ use Setono\SyliusCMSPlugin\Context\ContextCheck;
 use Setono\SyliusCMSPlugin\Context\ContextDependency;
 use Setono\SyliusCMSPlugin\Context\ContextDependencyFinderInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\BlogCategory;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Sylius\Component\Core\Model\ProductInterface;
@@ -62,6 +66,24 @@ final class ContextCheckTest extends TestCase
             new ValidationError(self::HEADING, null, null, 'The block "Taxon banner" needs the host-page context "Taxon page", "brand".'),
             new ValidationError(null, 'context', null, 'The placement in "Footer" doesn\'t provide the host-page context "Product page".'),
         ], $check->mismatches(self::snippet(['product'])));
+    }
+
+    /**
+     * A source such as In this category fits only some content types as the entry (docs/spec/extending.md#sources)
+     *
+     * @test
+     */
+    public function it_finds_what_fits_only_entries_of_other_content_types_than_the_entry_s(): void
+    {
+        $check = self::check(
+            self::fitting('Category posts', ['blog_category', 'removed'], self::NOTE),
+            self::fitting('Page posts', ['page'], self::HEADING),
+        );
+
+        self::assertEquals([
+            new ValidationError(self::NOTE, null, null, 'The block "Category posts" only works in an entry of the type "Blog category", "removed".'),
+        ], $check->mismatches(new Page()));
+        self::assertSame([], $check->mismatches(self::snippet(['entry'])), 'A snippet\'s entry can be of any content type');
     }
 
     /**
@@ -141,9 +163,11 @@ final class ContextCheckTest extends TestCase
         $translator->addResource('array', [
             'setono_sylius_cms.context_key.product' => 'Product page',
             'setono_sylius_cms.context_key.taxon' => 'Taxon page',
+            'setono_sylius_cms.content_type.blog_category' => 'Blog category',
         ], 'en');
         $translator->addResource('array', [
             'setono_sylius_cms.context.needs' => '%what% needs the host-page context %context%.',
+            'setono_sylius_cms.context.needs_entry_of' => '%what% only works in an entry of the type %content_types%.',
             'setono_sylius_cms.context.does_not_provide' => '%what% doesn\'t provide the host-page context %context%.',
             'setono_sylius_cms.context.block' => 'The block "%block%"',
             'setono_sylius_cms.context.placement' => 'The placement in "%slot%"',
@@ -156,6 +180,11 @@ final class ContextCheckTest extends TestCase
                 'taxon' => ['class' => TaxonInterface::class, 'label' => 'setono_sylius_cms.context_key.taxon'],
             ]),
             $translator,
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
+                'blog_category' => ['model' => BlogCategory::class, 'translation' => BlogCategoryTranslation::class, 'resource' => 'setono_sylius_cms.blog_category'],
+            ]),
         );
     }
 
@@ -165,6 +194,14 @@ final class ContextCheckTest extends TestCase
     private static function block(string $label, array $needs, string $key): ContextDependency
     {
         return new ContextDependency(new TranslatableMessage('setono_sylius_cms.context.block', ['%block%' => $label], 'validators'), $needs, block: $key);
+    }
+
+    /**
+     * @param list<string> $entryContentTypes
+     */
+    private static function fitting(string $label, array $entryContentTypes, string $key): ContextDependency
+    {
+        return new ContextDependency(new TranslatableMessage('setono_sylius_cms.context.block', ['%block%' => $label], 'validators'), ['entry'], block: $key, entryContentTypes: $entryContentTypes);
     }
 
     /**

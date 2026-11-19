@@ -7,8 +7,13 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Preset;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Block\Column;
 use Setono\SyliusCMSPlugin\Block\Columns;
+use Setono\SyliusCMSPlugin\Block\Entries;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Context\BlockDependencies;
+use Setono\SyliusCMSPlugin\Context\ContextDependency;
+use Setono\SyliusCMSPlugin\Context\ContextDependencyFinderInterface;
+use Setono\SyliusCMSPlugin\Model\BlogPost;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -98,6 +103,26 @@ final class PresetFitCheckTest extends TestCase
     }
 
     /**
+     * Such as the related_posts preset, whose Related source fits only entries of a collection with categories
+     *
+     * @test
+     */
+    public function it_does_not_offer_a_preset_whose_blocks_fit_only_entries_of_other_content_types_naming_the_entry_s(): void
+    {
+        $check = self::check();
+        $related = [self::block('entries')];
+
+        $fit = $check->at($related, self::page([]), null);
+        self::assertFalse($fit->fits());
+        self::assertEquals([new TranslatableMessage('setono_sylius_cms.preset.fit.wrong_entry', ['%content_type%' => new TranslatableMessage('setono_sylius_cms.content_type.page')])], $fit->reasons);
+
+        self::assertTrue($check->at($related, new BlogPost(), null)->fits());
+        $snippet = new Snippet();
+        $snippet->setContext(['entry']);
+        self::assertTrue($check->at($related, $snippet, null)->fits(), 'A snippet\'s entry can be of any content type');
+    }
+
+    /**
      * @test
      */
     public function it_does_not_offer_a_preset_with_nothing_to_insert(): void
@@ -110,17 +135,29 @@ final class PresetFitCheckTest extends TestCase
 
     private static function check(): PresetFitCheck
     {
-        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'columns' => Columns::class, 'column' => Column::class, 'product_badge' => ProductBadge::class], new FieldReader());
+        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'columns' => Columns::class, 'column' => Column::class, 'product_badge' => ProductBadge::class, 'entries' => Entries::class], new FieldReader());
         $contentTypes = new ContentTypeRegistry([
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'snippet' => ['model' => Snippet::class, 'translation' => EntryTranslation::class, 'resource' => 'setono_sylius_cms.snippet'],
+            'blog_post' => ['model' => BlogPost::class, 'translation' => BlogPostTranslation::class, 'resource' => 'setono_sylius_cms.blog_post'],
         ]);
+        // Every Entries block is filled by a source like Related, which fits only blog posts
+        $related = new class() implements ContextDependencyFinderInterface {
+            public function findIn(EntryInterface $workingCopy): iterable
+            {
+                foreach ($workingCopy->getBlockTree()->allBlocks() as $block) {
+                    if ('entries' === $block->type) {
+                        yield new ContextDependency(new TranslatableMessage('app.related'), ['entry'], block: $block->key, entryContentTypes: ['blog_post']);
+                    }
+                }
+            }
+        };
 
         return new PresetFitCheck(
             new NestingRules($blockTypes, $contentTypes),
             $blockTypes,
             $contentTypes,
-            [new BlockDependencies($blockTypes)],
+            [new BlockDependencies($blockTypes), $related],
             new ContextKeyRegistry(['product' => ['class' => ProductInterface::class, 'label' => 'setono_sylius_cms.context_key.product']]),
         );
     }

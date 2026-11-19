@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Registry;
 
+use Setono\SyliusCMSPlugin\Source\EntryContextAwareInterface;
 use Setono\SyliusCMSPlugin\Source\SourceInterface;
 
 /**
@@ -40,5 +41,14 @@ final readonly class SourceMetadata
     public function lists(string $class): bool
     {
         return is_a($this->of, $class, true);
+    }
+
+    /**
+     * Whether it fits an entry of the content type as the host page's entry: every source does, unless it says otherwise
+     * through EntryContextAwareInterface, such as In this category, which fits only categories
+     */
+    public function fitsEntryContentType(string $code): bool
+    {
+        return !$this->source instanceof EntryContextAwareInterface || $this->source->supportsEntryContentType($code);
     }
 }
