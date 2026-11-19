@@ -39,6 +39,12 @@ use Setono\SyliusCMSPlugin\Model\EntryReference;
 use Setono\SyliusCMSPlugin\Model\EntryReferenceInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\FaqCategory;
+use Setono\SyliusCMSPlugin\Model\FaqCategoryInterface;
+use Setono\SyliusCMSPlugin\Model\FaqItem;
+use Setono\SyliusCMSPlugin\Model\FaqItemInterface;
+use Setono\SyliusCMSPlugin\Model\FaqItemTranslation;
+use Setono\SyliusCMSPlugin\Model\FaqItemTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\MediaFolder;
@@ -715,7 +721,8 @@ final class Configuration implements ConfigurationInterface
      * it open, its saves, its revisions, its old slugs, its scheduled publish, its share links, the channels a
      * page is the homepage of and a snippet's placements), the bestseller scores, the media usage index and the reference
      * table have no admin screens of their own, so they have no controller. Nor have the editor presets, whose Presets
-     * screen lists code presets too. The content types are Page and Snippet, and the blog's Blog post and Blog category.
+     * screen lists code presets too. The content types are Page and Snippet, the blog's Blog post and Blog category, and
+     * the FAQ's FAQ item and FAQ category.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
      * The channel and audience group rows always belong to an entry, and the homepage rows to a page, so their
@@ -749,6 +756,8 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::contentTypeResource(SnippetInterface::CONTENT_TYPE, Snippet::class, SnippetInterface::class, EntryTranslation::class, EntryTranslationInterface::class))
                     ->append(self::contentTypeResource(BlogPostInterface::CONTENT_TYPE, BlogPost::class, BlogPostInterface::class, BlogPostTranslation::class, BlogPostTranslationInterface::class))
                     ->append(self::contentTypeResource(BlogCategoryInterface::CONTENT_TYPE, BlogCategory::class, BlogCategoryInterface::class, BlogCategoryTranslation::class, BlogCategoryTranslationInterface::class))
+                    ->append(self::contentTypeResource(FaqItemInterface::CONTENT_TYPE, FaqItem::class, FaqItemInterface::class, FaqItemTranslation::class, FaqItemTranslationInterface::class))
+                    ->append(self::contentTypeResource(FaqCategoryInterface::CONTENT_TYPE, FaqCategory::class, FaqCategoryInterface::class, EntryTranslation::class, EntryTranslationInterface::class))
                 ->end()
             ->end()
         ;

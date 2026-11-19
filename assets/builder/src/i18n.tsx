@@ -91,6 +91,7 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.unknown_block_type_help'
     | 'setono_sylius_cms.builder.preview'
     | 'setono_sylius_cms.builder.preview_failed'
+    | 'setono_sylius_cms.builder.no_preview'
     | 'setono_sylius_cms.builder.preview_channel'
     | 'setono_sylius_cms.builder.add_condition'
     | 'setono_sylius_cms.builder.condition'

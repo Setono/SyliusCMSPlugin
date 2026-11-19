@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    A mapped superclass, like every Sylius model: it becomes an entity when it's the model of its resource. Its columns
+    start with its content type's code, which Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener prefixes them with,
+    so categories is faq_item_categories. They're nullable, as the other content types' rows have none
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\FaqItem">
+        <!-- The UUIDs of its categories, in the editor's order. The reference table indexes those it's published with -->
+        <field name="categories" type="json" nullable="true"/>
+    </mapped-superclass>
+</doctrine-mapping>

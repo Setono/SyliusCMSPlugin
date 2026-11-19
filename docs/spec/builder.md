@@ -11,6 +11,7 @@ The full-screen [builder](../../GLOSSARY.md#editing) where every entry is edited
 - Its back button returns to where it was opened from, and Esc does the same.
 - Both send the unsaved changes first. When they can't be saved, the builder stays open and says why, and the editor stays or chooses **Leave anyway**, which leaves without them.
 - Every entry is edited here, including entries whose content type has no block tree. For those, the tree pane is hidden, and the preview shows the entry's page when it has its own URL.
+- An entry without a URL of its own, other than a snippet, such as a FAQ item, has no page to preview, so the preview pane says so. It's edited in its settings.
 
 ## The shell
 
@@ -43,7 +44,7 @@ From left to right:
 
 ### Centre: the preview
 
-- The preview is the real shop page in an iframe ([Preview mode](#preview-mode)). For an entry with its own URL that's its page, and for a snippet the host page of one of its placements.
+- The preview is the real shop page in an iframe ([Preview mode](#preview-mode)). For an entry with its own URL that's its page, and for a snippet the host page of one of its placements. Any other entry has no page, so there's no preview ([Opening and leaving](#opening-and-leaving)).
 - **Selection is linked both ways.** Clicking a block in the preview selects it in the tree and the right pane, and selecting it in the tree scrolls the preview to it.
 
 ### Right pane: the selection

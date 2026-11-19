@@ -4,19 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
-use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\BlogCategoryInterface;
 use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\BlogPostInterface;
 use Setono\SyliusCMSPlugin\Model\BlogPostTranslationInterface;
-use Setono\SyliusCMSPlugin\Model\EntryInterface;
-use Setono\SyliusCMSPlugin\Model\EntryReferenceInterface;
-use Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface;
-use Setono\SyliusCMSPlugin\Repository\EntryReferenceRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Resource\Factory\FactoryInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Helpers for the blog: categories and posts, created in en_US through their resources' factories, so like any new
@@ -25,7 +19,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 trait Blog
 {
-    abstract protected static function getContainer(): ContainerInterface;
+    use CollectionEntries;
 
     protected static function createBlogCategory(string $title, string $slug, ?string $description = null, bool $published = false): BlogCategoryInterface
     {
@@ -42,7 +36,7 @@ trait Blog
         self::assertInstanceOf(BlogCategoryTranslationInterface::class, $translation);
         $translation->setDescription($description);
 
-        return self::saveBlogEntry($category, $published);
+        return self::saveCollectionEntry($category, $published);
     }
 
     /**
@@ -76,45 +70,6 @@ trait Blog
         self::assertInstanceOf(BlogPostTranslationInterface::class, $translation);
         $translation->setExcerpt($excerpt);
 
-        return self::saveBlogEntry($post, $published);
-    }
-
-    /**
-     * What the reference table holds for the entry: its field and UUID per row, sorted
-     *
-     * @return list<array{string, string}>
-     */
-    protected static function referencesOf(EntryInterface $entry): array
-    {
-        /** @var EntryReferenceRepositoryInterface $repository */
-        $repository = self::getContainer()->get(EntryReferenceRepositoryInterface::class);
-
-        $references = array_map(static fn (EntryReferenceInterface $reference): array => [$reference->getField(), $reference->getUuid()], $repository->findByEntry($entry));
-        sort($references);
-
-        return $references;
-    }
-
-    /**
-     * @template T of EntryInterface
-     *
-     * @param T $entry
-     *
-     * @return T
-     */
-    private static function saveBlogEntry(EntryInterface $entry, bool $published): EntryInterface
-    {
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.entry');
-        $manager->persist($entry);
-        $manager->flush();
-
-        if ($published) {
-            /** @var EntryPublisherInterface $publisher */
-            $publisher = self::getContainer()->get(EntryPublisherInterface::class);
-            $publisher->publish($entry);
-        }
-
-        return $entry;
+        return self::saveCollectionEntry($post, $published);
     }
 }
