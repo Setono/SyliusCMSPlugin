@@ -234,6 +234,7 @@ setono_sylius_cms:
         invalid: 'It isn''t an export this shop can read: %reason%'
         newer_version: '%title% can''t be imported: %reason%. Deploy the code first.'
         not_publishable: '%title% can''t be published: %reason%'
+        other_content_type: '%title% has the UUID of an entry of the content type "%content_type%" here, so it can''t be imported.'
         settings_refused: 'The settings of %title% can''t be saved: %reason%'
         unknown_block_type: '%title% has blocks of the type "%type%", which the code here doesn''t have. Deploy the code first.'
         unknown_content_type: '%title% is of the content type "%content_type%", which the code here doesn''t have. Deploy the code first.'

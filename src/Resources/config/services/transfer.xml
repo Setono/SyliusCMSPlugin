@@ -27,5 +27,82 @@
             <argument>%setono_sylius_cms.plugin_version%</argument>
         </service>
         <service id="Setono\SyliusCMSPlugin\Transfer\ExporterInterface" alias="Setono\SyliusCMSPlugin\Transfer\Exporter"/>
+
+        <!-- Imports: read, plan, apply all or nothing (docs/spec/transfer.md#what-an-import-does) -->
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader" class="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\TargetRecords" class="Setono\SyliusCMSPlugin\Transfer\Import\TargetRecords">
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\PublishedContent"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\UnresolvedReferences" class="Setono\SyliusCMSPlugin\Transfer\Import\UnresolvedReferences">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
+            <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="sylius.repository.customer_group"/>
+            <argument type="service" id="sylius.repository.locale"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportPlanner" class="Setono\SyliusCMSPlugin\Transfer\Import\ImportPlanner">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.repository.editor_preset"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\TargetRecords"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\UrlClashFinderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\UnresolvedReferences"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportPlannerInterface" alias="Setono\SyliusCMSPlugin\Transfer\Import\ImportPlanner"/>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportedPlacements" class="Setono\SyliusCMSPlugin\Transfer\Import\ImportedPlacements">
+            <argument type="service" id="setono_sylius_cms.manager.placement"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Factory\PlacementFactoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportApplier" class="Setono\SyliusCMSPlugin\Transfer\Import\ImportApplier">
+            <argument type="service" id="setono_sylius_cms.manager.entry"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.entry_factories"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportedPlacements"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\TargetRecords"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\Importer" class="Setono\SyliusCMSPlugin\Transfer\Import\Importer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportPlannerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportApplier"/>
+            <argument type="service" id="setono_sylius_cms.manager.entry"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface" alias="Setono\SyliusCMSPlugin\Transfer\Import\Importer"/>
     </services>
 </container>

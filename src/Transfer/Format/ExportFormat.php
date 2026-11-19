@@ -184,7 +184,7 @@ final class ExportFormat
 
         return new Manifest(
             $plugin,
-            self::readDateTime($data['exportedAt'] ?? null, 'The manifest\'s exportedAt'),
+            self::parseDateTime($data['exportedAt'] ?? null, 'The manifest\'s exportedAt'),
             self::uuids($picked['entries'] ?? null, 'The manifest\'s picked entries'),
             self::uuids($picked['presets'] ?? null, 'The manifest\'s picked presets'),
             self::uuids($picked['media'] ?? null, 'The manifest\'s picked media items'),
@@ -200,7 +200,7 @@ final class ExportFormat
     public function decodeEntry(string $json): ExportedEntry
     {
         $data = self::map(self::decode($json, 'An entry'), 'An entry\'s file');
-        $changedAt = self::readDateTime($data['changedAt'] ?? null, 'The entry\'s changedAt');
+        $changedAt = self::parseDateTime($data['changedAt'] ?? null, 'The entry\'s changedAt');
 
         try {
             $settings = (new EntrySettingsNormalizer())->denormalize($data['settings'] ?? null, new EntrySettings(true, new DateWindow(null, null), [], new Audience(AudienceMode::Everyone)));
@@ -310,7 +310,7 @@ final class ExportFormat
             $focalPoint,
             null === $poster ? null : self::uuid($poster, 'A media item\'s poster'),
             $matches[1],
-            self::readDateTime($data['changedAt'] ?? null, 'A media item\'s changedAt'),
+            self::parseDateTime($data['changedAt'] ?? null, 'A media item\'s changedAt'),
         );
     }
 
@@ -431,7 +431,7 @@ final class ExportFormat
      *
      * @throws InvalidExportException
      */
-    private static function readDateTime(mixed $value, string $what): \DateTimeImmutable
+    public static function parseDateTime(mixed $value, string $what): \DateTimeImmutable
     {
         $dateTime = is_string($value) ? \DateTimeImmutable::createFromFormat('!Y-m-d\TH:i:s\Z', $value, new \DateTimeZone('UTC')) : false;
         if (false === $dateTime || self::dateTime($dateTime) !== $value) {
