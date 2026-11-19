@@ -140,9 +140,10 @@ directory `public/media/cms`, which the web server serves at `/media/cms`, besid
 
 Exports uploaded for an import in the admin wait for the worker in a storage of their own, `setono_sylius_cms.transfer_storage`,
 which is the private local directory `private/cms`, outside the web root, so the web server never serves them. Each is
-deleted once its import is done. The worker reads them from there, so it must run on the same server. A worker on
-another server needs a storage both share: define one in your `flysystem` config, written private, and name it in
-`setono_sylius_cms.transfer.storage`:
+deleted once its import finishes, fails or is cancelled, or after a day without being confirmed. Keep `private/cms`
+across deploys, as Sylius's plugins keep their `private` files, or an import waiting during a deploy loses its zip. The
+worker reads the zips from there, so it must run on the same server. A worker on another server needs a storage both
+share: define one in your `flysystem` config, written private, and name it in `setono_sylius_cms.transfer.storage`:
 
 ```yaml
 setono_sylius_cms:

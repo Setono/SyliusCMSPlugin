@@ -15,7 +15,7 @@ setono_sylius_cms:
             app_code: { label: 'app.cms.bindable_property.taxon.code', type: text, path: 'code' }
 ```
 
-The first key is the context key, `channel` or `customer` the property belongs to, then the property's code. `path` is
+The first key is the context key the property belongs to, such as `channel`, `customer` or `taxon`, then the property's code. `path` is
 a [property path](https://symfony.com/doc/6.4/components/property_access.html) on that object, such as `code` or
 `brand.name`. `type` is `text`, `number` or `url`, and decides which fields it can be bound to.
 

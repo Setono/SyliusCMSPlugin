@@ -17,6 +17,7 @@ properties and adding block styles keep working when the plugin's templates chan
 | `layout/<content type code>/<layout code>.html.twig` | A shipped layout, such as `layout/page/standard.html.twig` or `layout/blog_post/article.html.twig`. |
 | `card/<content type code>/<display>.html.twig` | A shipped card, such as `card/blog_post/grid.html.twig`. It gets `entry` and `display`. |
 | `slot/slot.html.twig` | The wrapper a slot with something to show prints around its snippets. |
+| `slot/template_event.html.twig` | The block a slot tied to a Sylius template event has on that event, which renders the slot with the event's context. |
 
 They're all in [`src/Resources/views`](../../src/Resources/views). The variables a block template and a layout template
 get are in [Block types](block-types.md#the-template) and [Layouts](layouts.md#the-template).
