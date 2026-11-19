@@ -33,6 +33,7 @@ A slot with nothing to show prints nothing, not even a wrapper. A placement whos
    - If the block's visibility conditions hide it from the shopper, the entry has only page 1.
    - Otherwise it counts the block's source and answers 404 for a `?page=N` past the last page, before any output. Page 1 always exists, even when the list is empty.
    - A `?page` that isn't a whole number of 1 or more answers 404, and `?page=1` redirects with a `301` to the URL without it.
+   - The page travels in the `RenderContext` (`page`), which the Entries block's template and the head tags read.
 4. **The layout.** The entry renders in its layout's template, resolved through Symfony bundle overrides and Sylius themes ([Extending](extending.md#twig)). An entry whose layout was removed from code renders in its content type's default layout, and the admin flags it.
 
 The homepage renders the same way through the decorated homepage controller, without the URL lookup in step 1 ([URLs and SEO](urls-and-seo.md#homepage)).
