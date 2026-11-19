@@ -193,7 +193,7 @@ final class RegistryTest extends BuilderApiTestCase
         // store locations, with a URL, a layout of their own and no block tree. It adds a layout of its own to pages. The
         // blog's content types ship with the plugin
         self::assertIsArray($registry['contentTypes']);
-        self::assertSame(['announcement', 'store_location', 'page', 'snippet', 'blog_post', 'blog_category'], array_column($registry['contentTypes'], 'code'));
+        self::assertSame(['announcement', 'store_location', 'page', 'snippet', 'blog_post', 'blog_category', 'faq_item', 'faq_category'], array_column($registry['contentTypes'], 'code'));
         $subtitle = ['name' => 'subtitle', 'schema' => ['type' => 'string', 'x-cms-options' => ['maxLength' => null], 'x-cms-type' => 'text', 'x-cms-label' => 'Subtitle', 'x-cms-help' => null, 'x-cms-required' => true, 'x-cms-translatable' => false]];
         self::assertSame(['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all, 'prefix' => null, 'homepage' => false, 'provides' => ['entry'], 'layouts' => [], 'fields' => [$subtitle]], $registry['contentTypes'][0]);
         $storeLocation = $registry['contentTypes'][1];
@@ -236,7 +236,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertSame([], $blockTypes['heading']['needs']);
 
         self::assertIsArray($registry['contentTypes']);
-        self::assertSame(['announcement' => ['entry'], 'store_location' => ['entry'], 'page' => ['entry'], 'snippet' => null, 'blog_post' => ['entry'], 'blog_category' => ['entry']], array_column($registry['contentTypes'], 'provides', 'code'));
+        self::assertSame(['announcement' => ['entry'], 'store_location' => ['entry'], 'page' => ['entry'], 'snippet' => null, 'blog_post' => ['entry'], 'blog_category' => ['entry'], 'faq_item' => ['entry'], 'faq_category' => ['entry']], array_column($registry['contentTypes'], 'provides', 'code'));
 
         self::assertSame([
             ['key' => 'product', 'label' => 'Product page'],
