@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Repository;
 
 use Pagerfanta\Pagerfanta;
 use Setono\SyliusCMSPlugin\Media\MediaFilter;
+use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 
 /**
@@ -47,6 +48,22 @@ interface MediaItemRepositoryInterface
      * The media item whose current file sits at this path in the plugin's storage
      */
     public function findOneByPath(string $path): ?MediaItemInterface;
+
+    /**
+     * Every media item, the one uploaded first first
+     *
+     * @return list<MediaItemInterface>
+     */
+    public function findAllInUploadOrder(): array;
+
+    /**
+     * The media items right in these folders, not in their subfolders, the one uploaded first first
+     *
+     * @param list<MediaFolderInterface> $folders
+     *
+     * @return list<MediaItemInterface>
+     */
+    public function findInFolders(array $folders): array;
 
     /**
      * The media items the library shows, newest first
