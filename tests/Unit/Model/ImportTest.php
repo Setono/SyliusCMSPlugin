@@ -137,6 +137,21 @@ final class ImportTest extends TestCase
     /**
      * @test
      */
+    public function it_is_abandonable_until_it_is_confirmed(): void
+    {
+        $import = self::uploaded();
+        self::assertTrue($import->isAbandonable());
+
+        $import->check([]);
+        self::assertTrue($import->isAbandonable());
+
+        $import->confirm(false, false);
+        self::assertFalse($import->isAbandonable());
+    }
+
+    /**
+     * @test
+     */
     public function it_is_not_abandoned_once_it_is_confirmed(): void
     {
         $import = self::uploaded();

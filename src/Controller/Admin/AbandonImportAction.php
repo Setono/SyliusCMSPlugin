@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
 use Setono\SyliusCMSPlugin\Transfer\Import\ImportQueueInterface;
-use Setono\SyliusCMSPlugin\Transfer\Import\ImportState;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -26,7 +25,7 @@ final readonly class AbandonImportAction
         $import = $this->importRequest->import($uuid);
         $this->importRequest->checkCsrfToken($request);
 
-        if (!in_array($import->getState(), [ImportState::Checking, ImportState::Checked], true)) {
+        if (!$import->isAbandonable()) {
             $this->importRequest->flash($request, 'error', 'setono_sylius_cms.import_not_waiting');
 
             return $this->importRequest->toImport($import);

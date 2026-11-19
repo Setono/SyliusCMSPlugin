@@ -21,7 +21,7 @@ final readonly class AbandonImportHandler
     public function __invoke(AbandonImport $message): void
     {
         $import = $this->imports->findOneByUuid($message->importUuid);
-        if (null === $import || !in_array($import->getState(), [ImportState::Checking, ImportState::Checked], true)) {
+        if (null === $import || !$import->isAbandonable()) {
             return;
         }
 

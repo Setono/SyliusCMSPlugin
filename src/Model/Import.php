@@ -98,6 +98,11 @@ class Import implements ImportInterface
         return ImportState::Checking === $this->state || ImportState::Importing === $this->state;
     }
 
+    public function isAbandonable(): bool
+    {
+        return ImportState::Checking === $this->state || ImportState::Checked === $this->state;
+    }
+
     public function getStartedAt(): ?\DateTimeImmutable
     {
         return UtcColumn::read($this->startedAt);
@@ -158,7 +163,9 @@ class Import implements ImportInterface
 
     public function abandon(\DateTimeImmutable $abandonedAt): void
     {
-        $this->assertState(ImportState::Checking, ImportState::Checked);
+        if (!$this->isAbandonable()) {
+            throw new \LogicException(sprintf('The import %s is %s', $this->uuid, $this->state->value));
+        }
 
         $this->state = ImportState::Abandoned;
         $this->path = null;

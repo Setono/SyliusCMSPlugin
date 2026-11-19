@@ -46,6 +46,11 @@ interface ImportInterface extends ResourceInterface
     public function isWaiting(): bool;
 
     /**
+     * Whether it can still be abandoned: until it's confirmed, while it's checked or waits to be confirmed
+     */
+    public function isAbandonable(): bool;
+
+    /**
      * When the worker started its dry run or, once it's confirmed, the import, or null while it waits for the worker
      */
     public function getStartedAt(): ?\DateTimeImmutable;
