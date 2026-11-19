@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tree;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Registry\Code;
+use Setono\SyliusCMSPlugin\Source\StoredSource;
 
 /**
  * Reads and writes the stored block tree format (docs/spec/content-model.md), which is a contract:
@@ -48,7 +49,7 @@ final class StoredTreeSerializer
         return new ListedObject([
             'code' => $layout->code,
             'version' => $layout->version,
-            'fields' => (object) $layout->fields,
+            'fields' => (object) StoredSource::canonicalFields($layout->fields),
             'translated' => $this->normalizeTranslated($layout->translated),
         ]);
     }
@@ -60,7 +61,7 @@ final class StoredTreeSerializer
             'type' => $block->type,
             'version' => $block->version,
             'style' => $block->style,
-            'fields' => (object) $block->fields,
+            'fields' => (object) StoredSource::canonicalFields($block->fields),
             'translated' => $this->normalizeTranslated($block->translated),
             'conditions' => array_map(static fn (array $condition): ListedObject => new ListedObject([
                 'kind' => $condition['kind'] ?? null,

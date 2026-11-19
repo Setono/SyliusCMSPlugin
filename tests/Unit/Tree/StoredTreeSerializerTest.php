@@ -62,6 +62,29 @@ final class StoredTreeSerializerTest extends TestCase
     }
 
     /**
+     * A Source value's parameters are a map, so empty ones are {}, however the value was read, such as from the
+     * builder's JSON decoded as arrays. See "Field values" in docs/spec/content-model.md
+     *
+     * @test
+     */
+    public function it_writes_a_source_values_empty_parameters_as_an_empty_map_in_a_field_and_in_each_locale(): void
+    {
+        $block = new StoredBlock(self::KEY, 'products', 1, fields: [
+            'products' => ['$source' => 'bestsellers', '$params' => [], '$limit' => 4],
+            'picks' => ['en_US' => ['$source' => 'on_sale', '$params' => [], '$limit' => 2]],
+            'tags' => [],
+        ]);
+        $layout = new StoredLayout('standard', 1, ['related' => ['$source' => 'related_products', '$params' => [], '$limit' => 3]]);
+
+        $json = (new StoredTreeSerializer())->toJson(new StoredTree($layout, [$block]));
+
+        self::assertStringContainsString('"related":{"$limit":3,"$params":{},"$source":"related_products"}', $json);
+        self::assertStringContainsString('"products":{"$limit":4,"$params":{},"$source":"bestsellers"}', $json);
+        self::assertStringContainsString('"picks":{"en_US":{"$limit":2,"$params":{},"$source":"on_sale"}}', $json);
+        self::assertStringContainsString('"tags":[]', $json, 'A value that isn\'t a source is written as it is');
+    }
+
+    /**
      * @test
      */
     public function it_writes_a_condition_without_negate_as_not_negated(): void

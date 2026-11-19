@@ -20,7 +20,7 @@
             "fields": {
                 "entries": {
                     "$limit": 3,
-                    "$params": [],
+                    "$params": {},
                     "$source": "related_entries"
                 }
             },

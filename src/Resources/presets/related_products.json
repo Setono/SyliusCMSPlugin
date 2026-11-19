@@ -20,7 +20,7 @@
             "fields": {
                 "products": {
                     "$limit": 8,
-                    "$params": [],
+                    "$params": {},
                     "$source": "product_associations"
                 }
             },

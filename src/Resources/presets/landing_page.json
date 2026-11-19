@@ -154,7 +154,7 @@
                 "display": "carousel",
                 "products": {
                     "$limit": 8,
-                    "$params": [],
+                    "$params": {},
                     "$source": "bestsellers"
                 }
             },

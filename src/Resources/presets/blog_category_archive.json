@@ -29,7 +29,7 @@
             "fields": {
                 "entries": {
                     "$limit": 9,
-                    "$params": [],
+                    "$params": {},
                     "$source": "entries_in_this_category"
                 },
                 "paginate": true

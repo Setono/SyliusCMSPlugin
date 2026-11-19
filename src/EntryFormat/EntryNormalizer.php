@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\EntryFields;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Source\StoredSource;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
@@ -41,7 +42,7 @@ final readonly class EntryNormalizer
                 $fields[$field] = EntryFields::read($translation, $field);
             }
 
-            $fields += $this->ownFields($translation, $this->contentTypeFields->translatable($contentType));
+            $fields = StoredSource::canonicalFields($fields + $this->ownFields($translation, $this->contentTypeFields->translatable($contentType)));
 
             $translations[$localeCode] = new ListedObject([
                 'shown' => $translation->isShown(),
@@ -60,7 +61,7 @@ final readonly class EntryNormalizer
             'createdAt' => $entry->getCreatedAt()->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z'),
             // The shared base fields: "Hide from search engines" for a content type with its own URL, and a snippet's
             // context, and the content type's own shared fields
-            'fields' => (object) (self::sharedFields($entry, $contentType) + $this->ownFields($entry, $this->contentTypeFields->shared($contentType))),
+            'fields' => (object) StoredSource::canonicalFields(self::sharedFields($entry, $contentType) + $this->ownFields($entry, $this->contentTypeFields->shared($contentType))),
             'translations' => (object) $translations,
             'tree' => (new StoredTreeSerializer())->normalize($entry->getBlockTree()),
         ]);

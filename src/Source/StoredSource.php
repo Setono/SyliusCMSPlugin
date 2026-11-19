@@ -31,11 +31,36 @@ final readonly class StoredSource
     }
 
     /**
+     * The field values with each Source value's empty parameters as an empty map, {} in canonical JSON, as the format has
+     * them, however they were read, such as from the builder's JSON decoded as arrays. A translatable field's value is
+     * a map of locales to values, so a source in a locale's value is one too. Every other value is left as it is
+     *
+     * @param array<array-key, mixed> $fields
+     *
+     * @return array<array-key, mixed>
+     */
+    public static function canonicalFields(array $fields): array
+    {
+        return array_map(static fn (mixed $value): mixed => self::isSource($value) ? self::canonical($value) : (is_array($value) && !array_is_list($value) ? array_map(self::canonical(...), $value) : $value), $fields);
+    }
+
+    /**
      * Whether the value is meant as a source, as a map with a "$source" key, whether or not it fits the shape
      */
     public static function isSource(mixed $value): bool
     {
         return is_array($value) && array_key_exists(self::SOURCE, $value);
+    }
+
+    private static function canonical(mixed $value): mixed
+    {
+        if (!self::isSource($value) || !is_array($value) || [] !== ($value[self::PARAMS] ?? null)) {
+            return $value;
+        }
+
+        $value[self::PARAMS] = new \stdClass();
+
+        return $value;
     }
 
     /**

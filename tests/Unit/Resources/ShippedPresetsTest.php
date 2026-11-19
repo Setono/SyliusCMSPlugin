@@ -154,8 +154,8 @@ final class ShippedPresetsTest extends TestCase
         $bestsellers = self::preset('bestsellers_carousel')->blocks[0];
         $related = self::preset('related_products')->blocks[0];
 
-        self::assertEquals(['display' => 'carousel', 'products' => ['$source' => 'bestsellers', '$params' => [], '$limit' => 8]], $bestsellers->fields);
-        self::assertEquals(['products' => ['$source' => 'product_associations', '$params' => [], '$limit' => 8]], $related->fields);
+        self::assertEquals(['display' => 'carousel', 'products' => ['$source' => 'bestsellers', '$params' => new \stdClass(), '$limit' => 8]], $bestsellers->fields);
+        self::assertEquals(['products' => ['$source' => 'product_associations', '$params' => new \stdClass(), '$limit' => 8]], $related->fields);
     }
 
     /**
@@ -182,9 +182,21 @@ final class ShippedPresetsTest extends TestCase
     {
         yield 'blog_page' => ['blog_page', ['entries' => ['$source' => 'entries_from_collection', '$params' => ['contentType' => 'blog_post'], '$limit' => 9], 'paginate' => true]];
         yield 'faq_page' => ['faq_page', ['entries' => ['$source' => 'entries_from_collection', '$params' => ['contentType' => 'faq_item'], '$limit' => 50], 'display' => 'accordion']];
-        yield 'blog_category_archive' => ['blog_category_archive', ['entries' => ['$source' => 'entries_in_this_category', '$params' => [], '$limit' => 9], 'paginate' => true]];
+        yield 'blog_category_archive' => ['blog_category_archive', ['entries' => ['$source' => 'entries_in_this_category', '$params' => new \stdClass(), '$limit' => 9], 'paginate' => true]];
         yield 'latest_posts' => ['latest_posts', ['entries' => ['$source' => 'entries_from_collection', '$params' => ['contentType' => 'blog_post'], '$limit' => 3]]];
-        yield 'related_posts' => ['related_posts', ['entries' => ['$source' => 'related_entries', '$params' => [], '$limit' => 3]]];
+        yield 'related_posts' => ['related_posts', ['entries' => ['$source' => 'related_entries', '$params' => new \stdClass(), '$limit' => 3]]];
+    }
+
+    /**
+     * A Source value's parameters are a map, written {} when empty, as the export writes them
+     *
+     * @test
+     *
+     * @dataProvider provideFiles
+     */
+    public function it_writes_a_sources_empty_parameters_as_an_empty_map(string $code, string $path): void
+    {
+        self::assertStringNotContainsString('"$params": []', (string) file_get_contents($path), $code);
     }
 
     /**
