@@ -504,9 +504,7 @@ final class CMSExtensionTest extends IntegrationTestCase
     {
         $blog = $this->pageWith(['en_US' => ['title' => 'Blog', 'slug' => 'blog']]);
         $block = new Entries();
-        /** @var ItemList<EntryInterface> $posts */
-        $posts = ItemList::lazy(static fn (): ArrayAdapter => new ArrayAdapter(array_map(static fn (int $number): string => 'Post ' . $number, range(1, $items))), $limit);
-        $block->entries = $posts;
+        $block->entries = ItemList::lazy(fn (): ArrayAdapter => new ArrayAdapter(array_map(fn (int $number): EntryInterface => $this->post('Post ' . $number), range(1, $items))), $limit);
         $block->paginate = $paginate;
 
         return [
@@ -514,6 +512,17 @@ final class CMSExtensionTest extends IntegrationTestCase
             'entry' => $blog,
             CMSRuntime::RENDER_CONTEXT => Rendering::context(channel: new Channel(), hostPageContext: ['entry' => $blog])->withPage($page),
         ];
+    }
+
+    /**
+     * A page standing in for a blog post, with a title in en_US
+     */
+    private function post(string $title): EntryInterface
+    {
+        $post = $this->pageWith(['en_US' => ['title' => $title]]);
+        $post->setCurrentLocale('en_US');
+
+        return $post;
     }
 
     public function notABlock(): NotABlock

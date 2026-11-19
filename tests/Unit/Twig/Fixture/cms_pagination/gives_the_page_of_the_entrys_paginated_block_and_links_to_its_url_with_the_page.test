@@ -2,7 +2,7 @@
 cms_pagination() gives the page of the entry's paginated Entries block that shows, its entries and its links, each to the entry's URL with ?page=N, page 1 without it
 --TEMPLATE--
 {%- set pagination = cms_pagination(view) -%}
-entries: {{ pagination.entries|join(", ") }}
+entries: {{ pagination.entries|map(post => post.title)|join(", ") }}
 links: {{ pagination.links|map(link => link.page ~ (link.current ? " (current)") ~ " " ~ link.url)|join(", ") }}
 previous: {{ pagination.previous.url }}
 next: {{ pagination.next.url }}

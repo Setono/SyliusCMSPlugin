@@ -107,6 +107,8 @@ final class PaginationTest extends TestCase
     /**
      * Each link as its page, the current one in brackets, and a gap as …
      *
+     * @param Pagination<int> $pagination
+     *
      * @return list<string>
      */
     private static function links(Pagination $pagination): array
@@ -122,6 +124,8 @@ final class PaginationTest extends TestCase
      * Page $page of a list of 3 to a page with $pages pages
      *
      * @param int<1, max> $page
+     *
+     * @return Pagination<int>
      */
     private static function pagination(int $page, int $pages): Pagination
     {

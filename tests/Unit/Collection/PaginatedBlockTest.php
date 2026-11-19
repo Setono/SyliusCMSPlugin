@@ -122,7 +122,7 @@ final class PaginatedBlockTest extends TestCase
      */
     public function it_lets_page_1_show_without_counting_even_when_the_list_is_empty(): void
     {
-        $uncountable = ItemList::lazy(static fn (): AdapterInterface => new class() implements AdapterInterface {
+        $uncountable = ItemList::lazy(static fn (): AdapterInterface => new /** @implements AdapterInterface<EntryInterface> */ class() implements AdapterInterface {
             public function getNbResults(): int
             {
                 throw new \LogicException('Page 1 is never counted before rendering');
@@ -164,24 +164,37 @@ final class PaginatedBlockTest extends TestCase
     }
 
     /**
+     * A source's list of $count posts, $limit to a page
+     *
      * @param int<1, max> $limit
      *
-     * @return ItemList<string>
+     * @return ItemList<EntryInterface>
      */
     private static function posts(int $count, int $limit): ItemList
     {
-        return ItemList::lazy(static fn (): AdapterInterface => new ArrayAdapter(array_map(static fn (int $number): string => 'Post ' . $number, range(1, $count))), $limit);
+        return ItemList::lazy(static fn (): AdapterInterface => new ArrayAdapter(self::pages($count)), $limit);
     }
 
     /**
-     * @param ItemList<mixed>|null $list
+     * @return list<EntryInterface>
+     */
+    private static function pages(int $count): array
+    {
+        $pages = [];
+        for ($number = 1; $number <= $count; ++$number) {
+            $pages[] = new Page();
+        }
+
+        return $pages;
+    }
+
+    /**
+     * @param ItemList<EntryInterface>|null $list
      */
     private function entries(string $key, bool $paginate = false, ?string $entry = null, ?ItemList $list = null): BlockView
     {
         $block = new Entries();
-        /** @var ItemList<EntryInterface> $list */
-        $list ??= ItemList::of([]);
-        $block->entries = $list;
+        $block->entries = $list ?? ItemList::of(self::pages(0));
         $block->paginate = $paginate;
 
         return new BlockView($key, 'entries', $block, null, [], entry: $entry ?? $this->page->getUuid());
