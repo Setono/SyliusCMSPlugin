@@ -341,7 +341,11 @@ final class ImportTest extends WebTestCase
      */
     private static function assertConflicts(Crawler $crawler): void
     {
-        $conflicts = $crawler->filter('[data-cms-import-conflicts] li')->each(static fn (Crawler $item): string => trim($item->text()));
+        $conflicts = [];
+        foreach ($crawler->filter('[data-cms-import-conflicts] li') as $item) {
+            $conflicts[] = trim($item->textContent);
+        }
+
         self::assertCount(2, $conflicts);
         self::assertSame('Autumn sale has unpublished changes here.', $conflicts[0]);
         self::assertMatchesRegularExpression('/^Autumn sale changed here at [0-9T:Z-]+, after the export\'s copy from 2026-11-12T10:15:00Z\.$/', $conflicts[1]);
