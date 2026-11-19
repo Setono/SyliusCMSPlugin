@@ -1,0 +1,55 @@
+{
+    "format": 1,
+    "name": "Campaign page",
+    "category": "Pages",
+    "description": "A heading and an introduction on the landing layout",
+    "thumbnail": "/build/app/campaign-page.svg",
+    "startingPoint": {
+        "contentType": "page",
+        "layout": {
+            "code": "landing",
+            "version": 1,
+            "fields": {
+                "tagline": {
+                    "$trans": "app.cms.preset.hero.heading"
+                },
+                "transparentHeader": true
+            },
+            "translated": {}
+        },
+        "default": true
+    },
+    "blocks": [
+        {
+            "key": "0193a5be-0000-7000-8000-00000000c001",
+            "type": "heading",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "level": "h1",
+                "text": {
+                    "da_DK": "Sommerudsalg",
+                    "de_DE": "Sommerschlussverkauf",
+                    "en_US": "Summer sale"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        },
+        {
+            "key": "0193a5be-0000-7000-8000-00000000c002",
+            "type": "rich_text",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "content": {
+                    "$trans": "app.cms.preset.hero.text"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

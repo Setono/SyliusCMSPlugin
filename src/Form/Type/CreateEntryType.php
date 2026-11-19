@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Form\Type;
 
+use Setono\SyliusCMSPlugin\Admin\StartingPointChoice;
 use Setono\SyliusCMSPlugin\Routing\Slug;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
@@ -15,17 +16,19 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
 
 /**
  * The create dialog's form: the title, the slug for a content type with its own URL, the layout, from wireframe cards,
- * for a content type with more than one, and the channels, all of the store's picked to start with, in a store with more
- * than one. A slug left empty is generated from the title with Sylius's slug generator, as the dialog does while the
- * editor types the title. See "Create dialog" in docs/spec/admin.md
+ * for a content type with more than one, the starting point, Blank or one of the content type's, when it has any, and
+ * the channels, all of the store's picked to start with, in a store with more than one. A slug left empty is generated
+ * from the title with Sylius's slug generator, as the dialog does while the editor types the title. See "Create
+ * dialog" in docs/spec/admin.md
  *
- * @extends AbstractType<array{title: string, slug?: string, layout?: string, channels?: array<int, string>}>
+ * @extends AbstractType<array{title: string, slug?: string, layout?: string, startingPoint?: string|null, channels?: array<int, string>}>
  */
 final class CreateEntryType extends AbstractType
 {
@@ -81,6 +84,12 @@ final class CreateEntryType extends AbstractType
             ]);
         }
 
+        /** @var list<StartingPointChoice> $startingPoints */
+        $startingPoints = $options['starting_points'];
+        if ([] !== $startingPoints) {
+            $this->addStartingPoint($builder, $startingPoints);
+        }
+
         $channels = $this->channels();
         if (count($channels) > 1) {
             $builder->add('channels', ChoiceType::class, [
@@ -103,12 +112,80 @@ final class CreateEntryType extends AbstractType
             ->setDefault('layouts', [])
             ->setAllowedTypes('layouts', 'array')
             ->setInfo('layouts', 'The layouts editors can pick, by code, each with its label and thumbnail: the default first, which is picked to start with')
+            ->setDefault('starting_points', [])
+            ->setAllowedTypes('starting_points', StartingPointChoice::class . '[]')
+            ->setInfo('starting_points', 'The content type\'s starting points, which editors can pick instead of Blank')
         ;
     }
 
     public function getBlockPrefix(): string
     {
         return 'setono_sylius_cms_create_entry';
+    }
+
+    /**
+     * The starting point, from cards: Blank, the field's placeholder, which leaves the tree as the content type starts
+     * it, then the content type's starting points. The default is picked to start with, unless it's disabled, and
+     * otherwise Blank. A disabled one is shown but refused
+     *
+     * @param FormBuilderInterface<mixed> $builder
+     * @param list<StartingPointChoice> $startingPoints
+     */
+    private function addStartingPoint(FormBuilderInterface $builder, array $startingPoints): void
+    {
+        $byId = [];
+        foreach ($startingPoints as $startingPoint) {
+            $byId[$startingPoint->id()] = $startingPoint;
+        }
+
+        $default = null;
+        foreach ($startingPoints as $startingPoint) {
+            if ($startingPoint->default && !$startingPoint->disabled) {
+                $default = $startingPoint->id();
+
+                break;
+            }
+        }
+
+        $enabled = array_keys(array_filter($byId, static fn (StartingPointChoice $startingPoint): bool => !$startingPoint->disabled));
+
+        $builder->add('startingPoint', ChoiceType::class, [
+            'label' => 'setono_sylius_cms.form.entry.starting_point',
+            'help' => 'setono_sylius_cms.form.entry.starting_point_help',
+            'choices' => array_keys($byId),
+            'choice_label' => static fn (string $id): string => $byId[$id]->name,
+            'choice_translation_domain' => false,
+            'choice_attr' => static fn (string $id): array => self::startingPointAttributes($byId[$id]),
+            'expanded' => true,
+            'multiple' => false,
+            'required' => false,
+            'placeholder' => 'setono_sylius_cms.form.entry.blank',
+            'data' => $default,
+            'constraints' => [new Choice(choices: $enabled, message: 'setono_sylius_cms.starting_point.disabled')],
+        ]);
+    }
+
+    /**
+     * The card's thumbnail and description, and whether it's disabled
+     *
+     * @return array<string, string>
+     */
+    private static function startingPointAttributes(StartingPointChoice $startingPoint): array
+    {
+        $attributes = [];
+        if (null !== $startingPoint->thumbnail) {
+            $attributes['data-thumbnail'] = $startingPoint->thumbnail;
+        }
+
+        if (null !== $startingPoint->description) {
+            $attributes['data-description'] = $startingPoint->description;
+        }
+
+        if ($startingPoint->disabled) {
+            $attributes['disabled'] = 'disabled';
+        }
+
+        return $attributes;
     }
 
     /**

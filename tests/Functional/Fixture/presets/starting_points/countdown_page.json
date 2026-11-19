@@ -1,0 +1,29 @@
+{
+    "format": 1,
+    "name": "Countdown page",
+    "category": "Pages",
+    "description": null,
+    "thumbnail": null,
+    "startingPoint": {
+        "contentType": "page",
+        "layout": {
+            "code": "standard",
+            "version": 1,
+            "fields": {},
+            "translated": {}
+        },
+        "default": false
+    },
+    "blocks": [
+        {
+            "key": "0193a5be-0000-7000-8000-00000000d001",
+            "type": "countdown",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

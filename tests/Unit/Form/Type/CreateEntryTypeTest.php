@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Form\Type;
 
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Admin\StartingPointChoice;
 use Setono\SyliusCMSPlugin\Form\Type\CreateEntryType;
+use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
@@ -29,6 +32,8 @@ final class CreateEntryTypeTest extends TypeTestCase
         'standard' => ['label' => 'setono_sylius_cms.layout.page.standard', 'thumbnail' => '/bundles/setonosyliuscmsplugin/thumbnail/layout/page/standard.svg'],
         'landing' => ['label' => 'app.cms.layout.landing', 'thumbnail' => null],
     ];
+
+    private const EDITOR_PRESET = '0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a';
 
     /** @var list<ChannelInterface> the store's channels, by name */
     private array $channels = [];
@@ -234,6 +239,101 @@ final class CreateEntryTypeTest extends TypeTestCase
     /**
      * @test
      */
+    public function it_offers_blank_and_the_starting_points_as_cards_with_blank_picked_to_start_with(): void
+    {
+        $form = $this->factory->create(CreateEntryType::class, null, ['starting_points' => [self::startingPoint('landing', thumbnail: '/build/landing.svg'), self::startingPoint(self::EDITOR_PRESET)]]);
+        $view = $form->createView();
+
+        /** @var array{label: string, expanded: bool, multiple: bool, required: bool, placeholder: string, choices: list<ChoiceView>, data: string|null} $vars */
+        $vars = $view['startingPoint']->vars;
+        self::assertSame('setono_sylius_cms.form.entry.starting_point', $vars['label']);
+        self::assertTrue($vars['expanded']);
+        self::assertFalse($vars['multiple']);
+        // Blank is the field's placeholder, which leaves the entry's tree as the content type starts it
+        self::assertFalse($vars['required']);
+        self::assertSame('setono_sylius_cms.form.entry.blank', $vars['placeholder']);
+        self::assertSame(['landing' => 'The landing', self::EDITOR_PRESET => 'The ' . self::EDITOR_PRESET], self::labels($vars['choices']));
+        self::assertSame(['data-thumbnail' => '/build/landing.svg', 'data-description' => 'About landing'], $vars['choices'][0]->attr);
+        self::assertSame(['data-description' => 'About ' . self::EDITOR_PRESET], $vars['choices'][1]->attr);
+        self::assertNull($vars['data']);
+        self::assertTrue($view['startingPoint']['placeholder']->vars['checked']);
+
+        $form->submit(['title' => 'About us', 'slug' => 'about-us', 'startingPoint' => self::EDITOR_PRESET]);
+
+        self::assertTrue($form->isValid());
+        self::assertSame(['title' => 'About us', 'slug' => 'about-us', 'startingPoint' => self::EDITOR_PRESET], $form->getData());
+    }
+
+    /**
+     * @test
+     */
+    public function it_picks_the_default_starting_point_to_start_with_and_takes_blank(): void
+    {
+        $form = $this->factory->create(CreateEntryType::class, null, ['starting_points' => [self::startingPoint('content'), self::startingPoint('landing', default: true)]]);
+
+        /** @var array{data: string|null} $vars */
+        $vars = $form->createView()['startingPoint']->vars;
+        self::assertSame('landing', $vars['data']);
+
+        $form->submit(['title' => 'About us', 'slug' => 'about-us', 'startingPoint' => '']);
+
+        self::assertTrue($form->isValid());
+        self::assertSame(['title' => 'About us', 'slug' => 'about-us', 'startingPoint' => null], $form->getData());
+    }
+
+    /**
+     * @test
+     */
+    public function it_picks_blank_to_start_with_when_the_default_starting_point_is_disabled(): void
+    {
+        $form = $this->factory->create(CreateEntryType::class, null, ['starting_points' => [self::startingPoint('landing', default: true, disabled: true)]]);
+
+        /** @var array{data: string|null} $vars */
+        $vars = $form->createView()['startingPoint']->vars;
+        self::assertNull($vars['data']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_disables_a_starting_point_with_blocks_of_removed_types_and_refuses_it(): void
+    {
+        $form = $this->factory->create(CreateEntryType::class, null, ['starting_points' => [self::startingPoint('countdown', disabled: true)]]);
+
+        /** @var array{choices: list<ChoiceView>} $vars */
+        $vars = $form->createView()['startingPoint']->vars;
+        self::assertSame(['data-description' => 'About countdown', 'disabled' => 'disabled'], $vars['choices'][0]->attr);
+
+        $form->submit(['title' => 'About us', 'slug' => 'about-us', 'startingPoint' => 'countdown']);
+
+        self::assertFalse($form->isValid());
+        self::assertCount(1, $form->get('startingPoint')->getErrors());
+        self::assertSame('setono_sylius_cms.starting_point.disabled', $form->get('startingPoint')->getErrors()[0]->getMessageTemplate());
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_starting_point_it_does_not_offer(): void
+    {
+        $form = $this->factory->create(CreateEntryType::class, null, ['starting_points' => [self::startingPoint('landing')]]);
+
+        $form->submit(['title' => 'About us', 'slug' => 'about-us', 'startingPoint' => 'gone']);
+
+        self::assertFalse($form->isValid());
+    }
+
+    /**
+     * @test
+     */
+    public function it_has_no_starting_point_to_pick_for_a_content_type_without_any(): void
+    {
+        self::assertFalse($this->factory->create(CreateEntryType::class)->has('startingPoint'));
+    }
+
+    /**
+     * @test
+     */
     public function its_fields_have_translated_labels_and_a_block_prefix(): void
     {
         $view = $this->factory->create(CreateEntryType::class)->createView();
@@ -317,6 +417,15 @@ final class CreateEntryTypeTest extends TypeTestCase
         $this->expectException(InvalidOptionsException::class);
 
         $this->factory->create(CreateEntryType::class, null, ['slug' => 'yes']);
+    }
+
+    private static function startingPoint(string $id, bool $default = false, bool $disabled = false, ?string $thumbnail = null): StartingPointChoice
+    {
+        $preset = str_contains($id, '-')
+            ? new Preset($id, [], startingPoint: new StartingPoint('page', null), uuid: $id)
+            : new Preset($id, [], startingPoint: new StartingPoint('page', null, $default), code: $id, thumbnail: $thumbnail);
+
+        return new StartingPointChoice($preset, 'The ' . $id, 'About ' . $id, $thumbnail, $default, [], $disabled);
     }
 
     /**

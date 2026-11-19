@@ -1,8 +1,9 @@
 {#
  # The create dialog's form for a content type (`content_type`): the title, the slug for a content type with its own
  # URL, which admin/create-entry-dialog.js fills from the title until the editor changes it, the layout from wireframe
- # cards for a content type with more than one, and the channels in a store with more than one. The dialog loads it with its heading; the create page shows it under its own.
- # See "Create dialog" in docs/spec/admin.md
+ # cards for a content type with more than one, the starting point from cards, Blank or one of `starting_points`, the
+ # content type's, when it has any, and the channels in a store with more than one. The dialog loads it with its
+ # heading; the create page shows it under its own. See "Create dialog" in docs/spec/admin.md
  #}
 {% form_theme form '@SyliusAdmin/Form/theme.html.twig' %}
 
@@ -33,6 +34,46 @@
                 {% do card.setRendered %}
             {% endfor %}
             {{ form_errors(form.layout) }}
+        </fieldset>
+    {% endif %}
+    {% if form.startingPoint is defined %}
+        {# Blank, then the content type's starting points as cards: each a radio with its thumbnail, its name and its
+         # description, and what's wrong with it. One that can't be picked is disabled. Picking one hides the layouts,
+         # as it brings its own #}
+        {% set starting_points_by_id = {} %}
+        {% for starting_point in starting_points|default([]) %}
+            {% set starting_points_by_id = starting_points_by_id|merge({(starting_point.id): starting_point}) %}
+        {% endfor %}
+        <fieldset class="field cms-layout-cards cms-starting-point-cards" data-cms-create-entry-starting-points aria-describedby="{{ form.startingPoint.vars.id }}_help">
+            <legend class="cms-layout-cards__legend">{{ form.startingPoint.vars.label|trans }}</legend>
+            {% for card in form.startingPoint %}
+                {% set starting_point = starting_points_by_id[card.vars.value]|default(null) %}
+                {% set disabled = card.vars.attr.disabled is defined %}
+                {% set thumbnail = card.vars.attr['data-thumbnail']|default(null) %}
+                <label class="cms-layout-card cms-starting-point-card{% if disabled %} cms-starting-point-card--disabled{% endif %}" for="{{ card.vars.id }}">
+                    <input type="radio" class="cms-layout-card__radio" id="{{ card.vars.id }}" name="{{ card.vars.full_name }}" value="{{ card.vars.value }}"{% if card.vars.checked %} checked{% endif %}{% if disabled %} disabled{% endif %}>
+                    {% if thumbnail is not null %}
+                        <img class="cms-layout-card__thumbnail" src="{{ asset(thumbnail) }}" alt="">
+                    {% else %}
+                        <span class="cms-layout-card__thumbnail cms-layout-card__thumbnail--none"></span>
+                    {% endif %}
+                    {# Blank is the placeholder, whose label is a translation key; a starting point's name is the editor's #}
+                    <span class="cms-layout-card__label">{{ starting_point is null ? card.vars.label|trans : card.vars.label }}</span>
+                    {% if starting_point is not null and starting_point.description is not null %}
+                        <span class="cms-starting-point-card__description">{{ starting_point.description }}</span>
+                    {% endif %}
+                    {% if starting_point is not null and starting_point.issues is not empty %}
+                        <span class="cms-starting-point-card__issues">
+                            {% for issue in starting_point.issues %}
+                                <span class="cms-starting-point-card__issue"><i class="orange exclamation triangle icon" aria-hidden="true"></i> {{ issue }}</span>
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </label>
+                {% do card.setRendered %}
+            {% endfor %}
+            <p class="cms-starting-point-cards__help" id="{{ form.startingPoint.vars.id }}_help">{{ form.startingPoint.vars.help|trans }}</p>
+            {{ form_errors(form.startingPoint) }}
         </fieldset>
     {% endif %}
     {% if form.channels is defined %}

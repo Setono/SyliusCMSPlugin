@@ -77,3 +77,7 @@ setono_sylius_cms:
         taken: 'The URL %url% is already the URL of "%title%" in %channels%.'
         taken_by_route: 'The URL %url% is taken by the route %route%.'
         taken_in_channel: 'The URL %url% is already the URL of "%title%" in %channels%, so this can''t be shown there too.'
+    # Why the create dialog refuses a starting point. See "Starting points" in docs/spec/layouts-and-presets.md
+    starting_point:
+        disabled: 'This starting point can''t be used until a developer fixes it. Pick another.'
+        refused: 'This starting point can''t be used: %reason%'

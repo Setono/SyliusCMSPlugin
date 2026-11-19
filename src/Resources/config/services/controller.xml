@@ -163,6 +163,10 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\StartingPointChoices"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\StartingPointTransformer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\ChannelLocales"/>
+            <argument type="service" id="translator"/>
 
             <tag name="controller.service_arguments"/>
         </service>
