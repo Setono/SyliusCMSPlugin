@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
@@ -79,6 +80,211 @@ final class ImportCommandTest extends KernelTestCase
         $preset = $presets->find(self::PRESET);
         self::assertNotNull($preset);
         self::assertSame('Autumn hero', $preset->name);
+        self::assertSame('2026-11-10T08:00:00Z', null === $preset->changedAt ? null : ExportFormat::dateTime($preset->changedAt));
+    }
+
+    /**
+     * @test
+     */
+    public function it_sets_changed_at_to_the_exports_value_on_every_write(): void
+    {
+        self::import(['path' => self::FIXTURE]);
+
+        // Saving the settings and the placements would otherwise have bumped it to now
+        self::assertSame('2026-11-12T10:15:00Z', ExportFormat::dateTime(self::entry(self::PAGE)->getChangedAt()));
+        self::assertSame('2026-11-12T09:30:00Z', ExportFormat::dateTime(self::entry(self::SNIPPET)->getChangedAt()));
+        self::assertSame('2026-11-09T07:00:00Z', ExportFormat::dateTime(self::entry(self::INNER_SNIPPET)->getChangedAt()));
+    }
+
+    /**
+     * @test
+     */
+    public function it_changes_nothing_on_a_dry_run_and_exits_as_the_real_run_would(): void
+    {
+        $tester = self::import(['path' => self::FIXTURE, '--dry-run' => true]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Autumn sale (page): create', self::display($tester));
+        self::assertStringContainsString('Autumn banner (snippet), came along: create', self::display($tester));
+        self::assertStringContainsString('The dry run would import: 3 entries and 1 editor preset created.', self::display($tester));
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+        self::assertNull(self::entries()->findOneByUuid(self::SNIPPET));
+
+        /** @var PresetProviderInterface $presets */
+        $presets = self::getContainer()->get(PresetProviderInterface::class);
+        self::assertNull($presets->find(self::PRESET));
+
+        // A refused import's dry run exits as it would
+        $page = self::createPage('Autumn sale', 'autumn-sale', published: true);
+        self::assertSame(1, self::import(['path' => self::FIXTURE, '--dry-run' => true])->getStatusCode());
+        self::assertSame(1, self::import(['path' => self::FIXTURE])->getStatusCode());
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+        self::assertNotNull(self::entries()->findOneByUuid($page->getUuid()));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_picked_entry_with_a_draft_here_with_3_and_overwrites_it_with_overwrite(): void
+    {
+        $page = self::createPageWithUuid(self::PAGE, 'Autumn sale (old)', 'autumn-sale');
+        self::saveChanges($page, [['op' => 'set_entry_value', 'field' => 'title', 'locale' => 'en_US', 'value' => 'Autumn sale (work in progress)']]);
+
+        $refused = self::import(['path' => self::FIXTURE]);
+
+        self::assertSame(3, $refused->getStatusCode(), $refused->getDisplay());
+        self::assertStringContainsString('Autumn sale (page): update', self::display($refused));
+        self::assertStringContainsString('Autumn sale has unpublished changes here.', self::display($refused));
+        self::assertStringContainsString('Run it with --overwrite', self::display($refused));
+        self::assertSame(3, self::import(['path' => self::FIXTURE, '--dry-run' => true])->getStatusCode());
+        $page = self::entry(self::PAGE);
+        self::assertInstanceOf(PageInterface::class, $page);
+        self::assertStringContainsString('work in progress', (string) self::draftOf($page)?->getContent());
+
+        $overwritten = self::import(['path' => self::FIXTURE, '--overwrite' => true]);
+
+        self::assertSame(Command::SUCCESS, $overwritten->getStatusCode(), $overwritten->getDisplay());
+        self::assertStringContainsString('Overwritten ----------- * Autumn sale has unpublished changes here.', self::display($overwritten));
+        self::assertStringContainsString('Imported: 2 entries and 1 editor preset created, 1 entry updated.', self::display($overwritten));
+        $page = self::entry(self::PAGE);
+        self::assertInstanceOf(PageInterface::class, $page);
+        // The export's content is the draft, and what shoppers see stays until it's published
+        self::assertSame('Autumn sale (old)', $page->getTranslation('en_US')->getTitle());
+        $draft = (string) self::draftOf($page)?->getContent();
+        self::assertStringContainsString('"title":"Autumn sale"', $draft);
+        self::assertStringNotContainsString('work in progress', $draft);
+        self::assertSame('2026-11-12T10:15:00Z', ExportFormat::dateTime($page->getChangedAt()));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_url_another_entry_has_here_with_1_even_with_overwrite(): void
+    {
+        self::createPage('Autumn sale here', 'autumn-sale', published: true, channels: ['WEB']);
+
+        $tester = self::import(['path' => self::FIXTURE, '--overwrite' => true]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Autumn sale would have the URL /en_US/autumn-sale, which Autumn sale here has in WEB.', self::display($tester));
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_block_type_the_code_here_does_not_have_with_1(): void
+    {
+        $export = $this->copyOfFixture();
+        $file = sprintf('%s/entries/%s.json', $export, self::INNER_SNIPPET);
+        file_put_contents($file, str_replace('"type": "heading"', '"type": "countdown"', (string) file_get_contents($file)));
+
+        $tester = self::import(['path' => $export]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Newsletter signup has blocks of the type "countdown", which the code here doesn\'t have. Deploy the code first.', self::display($tester));
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+    }
+
+    /**
+     * @test
+     */
+    public function it_exits_with_2_for_a_path_that_is_not_an_export_it_reads(): void
+    {
+        $missing = self::import(['path' => $this->temporaryDirectory() . '/missing']);
+        self::assertSame(Command::INVALID, $missing->getStatusCode());
+        self::assertStringContainsString('isneitheranexportfoldernorazip', self::squashed($missing));
+
+        $empty = self::import(['path' => $this->temporaryDirectory()]);
+        self::assertSame(Command::INVALID, $empty->getStatusCode());
+        self::assertStringContainsString('hasnomanifest.json', self::squashed($empty));
+
+        $notAZip = self::import(['path' => $this->temporaryFile('export.zip', 'Not a zip')]);
+        self::assertSame(Command::INVALID, $notAZip->getStatusCode());
+
+        $export = $this->copyOfFixture();
+        file_put_contents($export . '/manifest.json', str_replace('"format": 1', '"format": 2', (string) file_get_contents($export . '/manifest.json')));
+        $newerFormat = self::import(['path' => $export]);
+        self::assertSame(Command::INVALID, $newerFormat->getStatusCode());
+        self::assertStringContainsString('The export has the format 2, but this version of the plugin reads format 1', self::display($newerFormat));
+    }
+
+    /**
+     * @test
+     */
+    public function it_imports_the_same_export_from_a_zip(): void
+    {
+        $zip = new \ZipArchive();
+        $file = $this->temporaryDirectory() . '/export.zip';
+        self::assertTrue($zip->open($file, \ZipArchive::CREATE));
+        foreach (self::filesIn(self::FIXTURE) as $path) {
+            $zip->addFile(self::FIXTURE . '/' . $path, $path);
+        }
+        $zip->close();
+
+        $tester = self::import(['path' => $file]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Imported: 3 entries and 1 editor preset created.', self::display($tester));
+    }
+
+    /**
+     * A published page with the UUID the committed export's page has, as when environments were cloned from each other
+     */
+    private static function createPageWithUuid(string $uuid, string $title, string $slug): PageInterface
+    {
+        $page = self::createPage($title, $slug, published: true, channels: ['WEB']);
+        self::entityManager()->getConnection()->update('setono_sylius_cms__entry', ['uuid' => $uuid], ['id' => $page->getId()]);
+        self::entityManager()->clear();
+
+        $page = self::entry($uuid);
+        self::assertInstanceOf(PageInterface::class, $page);
+
+        return $page;
+    }
+
+    /**
+     * A copy of the committed export to change, in the test's temporary directory
+     */
+    private function copyOfFixture(): string
+    {
+        $copy = $this->temporaryDirectory() . '/export';
+        foreach (self::filesIn(self::FIXTURE) as $path) {
+            $directory = dirname($copy . '/' . $path);
+            if (!is_dir($directory)) {
+                mkdir($directory, 0777, true);
+            }
+
+            copy(self::FIXTURE . '/' . $path, $copy . '/' . $path);
+        }
+
+        return $copy;
+    }
+
+    /**
+     * @return list<string> the paths of the files in the directory, relative to it, sorted
+     */
+    private static function filesIn(string $directory): array
+    {
+        $files = [];
+        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS)) as $file) {
+            \assert($file instanceof \SplFileInfo);
+            $files[] = substr($file->getPathname(), strlen($directory) + 1);
+        }
+
+        sort($files, \SORT_STRING);
+
+        return $files;
+    }
+
+    private static function entries(): EntryRepositoryInterface
+    {
+        self::entityManager()->clear();
+
+        /** @var EntryRepositoryInterface $entries */
+        $entries = self::getContainer()->get(EntryRepositoryInterface::class);
+
+        return $entries;
     }
 
     private static function entry(string $uuid): EntryInterface
@@ -111,5 +317,13 @@ final class ImportCommandTest extends KernelTestCase
     private static function display(CommandTester $tester): string
     {
         return (string) preg_replace('/\s+/', ' ', $tester->getDisplay());
+    }
+
+    /**
+     * The command's output without any whitespace, for messages with a path SymfonyStyle may wrap anywhere
+     */
+    private static function squashed(CommandTester $tester): string
+    {
+        return (string) preg_replace('/\s+/', '', $tester->getDisplay());
     }
 }

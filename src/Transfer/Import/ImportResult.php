@@ -85,6 +85,6 @@ final readonly class ImportResult
      */
     public function unresolvedReferences(): array
     {
-        return $this->plan?->unresolvedReferences ?? [];
+        return $this->plan->unresolvedReferences ?? [];
     }
 }

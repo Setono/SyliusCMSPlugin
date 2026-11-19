@@ -78,7 +78,7 @@ final class ImportCommand extends Command
         $result = $this->importer->import($source, $options);
 
         if (null !== $result->plan) {
-            $this->printPlan($io, $result->plan);
+            $this->printPlan($io, $result->plan, $options->overwrite);
         }
 
         $this->printResult($io, $result, $options);
@@ -86,7 +86,7 @@ final class ImportCommand extends Command
         return $result->exitCode();
     }
 
-    private function printPlan(SymfonyStyle $io, ImportPlan $plan): void
+    private function printPlan(SymfonyStyle $io, ImportPlan $plan, bool $overwrite): void
     {
         foreach (['Entries' => $plan->entries, 'Editor presets' => $plan->presets] as $heading => $records) {
             if ([] !== $records) {
@@ -124,14 +124,20 @@ final class ImportCommand extends Command
             $io->text('They import unchanged, and the admin flags them as broken references.');
         }
 
-        if ([] !== $plan->conflicts) {
-            $io->section('Conflicts');
-            $conflicts = [];
-            foreach ($plan->conflicts as $conflict) {
+        $conflicts = $overwritten = [];
+        foreach ($plan->conflicts as $conflict) {
+            if ($overwrite && $conflict->kind->isResolvedByOverwrite()) {
+                $overwritten[] = $conflict->message->trans($this->translator);
+            } else {
                 $conflicts[] = $conflict->message->trans($this->translator);
             }
+        }
 
-            $io->listing($conflicts);
+        foreach (['Conflicts' => $conflicts, 'Overwritten' => $overwritten] as $heading => $messages) {
+            if ([] !== $messages) {
+                $io->section($heading);
+                $io->listing($messages);
+            }
         }
     }
 
