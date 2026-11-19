@@ -332,7 +332,11 @@ final class ShippedPresetsTest extends TestCase
         $files = glob(self::RESOURCES . '/../Block/*.php');
         foreach (false === $files ? [] : $files as $file) {
             $class = 'Setono\\SyliusCMSPlugin\\Block\\' . basename($file, '.php');
-            $attribute = class_exists($class) ? ((new \ReflectionClass($class))->getAttributes(BlockType::class)[0] ?? null) : null;
+            if (!class_exists($class)) {
+                continue;
+            }
+
+            $attribute = (new \ReflectionClass($class))->getAttributes(BlockType::class)[0] ?? null;
             if (null !== $attribute) {
                 $classes[$attribute->newInstance()->code] = $class;
             }
