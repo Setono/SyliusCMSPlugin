@@ -92,8 +92,15 @@ final class ExportCommand extends Command
 
         if ($zip) {
             $target = new ZipTarget($path);
-            $this->exporter->export($plan, $target);
-            $target->close();
+
+            try {
+                $this->exporter->export($plan, $target);
+                $target->close();
+            } catch (\Throwable $e) {
+                $target->discard();
+
+                throw $e;
+            }
         } else {
             $this->exporter->export($plan, new DirectoryTarget($path));
         }

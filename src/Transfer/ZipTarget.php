@@ -7,7 +7,8 @@ namespace Setono\SyliusCMSPlugin\Transfer;
 /**
  * Writes an export into a zip, holding the export's folder at its root. The zip is complete once it's closed. A file
  * from a stream is copied to a temporary file first, since a zip reads the files added to it only when it's closed, so
- * large media files never sit in memory
+ * large media files never sit in memory. An export that fails discards it, as ZipArchive otherwise writes what it has
+ * once it's freed
  */
 final class ZipTarget implements ExportTargetInterface
 {
@@ -15,6 +16,9 @@ final class ZipTarget implements ExportTargetInterface
 
     /** @var list<string> */
     private array $temporaryFiles = [];
+
+    /** Whether the zip is closed, written or discarded */
+    private bool $closed = false;
 
     /**
      * @throws \RuntimeException when the zip can't be made, such as when the file exists already
@@ -55,18 +59,40 @@ final class ZipTarget implements ExportTargetInterface
      */
     public function close(): void
     {
+        $this->closed = true;
+
         try {
             if (!$this->zip->close()) {
                 throw new \RuntimeException(sprintf('The zip %s couldn\'t be written', $this->file));
             }
         } finally {
-            foreach ($this->temporaryFiles as $temporaryFile) {
-                if (is_file($temporaryFile)) {
-                    unlink($temporaryFile);
-                }
-            }
-
-            $this->temporaryFiles = [];
+            $this->removeTemporaryFiles();
         }
+    }
+
+    /**
+     * Leaves the zip unwritten, unless it's closed already, and removes the temporary files
+     */
+    public function discard(): void
+    {
+        if (!$this->closed) {
+            $this->closed = true;
+            // A new zip without files isn't written at all
+            $this->zip->unchangeAll();
+            $this->zip->close();
+        }
+
+        $this->removeTemporaryFiles();
+    }
+
+    private function removeTemporaryFiles(): void
+    {
+        foreach ($this->temporaryFiles as $temporaryFile) {
+            if (is_file($temporaryFile)) {
+                unlink($temporaryFile);
+            }
+        }
+
+        $this->temporaryFiles = [];
     }
 }

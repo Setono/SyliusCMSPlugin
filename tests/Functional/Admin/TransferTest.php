@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
+use League\Flysystem\UnableToReadFile;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
@@ -122,6 +123,35 @@ final class TransferTest extends WebTestCase
     }
 
     /**
+     * A media file missing from the storage fails the export, which leaves no zip behind. ZipArchive writes what it has
+     * once it's freed, unless it's discarded
+     *
+     * @test
+     */
+    public function it_leaves_no_zip_behind_when_the_export_fails(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $client->catchExceptions(false);
+        $image = $this->uploadMediaItem('banner.png', self::png());
+        $snippet = self::createSnippet('Autumn banner', [new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'image', 1, fields: ['image' => $image->getUuid()])], published: true);
+        unlink(self::mediaDirectory() . '/' . $image->getPath());
+        $before = self::exportZips();
+        // As in production, so the exception's trace doesn't keep the zip alive after the request
+        $ignoreArgs = ini_set('zend.exception_ignore_args', '1');
+
+        try {
+            $client->request('GET', sprintf('/admin/cms/transfer/export?entries[]=%s', $snippet->getUuid()));
+            self::fail('The export fails');
+        } catch (UnableToReadFile) {
+        } finally {
+            ini_set('zend.exception_ignore_args', (string) $ignoreArgs);
+        }
+
+        self::assertSame([], array_values(array_diff(self::exportZips(), $before)));
+    }
+
+    /**
      * @test
      */
     public function it_sends_the_admin_user_back_to_pick_something_when_nothing_is_picked(): void
@@ -134,5 +164,21 @@ final class TransferTest extends WebTestCase
         self::assertResponseRedirects('/admin/cms/transfer');
         $client->followRedirect();
         self::assertSelectorTextContains('.sylius-flash-message.negative', 'Pick what to export first.');
+
+        // A parameter that isn't a list picks nothing
+        $page = self::createPage('Autumn sale', 'autumn-sale', published: true);
+        $client->request('GET', sprintf('/admin/cms/transfer/export?entries=%s', $page->getUuid()));
+
+        self::assertResponseRedirects('/admin/cms/transfer');
+    }
+
+    /**
+     * The zips exports write in the system's temporary directory until they're sent
+     *
+     * @return list<string>
+     */
+    private static function exportZips(): array
+    {
+        return glob(sys_get_temp_dir() . '/setono_sylius_cms_export_*.zip') ?: [];
     }
 }

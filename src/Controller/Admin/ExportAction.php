@@ -51,14 +51,13 @@ final readonly class ExportAction
 
         $file = sprintf('%s/setono_sylius_cms_export_%s.zip', sys_get_temp_dir(), bin2hex(random_bytes(8)));
 
+        $zip = new ZipTarget($file);
+
         try {
-            $zip = new ZipTarget($file);
             $this->exporter->export($plan, $zip);
             $zip->close();
         } catch (\Throwable $e) {
-            if (is_file($file)) {
-                unlink($file);
-            }
+            $zip->discard();
 
             throw $e;
         }

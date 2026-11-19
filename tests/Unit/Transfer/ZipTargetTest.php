@@ -10,7 +10,8 @@ use Setono\SyliusCMSPlugin\Transfer\ZipTarget;
 
 /**
  * Writes an export into a zip holding the export's folder at its root, complete once it's closed. A file from a stream
- * waits in a temporary file until then, which closing removes. See "Export format" in docs/spec/transfer.md
+ * waits in a temporary file until then, which closing removes. A failed export discards it. See "Export format" in
+ * docs/spec/transfer.md
  */
 final class ZipTargetTest extends TestCase
 {
@@ -88,6 +89,50 @@ final class ZipTargetTest extends TestCase
         foreach ($waiting as $temporaryFile) {
             self::assertFileDoesNotExist($temporaryFile);
         }
+    }
+
+    /**
+     * As when the export fails. ZipArchive would otherwise write what it has once it's freed
+     *
+     * @test
+     */
+    public function it_writes_no_zip_and_removes_the_temporary_files_when_it_is_discarded(): void
+    {
+        $file = $this->temporaryDirectory() . '/export.zip';
+        $before = self::temporaryFiles();
+        $target = new ZipTarget($file);
+        $target->write('manifest.json', '{"format": 1}');
+        $stream = self::stream('The original file');
+        $target->writeStream('media/' . self::BANNER . '/autumn-banner.jpg', $stream);
+        fclose($stream);
+        $waiting = array_values(array_diff(self::temporaryFiles(), $before));
+
+        $target->discard();
+        unset($target);
+        gc_collect_cycles();
+
+        self::assertFileDoesNotExist($file);
+        self::assertNotSame([], $waiting);
+        foreach ($waiting as $temporaryFile) {
+            self::assertFileDoesNotExist($temporaryFile);
+        }
+    }
+
+    /**
+     * Whatever failed after the zip was closed, a closed zip is written already
+     *
+     * @test
+     */
+    public function it_keeps_a_zip_that_is_closed_when_it_is_discarded(): void
+    {
+        $file = $this->temporaryDirectory() . '/export.zip';
+        $target = new ZipTarget($file);
+        $target->write('manifest.json', '{"format": 1}');
+        $target->close();
+
+        $target->discard();
+
+        self::assertSame(['manifest.json' => '{"format": 1}'], self::contents($file));
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
+use League\Flysystem\UnableToReadFile;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Media\FocalPoint;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
@@ -13,6 +14,7 @@ use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\CommandOutput;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
@@ -104,6 +106,35 @@ final class ExportCommandTest extends KernelTestCase
         self::assertTrue($zip->extractTo($unzipped));
         $zip->close();
         self::assertSameFiles(self::FIXTURE, $unzipped);
+    }
+
+    /**
+     * A media file missing from the storage fails the export. ZipArchive writes what it has once it's freed, unless
+     * it's discarded
+     *
+     * @test
+     */
+    public function it_writes_no_zip_when_the_export_fails(): void
+    {
+        $this->createContent();
+        /** @var MediaItemRepositoryInterface $mediaItems */
+        $mediaItems = self::getContainer()->get(MediaItemRepositoryInterface::class);
+        $video = $mediaItems->findOneByUuid(self::VIDEO);
+        self::assertNotNull($video);
+        unlink(self::mediaDirectory() . '/' . $video->getPath());
+        $directory = $this->temporaryDirectory() . '/export';
+        // As in production, so the exception's trace doesn't keep the zip alive after the command
+        $ignoreArgs = ini_set('zend.exception_ignore_args', '1');
+
+        try {
+            self::export(['dir' => $directory, '--entry' => [self::PAGE], '--zip' => true]);
+            self::fail('The export fails');
+        } catch (UnableToReadFile) {
+        } finally {
+            ini_set('zend.exception_ignore_args', (string) $ignoreArgs);
+        }
+
+        self::assertFileDoesNotExist($directory . '.zip');
     }
 
     /**
