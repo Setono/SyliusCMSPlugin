@@ -56,18 +56,18 @@ final class StartingPointsTest extends WebTestCase
         self::assertSame('Starting point', $fieldset->filter('legend')->text());
         $cards = $fieldset->filter('.cms-starting-point-card');
         // The plugin's shipped starting points come first, as its presets directory does
-        self::assertSame(['Blank', 'Content page', 'Landing page', 'Campaign page', 'Countdown page', 'Our launch page'], $cards->each(static fn (Crawler $card): string => $card->filter('.cms-layout-card__label')->text()));
-        self::assertSame(['', 'content_page', 'landing_page', 'campaign_page', 'countdown_page', $launch], $cards->each(static fn (Crawler $card): string => (string) $card->filter('input')->attr('value')));
+        self::assertSame(['Blank', 'Blog page', 'Content page', 'FAQ page', 'Landing page', 'Campaign page', 'Countdown page', 'Our launch page'], $cards->each(static fn (Crawler $card): string => $card->filter('.cms-layout-card__label')->text()));
+        self::assertSame(['', 'blog_page', 'content_page', 'faq_page', 'landing_page', 'campaign_page', 'countdown_page', $launch], $cards->each(static fn (Crawler $card): string => (string) $card->filter('input')->attr('value')));
         // A code preset shows its thumbnail, and the others a plain card
-        self::assertSame('/build/app/campaign-page.svg', $cards->eq(3)->filter('img')->attr('src'));
-        self::assertCount(0, $cards->eq(5)->filter('img'));
-        self::assertSame('The launch, as we did it', $cards->eq(5)->filter('.cms-starting-point-card__description')->text());
+        self::assertSame('/build/app/campaign-page.svg', $cards->eq(5)->filter('img')->attr('src'));
+        self::assertCount(0, $cards->eq(7)->filter('img'));
+        self::assertSame('The launch, as we did it', $cards->eq(7)->filter('.cms-starting-point-card__description')->text());
         // The code preset marked as the default is picked to start with
         self::assertSame(['campaign_page'], $crawler->filter('input[name="setono_sylius_cms_create_entry[startingPoint]"]:checked')->each(static fn (Crawler $radio): string => (string) $radio->attr('value')));
         // One with blocks of a type the code no longer has can't be picked, and says why
-        self::assertNotNull($cards->eq(4)->filter('input')->attr('disabled'));
-        self::assertStringContainsString('countdown', $cards->eq(4)->filter('.cms-starting-point-card__issues')->text());
-        self::assertNull($cards->eq(3)->filter('input')->attr('disabled'));
+        self::assertNotNull($cards->eq(6)->filter('input')->attr('disabled'));
+        self::assertStringContainsString('countdown', $cards->eq(6)->filter('.cms-starting-point-card__issues')->text());
+        self::assertNull($cards->eq(5)->filter('input')->attr('disabled'));
     }
 
     /**

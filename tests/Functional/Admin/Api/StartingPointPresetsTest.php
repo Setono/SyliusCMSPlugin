@@ -58,8 +58,8 @@ final class StartingPointPresetsTest extends BuilderApiTestCase
         self::assertArrayNotHasKey($uuid, self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid())));
         self::assertIsArray($index['startingPoints'] ?? null);
         // After the plugin's shipped starting points for pages
-        self::assertSame(['content_page', 'landing_page', $uuid], array_column($index['startingPoints'], 'id'));
-        self::assertSame(['id' => $uuid, 'fromCode' => false, 'name' => 'Campaign page', 'category' => 'Pages', 'description' => null], $index['startingPoints'][2] ?? null);
+        self::assertSame(['blog_page', 'content_page', 'faq_page', 'landing_page', $uuid], array_column($index['startingPoints'], 'id'));
+        self::assertSame(['id' => $uuid, 'fromCode' => false, 'name' => 'Campaign page', 'category' => 'Pages', 'description' => null], $index['startingPoints'][4] ?? null);
     }
 
     /**

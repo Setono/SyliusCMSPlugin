@@ -123,6 +123,62 @@ final class PresetFitCheckTest extends TestCase
     }
 
     /**
+     * Such as a blog listing: a list split into pages, which publish allows only in an entry with its own URL, once
+     *
+     * @test
+     */
+    public function it_offers_a_preset_with_a_paginated_entries_block_in_an_entry_with_its_own_url_whose_tree_has_none(): void
+    {
+        $tree = [self::entries(paginate: false), self::block('heading')];
+
+        self::assertTrue(self::check()->at([self::entries()], self::blogPost($tree), null)->fits());
+    }
+
+    /**
+     * A snippet in a slot on a taxon page would clash with Sylius's own ?page=N
+     *
+     * @test
+     */
+    public function it_does_not_offer_a_preset_with_a_paginated_entries_block_in_a_snippet(): void
+    {
+        $snippet = new Snippet();
+        $snippet->setContext(['entry']);
+
+        $fit = self::check()->at([self::block('columns', [self::block('column', [self::entries()])])], $snippet, null);
+
+        self::assertFalse($fit->fits());
+        self::assertEquals([new TranslatableMessage('setono_sylius_cms.preset.fit.paginate_without_url')], $fit->reasons);
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_offer_a_preset_with_a_paginated_entries_block_where_the_tree_already_has_one(): void
+    {
+        $check = self::check();
+        $nested = [self::block('columns', [self::block('column', [self::entries()])])];
+
+        $fit = $check->at([self::entries()], self::blogPost($nested), null);
+        self::assertFalse($fit->fits());
+        self::assertEquals([new TranslatableMessage('setono_sylius_cms.preset.fit.paginate_twice')], $fit->reasons);
+
+        $fit = $check->at([self::entries(), self::entries()], self::blogPost([]), null);
+        self::assertFalse($fit->fits(), 'A preset with two paginates twice wherever it goes');
+        self::assertEquals([new TranslatableMessage('setono_sylius_cms.preset.fit.paginate_twice')], $fit->reasons);
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_offer_a_preset_with_a_paginated_entries_block_whose_entries_are_hand_picked(): void
+    {
+        $fit = self::check()->at([self::entries(['0193a5be-0000-7000-8000-000000000001'])], self::blogPost([]), null);
+
+        self::assertFalse($fit->fits());
+        self::assertEquals([new TranslatableMessage('setono_sylius_cms.preset.fit.paginate_without_source')], $fit->reasons);
+    }
+
+    /**
      * @test
      */
     public function it_does_not_offer_a_preset_with_nothing_to_insert(): void
@@ -171,6 +227,29 @@ final class PresetFitCheckTest extends TestCase
         $page->setBlockTree(new StoredTree(null, $blocks));
 
         return $page;
+    }
+
+    /**
+     * @param list<StoredBlock> $blocks
+     */
+    private static function blogPost(array $blocks): EntryInterface
+    {
+        $post = new BlogPost();
+        $post->setBlockTree(new StoredTree(null, $blocks));
+
+        return $post;
+    }
+
+    /**
+     * An Entries block, filled by a source unless its entries are hand-picked, and paginated unless told otherwise
+     *
+     * @param array<array-key, mixed> $entries the Entries field's stored value
+     */
+    private static function entries(array $entries = ['$source' => 'related_entries', '$params' => [], '$limit' => 9], bool $paginate = true): StoredBlock
+    {
+        $block = self::block('entries');
+
+        return new StoredBlock($block->key, 'entries', 1, fields: ['entries' => $entries, 'paginate' => $paginate]);
     }
 
     private static function columns(int $columns): StoredBlock

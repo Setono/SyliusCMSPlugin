@@ -4,29 +4,19 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Validation;
 
-use Setono\SyliusCMSPlugin\Block\Entries;
+use Setono\SyliusCMSPlugin\Collection\PaginationBreach;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
-use Setono\SyliusCMSPlugin\Source\StoredSource;
-use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * The paginated Entries block's publish rules, each refused at the block's paginate field. Only an entry with its own
- * URL paginates, so a snippet can't: one in a slot on a taxon page would clash with Sylius's own ?page=N. It paginates
- * through one Entries block in its own tree, so a second one is refused, in tree order. Its page size is the list's
- * $limit, so it needs a source to fill it. See "Pagination" in docs/spec/collections.md
+ * The paginated Entries block's publish rules, each refused at the block's paginate field: only in an entry with its
+ * own URL, once in its tree, and filled by a source (PaginationBreach). See "Pagination" in docs/spec/collections.md
  *
  * @internal
  */
 final readonly class PaginationValidator
 {
-    /** The Entries block's field that holds its list */
-    private const ENTRIES_FIELD = 'entries';
-
-    /** The Entries block's field that turns pagination on */
-    private const PAGINATE_FIELD = 'paginate';
-
     public function __construct(private TranslatorInterface $translator)
     {
     }
@@ -40,30 +30,10 @@ final readonly class PaginationValidator
     public function validate(StoredTree $tree, ContentTypeMetadata $contentType): array
     {
         $errors = [];
-        $seen = false;
-        foreach ($tree->allBlocks() as $block) {
-            if (!self::paginates($block)) {
-                continue;
-            }
-
-            $message = match (true) {
-                !$contentType->hasOwnUrl() => 'setono_sylius_cms.block.paginate_without_url',
-                $seen => 'setono_sylius_cms.block.paginate_twice',
-                !StoredSource::isSource($block->fields[self::ENTRIES_FIELD] ?? null) => 'setono_sylius_cms.block.paginate_without_source',
-                default => null,
-            };
-            $seen = true;
-
-            if (null !== $message) {
-                $errors[] = new ValidationError($block->key, self::PAGINATE_FIELD, null, $this->translator->trans($message, [], 'validators'));
-            }
+        foreach (PaginationBreach::in($tree->allBlocks(), $contentType->hasOwnUrl()) as $key => $breach) {
+            $errors[] = new ValidationError($key, PaginationBreach::PAGINATE_FIELD, null, $this->translator->trans('setono_sylius_cms.block.paginate_' . $breach->value, [], 'validators'));
         }
 
         return $errors;
-    }
-
-    private static function paginates(StoredBlock $block): bool
-    {
-        return Entries::CODE === $block->type && true === ($block->fields[self::PAGINATE_FIELD] ?? null);
     }
 }

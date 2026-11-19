@@ -1,0 +1,42 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.blog_category_archive.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.blog"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.blog_category_archive.description"
+    },
+    "thumbnail": "/bundles/setonosyliuscmsplugin/thumbnail/preset/blog_category_archive.svg",
+    "startingPoint": {
+        "contentType": "blog_category",
+        "layout": {
+            "code": "standard",
+            "version": 1,
+            "fields": {},
+            "translated": {}
+        },
+        "default": true
+    },
+    "blocks": [
+        {
+            "key": "01a1f1a1-c1c3-7fb4-bded-81c3fa2fe4e4",
+            "type": "entries",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "entries": {
+                    "$limit": 9,
+                    "$params": [],
+                    "$source": "entries_in_this_category"
+                },
+                "paginate": true
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

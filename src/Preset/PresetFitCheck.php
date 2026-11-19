@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Preset;
 
+use Setono\SyliusCMSPlugin\Collection\PaginationBreach;
 use Setono\SyliusCMSPlugin\Context\ContextDependency;
 use Setono\SyliusCMSPlugin\Context\ContextDependencyFinderInterface;
 use Setono\SyliusCMSPlugin\Context\EntryContext;
@@ -27,8 +28,9 @@ use Symfony\Component\Translation\TranslatableMessage;
  * is what the entry provides its tree, or what a snippet declares, and every source in it fits the entry's content type,
  * as Related fits only entries of a collection with categories. What a preset needs is asked of every context
  * dependency finder, the same ones publish asks, so block types, condition kinds, sources, bindings and Snippet blocks
- * all count, and so does whatever a later finder adds. See "Where a preset is offered" in
- * docs/spec/layouts-and-presets.md
+ * all count, and so does whatever a later finder adds. A paginated Entries block in it must keep to the rules publish
+ * holds it to where it would go: only in an entry with its own URL, once in its tree, filled by a source. See "Where a
+ * preset is offered" in docs/spec/layouts-and-presets.md and "Pagination" in docs/spec/collections.md
  */
 final readonly class PresetFitCheck
 {
@@ -55,7 +57,11 @@ final readonly class PresetFitCheck
             return new PresetFit([new TranslatableMessage('setono_sylius_cms.preset.fit.nothing_to_insert')]);
         }
 
-        return new PresetFit([...$this->nestingReasons($blocks, $workingCopy, $parent), ...$this->contextReasons($blocks, $workingCopy)]);
+        return new PresetFit([
+            ...$this->nestingReasons($blocks, $workingCopy, $parent),
+            ...$this->contextReasons($blocks, $workingCopy),
+            ...$this->paginationReasons($blocks, $workingCopy),
+        ]);
     }
 
     /**
@@ -136,6 +142,30 @@ final readonly class PresetFitCheck
         }
 
         return $reasons;
+    }
+
+    /**
+     * The pagination rules the preset's paginated Entries blocks would break in the entry, after the tree's own blocks,
+     * as publish would refuse them. A breach of the tree's own blocks is the entry's, not the preset's
+     *
+     * @param list<StoredBlock> $blocks
+     *
+     * @return list<TranslatableMessage>
+     */
+    private function paginationReasons(array $blocks, EntryInterface $workingCopy): array
+    {
+        $inserted = (new StoredTree(null, $blocks))->allBlocks();
+        $breaches = PaginationBreach::in([...$workingCopy->getBlockTree()->allBlocks(), ...$inserted], $this->contentTypes->getByEntry($workingCopy)->hasOwnUrl());
+
+        $reasons = [];
+        foreach ($inserted as $block) {
+            $breach = $breaches[$block->key] ?? null;
+            if (null !== $breach) {
+                $reasons[$breach->value] = new TranslatableMessage('setono_sylius_cms.preset.fit.paginate_' . $breach->value);
+            }
+        }
+
+        return array_values($reasons);
     }
 
     /**

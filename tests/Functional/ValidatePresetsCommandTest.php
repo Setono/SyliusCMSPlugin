@@ -35,7 +35,7 @@ final class ValidatePresetsCommandTest extends KernelTestCase
         self::assertStringContainsString('product_spotlight.json', $display);
         // The plugin's shipped presets are registered too
         self::assertStringContainsString('src/Resources/presets/landing_page.json', $display);
-        self::assertStringContainsString('[OK] 14 preset files are valid.', $display);
+        self::assertStringContainsString('[OK] 19 preset files are valid.', $display);
     }
 
     /**

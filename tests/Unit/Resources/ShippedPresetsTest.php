@@ -21,9 +21,10 @@ use Symfony\Component\Translation\Loader\YamlFileLoader;
 use Symfony\Component\Translation\MessageCatalogue;
 
 /**
- * The code presets the plugin ships, in its presets directory: page starting points and block presets, whose text is
- * all translation keys translated in the plugin's own translation files, and whose images are empty. See "Shipped code
- * presets" and "Code presets" in docs/spec/layouts-and-presets.md
+ * The code presets the plugin ships, in its presets directory: starting points and block presets, whose text is all
+ * translation keys translated in the plugin's own translation files, and whose images are empty. See "Shipped code
+ * presets" and "Code presets" in docs/spec/layouts-and-presets.md, and "Shipped layouts, starting points and presets"
+ * in docs/spec/collections.md
  */
 final class ShippedPresetsTest extends TestCase
 {
@@ -50,13 +51,18 @@ final class ShippedPresetsTest extends TestCase
         self::assertSame([
             'banner_carousel',
             'bestsellers_carousel',
+            'blog_category_archive',
+            'blog_page',
             'campaign_with_fallback',
             'content_page',
             'faq',
+            'faq_page',
             'footer_links',
             'hero',
             'image_and_text',
             'landing_page',
+            'latest_posts',
+            'related_posts',
             'related_products',
             'three_usps',
         ], $codes);
@@ -85,8 +91,9 @@ final class ShippedPresetsTest extends TestCase
         self::assertSame($startingPoint->contentType, $preset->startingPoint->contentType);
         self::assertSame($startingPoint->layout?->code, $preset->startingPoint->layout?->code);
         self::assertSame($startingPoint->layout?->fields, $preset->startingPoint->layout?->fields);
-        // No starting point for Page is the default, so the create dialog preselects Blank
-        self::assertFalse($preset->startingPoint->default);
+        // No starting point for Page is the default, so the create dialog preselects Blank, and the category archive is
+        // Blog category's
+        self::assertSame($startingPoint->default, $preset->startingPoint->default);
     }
 
     /**
@@ -108,6 +115,11 @@ final class ShippedPresetsTest extends TestCase
         yield 'bestsellers_carousel' => ['bestsellers_carousel', null, 'products', 'products'];
         yield 'related_products' => ['related_products', null, 'products', 'products'];
         yield 'footer_links' => ['footer_links', null, 'navigation', 'columns(column(link_list(link, link, link)), column(link_list(link, link, link)), column(link_list(link, link, link)))'];
+        yield 'blog_page' => ['blog_page', new StartingPoint('page', new StoredLayout('standard', 1)), 'pages', 'heading, entries'];
+        yield 'faq_page' => ['faq_page', new StartingPoint('page', new StoredLayout('standard', 1)), 'pages', 'heading, entries'];
+        yield 'blog_category_archive' => ['blog_category_archive', new StartingPoint('blog_category', new StoredLayout('standard', 1), true), 'blog', 'entries'];
+        yield 'latest_posts' => ['latest_posts', null, 'blog', 'entries'];
+        yield 'related_posts' => ['related_posts', null, 'blog', 'entries'];
     }
 
     /**
@@ -144,6 +156,35 @@ final class ShippedPresetsTest extends TestCase
 
         self::assertEquals(['display' => 'carousel', 'products' => ['$source' => 'bestsellers', '$params' => [], '$limit' => 8]], $bestsellers->fields);
         self::assertEquals(['products' => ['$source' => 'product_associations', '$params' => [], '$limit' => 8]], $related->fields);
+    }
+
+    /**
+     * The blog's listing and each category's archive split the posts into pages of 9, a grid of 3 by 3, while the FAQ
+     * page lists every question it's likely to have, as an FAQ split into pages would hide some from a search in the page
+     *
+     * @test
+     *
+     * @dataProvider provideEntriesPresets
+     *
+     * @param array<string, mixed> $fields
+     */
+    public function its_blog_and_faq_presets_list_entries_from_the_sources_the_spec_lists(string $code, array $fields): void
+    {
+        $entries = array_filter(self::preset($code)->blocks, static fn (StoredBlock $block): bool => 'entries' === $block->type);
+
+        self::assertEquals([$fields], array_values(array_map(static fn (StoredBlock $block): array => $block->fields, $entries)));
+    }
+
+    /**
+     * @return iterable<string, array{string, array<string, mixed>}>
+     */
+    public function provideEntriesPresets(): iterable
+    {
+        yield 'blog_page' => ['blog_page', ['entries' => ['$source' => 'entries_from_collection', '$params' => ['contentType' => 'blog_post'], '$limit' => 9], 'paginate' => true]];
+        yield 'faq_page' => ['faq_page', ['entries' => ['$source' => 'entries_from_collection', '$params' => ['contentType' => 'faq_item'], '$limit' => 50], 'display' => 'accordion']];
+        yield 'blog_category_archive' => ['blog_category_archive', ['entries' => ['$source' => 'entries_in_this_category', '$params' => [], '$limit' => 9], 'paginate' => true]];
+        yield 'latest_posts' => ['latest_posts', ['entries' => ['$source' => 'entries_from_collection', '$params' => ['contentType' => 'blog_post'], '$limit' => 3]]];
+        yield 'related_posts' => ['related_posts', ['entries' => ['$source' => 'related_entries', '$params' => [], '$limit' => 3]]];
     }
 
     /**

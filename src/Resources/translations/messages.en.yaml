@@ -334,6 +334,10 @@ setono_sylius_cms:
             needs_context: 'Needs: %context%'
             not_allowed: '%block% isn''t allowed here'
             nothing_to_insert: 'Nothing in it can be inserted'
+            # A paginated Entries block in it would break a pagination rule here. See "Pagination" in docs/spec/collections.md
+            paginate_twice: 'Splits a list into pages, which another list here already does'
+            paginate_without_source: 'Splits a list into pages that no source fills'
+            paginate_without_url: 'Splits a list into pages, which only an entry with its own URL can'
             too_many: 'At most %count% %block% blocks fit here'
             wrong_entry: 'Not for: %content_type%'
         # What setono:cms:preset:validate reports and the Presets tab marks a preset for. See "Presets with invalid blocks"
@@ -368,6 +372,13 @@ setono_sylius_cms:
         bestsellers_carousel:
             description: 'The channel''s bestsellers in a carousel'
             name: 'Bestsellers carousel'
+        blog_category_archive:
+            description: 'The category''s posts, newest first, split into pages'
+            name: 'Category archive'
+        blog_page:
+            description: 'The blog''s posts, newest first, split into pages under a heading. Create it at the slug blog'
+            heading: 'Latest posts'
+            name: 'Blog page'
         campaign_with_fallback:
             campaign:
                 button: 'Shop the sale'
@@ -396,6 +407,10 @@ setono_sylius_cms:
             question_3:
                 answer: '<p>Email or call us, and we''ll get back to you within one working day.</p>'
                 title: 'How can I contact you?'
+        faq_page:
+            description: 'The questions of the FAQ under a heading, each opening to its answer'
+            heading: 'Frequently asked questions'
+            name: 'FAQ page'
         footer_links:
             about:
                 heading: 'About us'
@@ -431,6 +446,12 @@ setono_sylius_cms:
             description: 'A banner carousel, the bestsellers, three USPs and text, with the title hidden'
             name: 'Landing page'
             text: '<h2>Why shop with us</h2><p>Tell your customers who you are, what you sell and what makes your store worth coming back to.</p>'
+        latest_posts:
+            description: 'The three newest blog posts in a grid'
+            name: 'Latest posts'
+        related_posts:
+            description: 'Three posts in the categories of the post on the page, in a grid. Offered on blog posts'
+            name: 'Related posts'
         related_products:
             description: 'The products associated with the product on the page, of every association type. Offered where a product is available'
             name: 'Related products'
@@ -449,6 +470,7 @@ setono_sylius_cms:
     # The categories of the shipped code presets, which editors' presets can share
     preset_category:
         banners: Banners
+        blog: Blog
         content: Content
         navigation: Navigation
         pages: Pages
@@ -462,6 +484,7 @@ setono_sylius_cms:
         broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
         broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
         capped_slot_without_catch_all: '"%slot%" is capped at %cap% and has no catch-all placement, with no page scope and a published, enabled snippet for everyone, so some pages or shoppers may see nothing there.'
+        category_archive_without_entries: 'Its page lists none of the category''s entries, as no Entries block is left in its blocks. Add an Entries block filled by %source%.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
@@ -490,6 +513,7 @@ setono_sylius_cms:
     problem_kind:
         broken_reference: Broken references
         capped_slot_without_catch_all: Capped slots without a catch-all placement
+        category_archive_without_entries: Category pages without an Entries block
         deleted_customer_group: Deleted customer groups
         misfit_value: Values that don't fit their field
         page_scope_mismatch: Page scopes that don't fit their slots

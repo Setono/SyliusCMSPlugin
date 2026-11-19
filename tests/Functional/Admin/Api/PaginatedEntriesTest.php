@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
+use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
+use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
  * Only an entry with its own URL paginates, through one Entries block in its own tree, filled by a source: publish
  * refuses a second paginated Entries block, and one in a snippet, and the builder's validation flags them at their
- * Split into pages field. See "Pagination" in docs/spec/collections.md
+ * Split into pages field. So the block picker doesn't offer a preset holding one where publish would refuse it. See
+ * "Pagination" in docs/spec/collections.md and "Where a preset is offered" in docs/spec/layouts-and-presets.md
  */
 final class PaginatedEntriesTest extends BuilderApiTestCase
 {
@@ -77,6 +80,39 @@ final class PaginatedEntriesTest extends BuilderApiTestCase
         self::assertSame(['errors' => [
             ['block' => self::FIRST, 'field' => 'paginate', 'locale' => null, 'message' => 'A list can only be split into pages when a source fills it. Pick a source under "Filled by", or turn off "Split into pages".'],
         ]], self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/validate', $page->getUuid())));
+    }
+
+    /**
+     * @test
+     */
+    public function the_block_picker_offers_a_preset_with_a_paginated_entries_block_only_where_it_may_paginate(): void
+    {
+        $client = self::signedIn();
+        $preset = self::saveBlockPreset('Paged posts', self::entries(self::FIRST))->id();
+        $handPicked = self::saveBlockPreset('Paged picks', self::entries(self::FIRST, []))->id();
+        $page = self::createPage('Blog', 'blog');
+        $paginating = self::createPageWithBlocks('News', 'news', [self::entries(self::SECOND)]);
+        $snippet = self::createSnippet('Latest posts');
+
+        $presets = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid()));
+        self::assertTrue($presets[$preset]['fits']);
+        self::assertSame(['Splits a list into pages that no source fills'], $presets[$handPicked]['reasons']);
+
+        $presets = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $paginating->getUuid()));
+        self::assertFalse($presets[$preset]['fits']);
+        self::assertSame(['Splits a list into pages, which another list here already does'], $presets[$preset]['reasons']);
+
+        $presets = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $snippet->getUuid()));
+        self::assertFalse($presets[$preset]['fits']);
+        self::assertSame(['Splits a list into pages, which only an entry with its own URL can'], $presets[$preset]['reasons']);
+    }
+
+    private static function saveBlockPreset(string $name, StoredBlock $block): Preset
+    {
+        /** @var EditorPresetSaverInterface $saver */
+        $saver = self::getContainer()->get(EditorPresetSaverInterface::class);
+
+        return $saver->save(new Preset($name, [$block]));
     }
 
     /**
