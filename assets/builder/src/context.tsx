@@ -65,6 +65,8 @@ export interface BuilderSession {
     locales: Locale[];
     /** The store's customer groups, which the audience names. */
     customerGroups: CustomerGroup[];
+    /** The time zone scheduled publishes are entered and shown in, the one the server gives, such as Europe/Copenhagen. */
+    timeZone: string;
     /** The URL prefix of the entry's content type, '' for URLs at the root, or null when it has no URL of its own. */
     urlPrefix: string | null;
     /** Whether the entry can be a channel's homepage, which only a page can. */

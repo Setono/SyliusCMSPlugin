@@ -15,7 +15,8 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * The overview page's Schedule, and Schedule again for a failed scheduled publish, which schedules a publish as the
  * builder's does. The form's "at" is a datetime-local input's value, such as 2026-11-27T09:00, in PHP's default time
- * zone, which is the one the admin shows times in. See "Entry overview page" in docs/spec/admin.md
+ * zone, which is the one the admin shows times in, and the one the builder converts its times from. See "Entry
+ * overview page" in docs/spec/admin.md and "Scheduled publishes" in docs/spec/publishing.md
  */
 final readonly class ScheduleEntryAction
 {
@@ -43,7 +44,7 @@ final readonly class ScheduleEntryAction
                 return ['error', $e->getMessage()];
             }
 
-            return ['success', ['message' => 'setono_sylius_cms.entry_publish_scheduled', 'parameters' => ['%at%' => $at->format('Y-m-d H:i')]]];
+            return ['success', ['message' => 'setono_sylius_cms.entry_publish_scheduled', 'parameters' => ['%at%' => $at->format('Y-m-d H:i'), '%time_zone%' => $at->getTimezone()->getName()]]];
         });
     }
 }
