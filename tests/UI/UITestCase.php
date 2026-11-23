@@ -18,9 +18,30 @@ abstract class UITestCase extends PlaywrightTestCase
 {
     use Entries;
 
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        // The next test's pages are in the machine's time zone again
+        if (self::$sharedBrowser instanceof BrowserInTimeZone) {
+            self::$sharedBrowser->stop();
+            self::$sharedBrowser = null;
+        }
+    }
+
     protected function signInAsAdmin(): void
     {
         $this->loginUser(self::admin(), 'admin');
+    }
+
+    /**
+     * Opens the test's pages in a browser in the time zone, such as America/New_York, in place of the machine's. Call it
+     * before the test signs in or visits a page
+     */
+    protected static function useBrowserTimeZone(string $timeZone): void
+    {
+        self::$sharedBrowser?->stop();
+        self::$sharedBrowser = new BrowserInTimeZone($timeZone);
     }
 
     /**

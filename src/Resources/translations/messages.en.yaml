@@ -805,11 +805,11 @@ setono_sylius_cms:
         scheduled: Scheduled
         scheduled_publish:
             by: 'Scheduled by %name%.'
-            failed: 'The publish scheduled for %at% was stopped when it ran'
+            failed: 'The publish scheduled for %at% (%time_zone%) was stopped when it ran'
             locked: The draft is locked until then. Cancel the schedule to change it.
-            overdue: 'The publish scheduled for %at% hasn''t run'
+            overdue: 'The publish scheduled for %at% (%time_zone%) hasn''t run'
             overdue_help: The Messenger worker may not be running. Publish now, or cancel the schedule.
-            waiting: 'Publishes %at%'
+            waiting: 'Publishes %at% (%time_zone%)'
         search: Search
         share_draft: Share draft
         share_draft_help: 'Anyone with the link sees the draft in the shop, in the channel and language you pick, without signing in. Shown to and Date are fixed now, as the builder''s preview starts them, and the link works until you revoke it.'
@@ -1076,8 +1076,8 @@ setono_sylius_cms:
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
-        locked: 'The draft is locked: it publishes %at%. Cancel the schedule to edit it.'
-        locked_overdue: 'The draft is locked: its publish was scheduled for %at% and hasn''t run. The Messenger worker may not be running.'
+        locked: 'The draft is locked: it publishes %at% (%time_zone%). Cancel the schedule to edit it.'
+        locked_overdue: 'The draft is locked: its publish was scheduled for %at% (%time_zone%) and hasn''t run. The Messenger worker may not be running.'
         locale_no_translation: no translation
         locale_outdated: '%count% outdated'
         locale_untranslated: '%count% untranslated'
@@ -1246,7 +1246,7 @@ setono_sylius_cms:
         schedule_in_the_past: Pick a time in the future.
         schedule_menu: Schedule…
         schedule_publish: Schedule the publish
-        schedule_stopped: 'The publish scheduled for %at% was stopped when it ran: %reason%'
+        schedule_stopped: 'The publish scheduled for %at% (%time_zone%) was stopped when it ran: %reason%'
         scheduled_publish_failed: Scheduled publish failed
         scheduled_publish_overdue: Scheduled publish overdue
         scheduling: Scheduling…

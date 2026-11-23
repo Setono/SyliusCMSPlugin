@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
+use Setono\SyliusCMSPlugin\Tests\Support\ServerTimeZone;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -19,6 +20,7 @@ final class BuilderTest extends WebTestCase
     use Customers;
     use Entries;
     use Placements;
+    use ServerTimeZone;
 
     /**
      * @test
@@ -189,6 +191,22 @@ final class BuilderTest extends WebTestCase
         $builder = static fn (PageInterface $page): Crawler => $client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
         self::assertSame(['shownTo' => '@guest', 'date' => null], self::config($builder($everyone))['preview'] ?? null);
         self::assertSame(['shownTo' => 'wholesale', 'date' => $nextWeek->format('Y-m-d\TH:i:s\Z')], self::config($builder($wholesale))['preview'] ?? null);
+    }
+
+    /**
+     * A scheduled publish is entered and shown in PHP's default time zone, as on the overview page, whatever the editor's
+     * browser uses, so the builder is given it. See "Scheduled publishes" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_gives_the_builder_php_s_default_time_zone_to_schedule_publishes_in(): void
+    {
+        $this->useServerTimeZone('Europe/Copenhagen');
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $page = self::createPage('About us', 'about-us');
+
+        self::assertSame('Europe/Copenhagen', self::config($client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid())))['timeZone'] ?? null);
     }
 
     /**

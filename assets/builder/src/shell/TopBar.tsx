@@ -23,11 +23,11 @@ const statusLabels: Record<EntryStatus, MessageKey> = {
     unpublished_changes: 'setono_sylius_cms.builder.unpublished_changes',
 };
 
-/** The status label of the entry's scheduled publish, the same the entry lists show. */
-export function scheduleLabel(t: Translate, schedule: Schedule): string {
+/** The status label of the entry's scheduled publish, the same the entry lists show, in the time zone the server gives. */
+export function scheduleLabel(t: Translate, schedule: Schedule, timeZone: string): string {
     switch (schedule.status) {
         case 'publishes_at_a_time':
-            return t('setono_sylius_cms.builder.publishes_at', { '%at%': formatDateTime(schedule.at) });
+            return t('setono_sylius_cms.builder.publishes_at', { '%at%': formatDateTime(schedule.at, timeZone) });
         case 'scheduled_publish_overdue':
             return t('setono_sylius_cms.builder.scheduled_publish_overdue');
         case 'scheduled_publish_failed':
@@ -37,7 +37,7 @@ export function scheduleLabel(t: Translate, schedule: Schedule): string {
 
 export function TopBar() {
     const t = useTranslator();
-    const { backUrl, leave, locales } = useBuilder();
+    const { backUrl, leave, locales, timeZone } = useBuilder();
     // The title in the edited locale, or the one it falls back to
     const title = useBuilderState((state) => {
         for (const locale of localeOf(locales, state.locale).fallbackChain) {
@@ -76,7 +76,7 @@ export function TopBar() {
                     </span>
                     {schedule !== null && (
                         <span className={styles.status} data-status={schedule.status}>
-                            {scheduleLabel(t, schedule)}
+                            {scheduleLabel(t, schedule, timeZone)}
                         </span>
                     )}
                 </div>
@@ -486,20 +486,22 @@ function Publish() {
 }
 
 /**
- * The Publish button's menu, which schedules the publish for a time instead, entered in the editor's own time zone.
- * Once it's scheduled, the working copy is locked. See "Scheduled publishes" in docs/spec/publishing.md
+ * The Publish button's menu, which schedules the publish for a time instead, entered in the time zone the server gives,
+ * which it names, whatever the editor's own. Once it's scheduled, the working copy is locked. See "Scheduled publishes"
+ * in docs/spec/publishing.md
  */
 function SchedulePublish({ disabled }: { disabled: boolean }) {
     const t = useTranslator();
-    const { schedule } = useBuilder();
+    const { schedule, timeZone } = useBuilder();
     const scheduleState = useBuilderState((state) => state.scheduleState);
     const scheduleRefusal = useBuilderState((state) => state.scheduleRefusal);
     const [open, setOpen] = useState(false);
     const [at, setAt] = useState('');
     const inputId = useId();
+    const timeZoneId = useId();
     const menu = t('setono_sylius_cms.builder.schedule_menu');
     const scheduling = scheduleState === 'scheduling';
-    const utc = fromLocalInput(at);
+    const utc = fromLocalInput(at, timeZone);
 
     const submit = (event: FormEvent): void => {
         event.preventDefault();
@@ -528,7 +530,20 @@ function SchedulePublish({ disabled }: { disabled: boolean }) {
                         <label htmlFor={inputId} className={styles.scheduleLabel}>
                             {t('setono_sylius_cms.builder.schedule_at')}
                         </label>
-                        <input id={inputId} type="datetime-local" className={styles.scheduleInput} required value={at} onChange={(event) => setAt(event.currentTarget.value)} />
+                        <div className={styles.scheduleTime}>
+                            <input
+                                id={inputId}
+                                type="datetime-local"
+                                className={styles.scheduleInput}
+                                aria-describedby={timeZoneId}
+                                required
+                                value={at}
+                                onChange={(event) => setAt(event.currentTarget.value)}
+                            />
+                            <span id={timeZoneId} className={styles.timeZone}>
+                                {timeZone}
+                            </span>
+                        </div>
                         {scheduleState === 'failed' && (
                             <p role="alert" className={styles.failed}>
                                 {t('setono_sylius_cms.builder.schedule_failed')}
