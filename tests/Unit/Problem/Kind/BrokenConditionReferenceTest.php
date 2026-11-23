@@ -22,11 +22,13 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Problem\Fix;
+use Setono\SyliusCMSPlugin\Problem\BrokenReferences;
 use Setono\SyliusCMSPlugin\Problem\Kind\BrokenConditionReference;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
@@ -34,6 +36,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\Sources;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Product;
@@ -282,8 +285,11 @@ final class BrokenConditionReferenceTest extends TestCase
 
         $products ??= $this->prophesize(ReferenceTypeLoaderInterface::class)->reveal();
 
+        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'columns' => Columns::class, 'column' => Column::class], new FieldReader());
+
         return new BrokenConditionReference(
-            new BlockTypeRegistry(['heading' => Heading::class, 'columns' => Columns::class, 'column' => Column::class], new FieldReader()),
+            new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())),
+            $blockTypes,
             Conditions::registry([
                 ChannelKind::CODE => new ChannelKind(),
                 LocaleKind::CODE => new LocaleKind(),
@@ -296,10 +302,12 @@ final class BrokenConditionReferenceTest extends TestCase
                 ListFieldHandler::class => static fn (): ListFieldHandler => Sources::listFieldHandler(),
                 ProductHandler::class => static fn (): ProductHandler => new ProductHandler(),
             ])),
-            new ServiceLocator(['product' => static fn (): ReferenceTypeLoaderInterface => $products]),
+            new BrokenReferences(
+                new ServiceLocator(['product' => static fn (): ReferenceTypeLoaderInterface => $products]),
+                $entries ?? $this->prophesize(EntryRepositoryInterface::class)->reveal(),
+            ),
             $channels,
             $locales,
-            $entries ?? $this->prophesize(EntryRepositoryInterface::class)->reveal(),
         );
     }
 }

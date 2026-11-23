@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Condition\Kind\CustomerGroupKind;
 use Setono\SyliusCMSPlugin\Condition\Kind\LocaleKind;
 use Setono\SyliusCMSPlugin\Condition\Kind\ProductInTaxonKind;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
+use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\ListFieldHandler;
@@ -167,6 +168,8 @@ final class ConditionValidatorTest extends TestCase
 
     /**
      * The store's channel WEB, locale en_US and customer group retail
+     *
+     * @return ServiceLocator<ChoicesProviderInterface>
      */
     private function storeChoices(): ServiceLocator
     {

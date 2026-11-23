@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
-use Psr\Container\ContainerInterface;
+use Setono\SyliusCMSPlugin\Condition\StoredCondition;
 use Setono\SyliusCMSPlugin\Field\Choice;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
-use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
+use Setono\SyliusCMSPlugin\Problem\BrokenReferences;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ReferenceProblemKindInterface;
@@ -17,15 +17,11 @@ use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
-use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
-use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
-use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\ChannelChoicesProvider;
 use Setono\SyliusCMSPlugin\Targeting\LocaleChoicesProvider;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Sylius\Component\Channel\Model\ChannelInterface;
-use Sylius\Component\Core\Model\ProductInterface;
-use Sylius\Component\Core\Model\TaxonInterface;
 use Sylius\Component\Locale\Model\LocaleInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Component\Translation\TranslatableMessage;
@@ -40,33 +36,40 @@ use Symfony\Contracts\Service\ResetInterface;
  * checked with one query per entry, as BrokenReference checks fields. A deleted customer group is DeletedCustomerGroup's
  * problem. A condition of a kind the code no longer has, and a block of a type it no longer has with what's inside it,
  * aren't read. A channel, locale or any record BrokenReference reads deleted, or given another code or UUID, has the
- * entries that may name it counted again. See "Deleted customer groups" in docs/spec/targeting.md and "Problems" in
- * docs/spec/admin.md
+ * entries that may name it counted again. See "Deleted records in conditions" in docs/spec/targeting.md and "Problems"
+ * in docs/spec/admin.md
  */
 final class BrokenConditionReference implements ReferenceProblemKindInterface, ResetInterface
 {
     public const CODE = 'broken_condition_reference';
 
-    /** The choices providers whose choices are the store's records, with the type a problem names them by */
-    private const STORE_CHOICES = [ChannelChoicesProvider::class => 'channel', LocaleChoicesProvider::class => 'locale'];
+    /**
+     * @var array<class-string, array{repository: RepositoryInterface<ChannelInterface>|RepositoryInterface<LocaleInterface>, message: string}>
+     *      what a Choice of the store's channels or locales needs, by its choices provider: where the records are read
+     *      from, and the message of a problem naming one the store no longer has
+     */
+    private readonly array $storeChoices;
 
-    /** @var array<string, list<string>> the codes of the store's channels and locales, by type, as they were read */
+    /** @var array<class-string, list<string>> the codes of the store's channels and locales, by choices provider, as they were read */
     private array $codes = [];
 
     /**
-     * @param ContainerInterface $typeLoaders the ReferenceTypeLoaderInterface of each reference type, by type
      * @param RepositoryInterface<ChannelInterface> $channelRepository
      * @param RepositoryInterface<LocaleInterface> $localeRepository
      */
     public function __construct(
+        private readonly TreeValues $treeValues,
         private readonly BlockTypeRegistryInterface $blockTypes,
         private readonly ConditionKindRegistryInterface $conditionKinds,
         private readonly FieldHandlerLocator $fieldHandlers,
-        private readonly ContainerInterface $typeLoaders,
-        private readonly RepositoryInterface $channelRepository,
-        private readonly RepositoryInterface $localeRepository,
-        private readonly EntryRepositoryInterface $entries,
+        private readonly BrokenReferences $brokenReferences,
+        RepositoryInterface $channelRepository,
+        RepositoryInterface $localeRepository,
     ) {
+        $this->storeChoices = [
+            ChannelChoicesProvider::class => ['repository' => $channelRepository, 'message' => 'setono_sylius_cms.problem.deleted_channel_in_condition'],
+            LocaleChoicesProvider::class => ['repository' => $localeRepository, 'message' => 'setono_sylius_cms.problem.deleted_locale_in_condition'],
+        ];
     }
 
     /**
@@ -92,57 +95,36 @@ final class BrokenConditionReference implements ReferenceProblemKindInterface, R
         // The store's channels or locales may have changed
         $this->reset();
 
-        // The entries that named a former code may still, and now hold a broken reference
-        $ids = $formerValues;
-        foreach ($referenced as $record) {
-            $id = match (true) {
-                $record instanceof MediaItemInterface, $record instanceof EntryInterface => $record->getUuid(),
-                $record instanceof ChannelInterface, $record instanceof LocaleInterface, $record instanceof ProductInterface, $record instanceof TaxonInterface => $record->getCode(),
-                default => null,
-            };
-
-            if (null !== $id) {
-                $ids[] = $id;
-            }
-        }
-
-        return [] === $ids ? [] : $this->entries->findReferencing(array_values(array_unique($ids)));
+        return $this->brokenReferences->entriesReferencing($referenced, $formerValues);
     }
 
     public function findIn(EntryInterface $entry): iterable
     {
-        /** @var list<array{block: StoredBlock, field: FieldMetadata, reference: Reference}> $found */
+        /** @var list<array{block: StoredBlock, field: FieldMetadata}> $found the block and parameter of each reference */
         $found = [];
-        foreach ($this->shownBlocks($entry->getBlockTree()->blocks) as $block) {
+        /** @var list<Reference> $references */
+        $references = [];
+        foreach ($this->treeValues->shownBlocks($entry->getBlockTree()->blocks) as $block) {
             foreach ($block->conditions as $condition) {
                 foreach ($this->parameters($condition) as [$field, $value]) {
                     yield from $this->deletedInStore($entry, $block, $field, $value);
 
                     foreach ($this->fieldHandlers->get($field->field)->references($field->field, $value) as $reference) {
-                        if ($this->typeLoaders->has($reference->type)) {
-                            $found[] = ['block' => $block, 'field' => $field, 'reference' => $reference];
-                        }
+                        $found[] = ['block' => $block, 'field' => $field];
+                        $references[] = $reference;
                     }
                 }
             }
         }
 
-        $existing = [];
-        foreach (ReferenceLoader::idsByType(array_column($found, 'reference')) as $type => $ids) {
-            $loader = $this->typeLoaders->get($type);
-            if ($loader instanceof ReferenceTypeLoaderInterface) {
-                $existing[$type] = array_fill_keys($loader->existing($ids), true);
-            }
-        }
+        foreach ($this->brokenReferences->broken($references) as $index => $reference) {
+            ['block' => $block, 'field' => $field] = $found[$index];
 
-        foreach ($found as ['block' => $block, 'field' => $field, 'reference' => $reference]) {
-            if (!isset($existing[$reference->type][$reference->id])) {
-                yield $this->problem($entry, $block, new TranslatableMessage('setono_sylius_cms.problem.broken_condition_reference', [
-                    '%field%' => new TranslatableMessage($field->field->label),
-                    '%block%' => $this->blockLabel($block),
-                    '%type%' => new TranslatableMessage(sprintf('setono_sylius_cms.reference_type.%s', $reference->type)),
-                ]));
-            }
+            yield $this->problem($entry, $block, new TranslatableMessage('setono_sylius_cms.problem.broken_condition_reference', [
+                '%field%' => new TranslatableMessage($field->field->label),
+                '%block%' => $this->blockLabel($block),
+                '%type%' => new TranslatableMessage(sprintf('setono_sylius_cms.reference_type.%s', $reference->type)),
+            ]));
         }
     }
 
@@ -152,42 +134,22 @@ final class BrokenConditionReference implements ReferenceProblemKindInterface, R
     }
 
     /**
-     * The blocks that render, in tree order: a block of a type the code no longer has isn't shown, nor what's inside it
-     *
-     * @param list<StoredBlock> $blocks
-     *
-     * @return \Generator<StoredBlock>
-     */
-    private function shownBlocks(array $blocks): \Generator
-    {
-        foreach ($blocks as $block) {
-            if ($this->blockTypes->has($block->type)) {
-                yield $block;
-                yield from $this->shownBlocks($block->children);
-            }
-        }
-    }
-
-    /**
      * The parameter values a condition of a kind the code has holds, each with its field
-     *
-     * @param array<string, mixed> $condition
      *
      * @return \Generator<array{FieldMetadata, mixed}>
      */
-    private function parameters(array $condition): \Generator
+    private function parameters(mixed $value): \Generator
     {
-        $code = $condition['kind'] ?? null;
-        $kind = is_string($code) ? $this->conditionKinds->find($code) : null;
-        $params = $condition['params'] ?? null;
-        if (null === $kind || !is_array($params)) {
+        $condition = StoredCondition::fromValue($value);
+        $kind = null === $condition ? null : $this->conditionKinds->find($condition->kind);
+        if (null === $condition || null === $kind) {
             return;
         }
 
         foreach ($kind->fields as $name => $field) {
-            $value = $params[$name] ?? null;
-            if (null !== $value) {
-                yield [$field, $value];
+            $param = $condition->params[$name] ?? null;
+            if (null !== $param) {
+                yield [$field, $param];
             }
         }
     }
@@ -200,20 +162,16 @@ final class BrokenConditionReference implements ReferenceProblemKindInterface, R
     private function deletedInStore(EntryInterface $entry, StoredBlock $block, FieldMetadata $field, mixed $value): \Generator
     {
         $choice = $field->field;
-        if (!$choice instanceof Choice) {
+        if (!$choice instanceof Choice || !isset($this->storeChoices[(string) $choice->choicesProvider])) {
             return;
         }
 
-        $type = self::STORE_CHOICES[(string) $choice->choicesProvider] ?? null;
-        if (null === $type) {
-            return;
-        }
-
+        $provider = (string) $choice->choicesProvider;
         $named = $choice->multiple ? (is_array($value) && array_is_list($value) ? $value : []) : [$value];
-        $codes = $this->codes($type);
+        $codes = $this->codes($provider);
         foreach (array_unique(array_filter($named, is_string(...))) as $code) {
             if (!in_array($code, $codes, true)) {
-                yield $this->problem($entry, $block, new TranslatableMessage(sprintf('setono_sylius_cms.problem.deleted_%s_in_condition', $type), [
+                yield $this->problem($entry, $block, new TranslatableMessage($this->storeChoices[$provider]['message'], [
                     '%code%' => $code,
                     '%block%' => $this->blockLabel($block),
                 ]));
@@ -222,24 +180,26 @@ final class BrokenConditionReference implements ReferenceProblemKindInterface, R
     }
 
     /**
-     * The codes of the store's channels or locales, read once until a write of them is asked about
+     * The codes of the store's records a Choice of its channels or locales picks from, read once until a write of them
+     * is asked about
+     *
+     * @param class-string $provider
      *
      * @return list<string>
      */
-    private function codes(string $type): array
+    private function codes(string $provider): array
     {
-        if (!isset($this->codes[$type])) {
-            $repository = 'channel' === $type ? $this->channelRepository : $this->localeRepository;
-            $this->codes[$type] = [];
-            foreach ($repository->findAll() as $record) {
+        if (!isset($this->codes[$provider])) {
+            $this->codes[$provider] = [];
+            foreach ($this->storeChoices[$provider]['repository']->findAll() as $record) {
                 $code = $record->getCode();
                 if (null !== $code) {
-                    $this->codes[$type][] = $code;
+                    $this->codes[$provider][] = $code;
                 }
             }
         }
 
-        return $this->codes[$type];
+        return $this->codes[$provider];
     }
 
     private function blockLabel(StoredBlock $block): TranslatableMessage

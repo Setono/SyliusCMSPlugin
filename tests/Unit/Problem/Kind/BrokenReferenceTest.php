@@ -21,6 +21,7 @@ use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Problem\Fix;
+use Setono\SyliusCMSPlugin\Problem\BrokenReferences;
 use Setono\SyliusCMSPlugin\Problem\Kind\BrokenReference;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\Severity;
@@ -326,11 +327,13 @@ final class BrokenReferenceTest extends TestCase
             ]),
             $blockTypes,
             new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()),
-            new ServiceLocator([
-                'media_item' => static fn (): ReferenceTypeLoaderInterface => $mediaItems,
-                'product' => static fn (): ReferenceTypeLoaderInterface => $products,
-            ]),
-            $entries ?? $this->prophesize(EntryRepositoryInterface::class)->reveal(),
+            new BrokenReferences(
+                new ServiceLocator([
+                    'media_item' => static fn (): ReferenceTypeLoaderInterface => $mediaItems,
+                    'product' => static fn (): ReferenceTypeLoaderInterface => $products,
+                ]),
+                $entries ?? $this->prophesize(EntryRepositoryInterface::class)->reveal(),
+            ),
         );
     }
 }

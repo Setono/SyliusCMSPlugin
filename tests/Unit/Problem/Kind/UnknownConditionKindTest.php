@@ -15,9 +15,11 @@ use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
@@ -101,9 +103,8 @@ final class UnknownConditionKindTest extends TestCase
 
     private static function kind(): UnknownConditionKind
     {
-        return new UnknownConditionKind(
-            new BlockTypeRegistry(['heading' => Heading::class, 'columns' => Columns::class, 'column' => Column::class], new FieldReader()),
-            Conditions::registry(),
-        );
+        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'columns' => Columns::class, 'column' => Column::class], new FieldReader());
+
+        return new UnknownConditionKind(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $blockTypes, Conditions::registry());
     }
 }

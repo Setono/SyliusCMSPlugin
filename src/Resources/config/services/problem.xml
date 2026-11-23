@@ -105,6 +105,7 @@
 
         <!-- A block's condition of a kind a project removed, on purpose or not: a warning in the admin, so lint leaves it out -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownConditionKind" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownConditionKind">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
 
@@ -228,14 +229,19 @@
             <tag name="kernel.reset" method="reset"/>
         </service>
 
+        <!-- Which references no longer resolve, and which entries may refer to a record, for the broken reference kinds -->
+        <service id="Setono\SyliusCMSPlugin\Problem\BrokenReferences" class="Setono\SyliusCMSPlugin\Problem\BrokenReferences">
+            <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+        </service>
+
         <!-- A reference in a field to a record that was deleted, such as a media item, which setono:cms:lint reports -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\BrokenReference" class="Setono\SyliusCMSPlugin\Problem\Kind\BrokenReference">
             <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
-            <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\BrokenReferences"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
@@ -246,13 +252,13 @@
         such as a product, which setono:cms:lint reports
         -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\BrokenConditionReference" class="Setono\SyliusCMSPlugin\Problem\Kind\BrokenConditionReference">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
-            <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\BrokenReferences"/>
             <argument type="service" id="sylius.repository.channel"/>
             <argument type="service" id="sylius.repository.locale"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
             <tag name="kernel.reset" method="reset"/>

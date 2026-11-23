@@ -87,14 +87,27 @@ final readonly class TreeValues
      */
     public function inBlocks(array $blocks): \Generator
     {
-        foreach ($blocks as $block) {
-            if (!$this->blockTypes->has($block->type)) {
-                continue;
-            }
-
+        foreach ($this->shownBlocks($blocks) as $block) {
             $blockType = $this->blockTypes->get($block->type);
             yield from self::inValues($blockType->fields, $block->fields, $block, $blockType);
-            yield from $this->inBlocks($block->children);
+        }
+    }
+
+    /**
+     * The blocks that render and every block inside them that does, in tree order: a block of a type the code no longer
+     * has isn't shown, nor what's inside it
+     *
+     * @param list<StoredBlock> $blocks
+     *
+     * @return \Generator<StoredBlock>
+     */
+    public function shownBlocks(array $blocks): \Generator
+    {
+        foreach ($blocks as $block) {
+            if ($this->blockTypes->has($block->type)) {
+                yield $block;
+                yield from $this->shownBlocks($block->children);
+            }
         }
     }
 
