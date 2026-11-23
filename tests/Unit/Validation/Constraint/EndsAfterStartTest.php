@@ -82,7 +82,7 @@ final class EndsAfterStartTest extends TestCase
     {
         return array_map(
             static fn (ConstraintViolationInterface $violation): array => [$violation->getPropertyPath(), (string) $violation->getMessage()],
-            iterator_to_array(self::validator()->validate($values, new EndsAfterStart(start: 'from', end: 'until'))),
+            iterator_to_array(self::validator()->validate($values, new EndsAfterStart(start: 'from', end: 'until')), false),
         );
     }
 

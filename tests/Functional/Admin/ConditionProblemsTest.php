@@ -13,7 +13,6 @@ use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\GreetingKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
-use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Console\Application;

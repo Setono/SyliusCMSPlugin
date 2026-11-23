@@ -61,15 +61,15 @@ final readonly class BlockTreeValidator
     {
         if (null === $stored) {
             $layout = $this->layouts->resolve($contentType, null);
+            $values = [];
         } else {
             $layout = $this->layouts->has($contentType, $stored->code) ? $this->layouts->get($contentType, $stored->code) : null;
+            $values = $stored->fields;
         }
 
         if (null === $layout || $layout->disabled) {
             return [];
         }
-
-        $values = $stored?->fields ?? [];
 
         return array_map(
             static fn (ValidationError $error): ValidationError => $error->inLayout(),

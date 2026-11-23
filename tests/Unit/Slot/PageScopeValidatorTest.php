@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Field\NumberHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Slot\PageScopeValidator;
@@ -136,11 +137,13 @@ final class PageScopeValidatorTest extends TestCase
      */
     public function it_refuses_parameter_values_that_do_not_fit_together_such_as_a_span_that_ends_before_it_starts(): void
     {
+        $kind = self::conditionKinds()->get('released_between');
+
         self::assertEquals(
             [new TranslatableMessage('setono_sylius_cms.page_scope.field', [
                 '%number%' => 1,
-                '%kind%' => new TranslatableMessage('Released between'),
-                '%field%' => new TranslatableMessage('app.released_between.until'),
+                '%kind%' => new TranslatableMessage($kind->label),
+                '%field%' => new TranslatableMessage($kind->fields['until']->field->label),
                 '%message%' => 'setono_sylius_cms.field.ends_before_start',
             ], 'validators')],
             $this->validator()->validate('product.after_price', [['kind' => 'released_between', 'negate' => false, 'params' => ['from' => '2026-12-01', 'until' => '2026-11-01']]]),
@@ -158,7 +161,7 @@ final class PageScopeValidatorTest extends TestCase
         self::assertEquals(
             [new TranslatableMessage('setono_sylius_cms.page_scope.condition', [
                 '%number%' => 1,
-                '%kind%' => new TranslatableMessage('Discounted by'),
+                '%kind%' => new TranslatableMessage(self::conditionKinds()->get('discounted_by')->label),
                 '%message%' => 'setono_sylius_cms.block.exactly_one_of',
             ], 'validators')],
             $this->validator()->validate('product.after_price', [['kind' => 'discounted_by', 'negate' => false, 'params' => []]]),
@@ -189,6 +192,11 @@ final class PageScopeValidatorTest extends TestCase
         return ['kind' => 'product_in_taxon', 'negate' => false, 'params' => ['taxons' => $taxons]];
     }
 
+    private static function conditionKinds(): ConditionKindRegistry
+    {
+        return Conditions::registry(['product_in_taxon' => new ProductInTaxonKind(), 'taxon' => new TaxonKind(), 'released_between' => new ReleasedBetween(), 'discounted_by' => new DiscountedBy()]);
+    }
+
     private function validator(): PageScopeValidator
     {
         $translator = new IdentityTranslator();
@@ -201,7 +209,7 @@ final class PageScopeValidatorTest extends TestCase
 
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
 
-        $conditionKinds = Conditions::registry(['product_in_taxon' => new ProductInTaxonKind(), 'taxon' => new TaxonKind(), 'released_between' => new ReleasedBetween(), 'discounted_by' => new DiscountedBy()]);
+        $conditionKinds = self::conditionKinds();
 
         return new PageScopeValidator(
             $conditionKinds,
