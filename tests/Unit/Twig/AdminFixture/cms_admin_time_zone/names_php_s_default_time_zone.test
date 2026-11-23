@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_time_zone() names PHP's default time zone, which the admin shows and reads scheduled publishes in
+--TEMPLATE--
+{{ cms_admin_time_zone() }}
+--DATA--
+return $this->inTimeZone('Europe/Copenhagen')
+--EXPECT--
+Europe/Copenhagen

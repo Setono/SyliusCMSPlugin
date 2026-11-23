@@ -365,9 +365,9 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.publishes_at': 'Publishes %at%',
     'setono_sylius_cms.builder.scheduled_publish_overdue': 'Scheduled publish overdue',
     'setono_sylius_cms.builder.scheduled_publish_failed': 'Scheduled publish failed',
-    'setono_sylius_cms.builder.locked': 'The draft is locked: it publishes %at%. Cancel the schedule to edit it.',
-    'setono_sylius_cms.builder.locked_overdue': "The draft is locked: its publish was scheduled for %at% and hasn't run. The Messenger worker may not be running.",
-    'setono_sylius_cms.builder.schedule_stopped': 'The publish scheduled for %at% was stopped when it ran: %reason%',
+    'setono_sylius_cms.builder.locked': 'The draft is locked: it publishes %at% (%time_zone%). Cancel the schedule to edit it.',
+    'setono_sylius_cms.builder.locked_overdue': "The draft is locked: its publish was scheduled for %at% (%time_zone%) and hasn't run. The Messenger worker may not be running.",
+    'setono_sylius_cms.builder.schedule_stopped': 'The publish scheduled for %at% (%time_zone%) was stopped when it ran: %reason%',
 };
 
 /** A Choice field of several values, as a condition kind's parameter. */

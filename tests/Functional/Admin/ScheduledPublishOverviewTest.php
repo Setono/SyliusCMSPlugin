@@ -55,13 +55,13 @@ final class ScheduledPublishOverviewTest extends WebTestCase
         self::assertCount(1, self::sentMessages());
 
         $crawler = $client->followRedirect();
-        self::assertSelectorTextContains('.sylius-flash-message', 'The publish has been scheduled for 2026-11-20 11:30.');
+        self::assertSelectorTextContains('.sylius-flash-message', 'The publish has been scheduled for 2026-11-20 11:30 (UTC).');
         self::assertSame(['Published', 'Unpublished changes', 'Publishes 2026-11-20 11:30'], self::labels($crawler));
 
         $publishing = $crawler->filter('[data-section="publishing"]');
         $message = $publishing->filter('[data-scheduled-publish]');
         self::assertSame('publishes_at_a_time', $message->attr('data-scheduled-publish'));
-        self::assertSame('Publishes 2026-11-20 11:30', $message->filter('.header')->text());
+        self::assertSame('Publishes 2026-11-20 11:30 (UTC)', $message->filter('.header')->text());
         self::assertSame('Scheduled by John Doe. The draft is locked until then. Cancel the schedule to change it.', $message->filter('p')->text());
         // It waits, so the only thing to do is cancel it
         self::assertSame(['Cancel the schedule'], self::buttons($publishing));
@@ -175,7 +175,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
         $publishing = $crawler->filter('[data-section="publishing"]');
         $message = $publishing->filter('[data-scheduled-publish]');
         self::assertSame('scheduled_publish_overdue', $message->attr('data-scheduled-publish'));
-        self::assertSame('The publish scheduled for 2026-11-20 11:30 hasn\'t run', $message->filter('.header')->text());
+        self::assertSame('The publish scheduled for 2026-11-20 11:30 (UTC) hasn\'t run', $message->filter('.header')->text());
         self::assertSame('The Messenger worker may not be running. Publish now, or cancel the schedule.', $message->filter('p')->text());
         self::assertSame(['Publish now', 'Cancel the schedule'], self::buttons($publishing));
 
@@ -224,7 +224,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
         $publishing = $crawler->filter('[data-section="publishing"]');
         $message = $publishing->filter('[data-scheduled-publish]');
         self::assertSame('scheduled_publish_failed', $message->attr('data-scheduled-publish'));
-        self::assertSame('The publish scheduled for 2026-11-20 11:30 was stopped when it ran', $message->filter('.header')->text());
+        self::assertSame('The publish scheduled for 2026-11-20 11:30 (UTC) was stopped when it ran', $message->filter('.header')->text());
         self::assertSame('The campaign was postponed', $message->filter('[data-reason]')->text());
         // The draft is unlocked, so it can be published, discarded or scheduled again, or the failure dismissed
         self::assertSame(['Publish', 'Discard changes', 'Schedule again', 'Dismiss'], self::buttons($publishing));
