@@ -27,6 +27,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 const ORIGIN = 'http://admin.example';

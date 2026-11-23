@@ -27,6 +27,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 /** The FAQ's items: no URL of their own and no block tree, with a translatable answer and their categories. */

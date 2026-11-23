@@ -35,6 +35,7 @@ const config: BuilderConfig = {
         { code: 'de_CH', name: 'German (Switzerland)', fallbackChain: ['de_CH', 'de_DE', 'en_US'] },
     ],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 const translationStrings: Record<string, string> = {

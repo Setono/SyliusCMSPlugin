@@ -18,11 +18,12 @@ export function ScheduleBanner() {
         return null;
     }
 
-    const at = { '%at%': formatDateTime(schedule.at, timeZone), '%time_zone%': timeZone };
+    // The time and its zone's name, which every message shows
+    const timeParameters = { '%at%': formatDateTime(schedule.at, timeZone), '%time_zone%': timeZone };
     const message = {
-        publishes_at_a_time: () => t('setono_sylius_cms.builder.locked', at),
-        scheduled_publish_overdue: () => t('setono_sylius_cms.builder.locked_overdue', at),
-        scheduled_publish_failed: () => t('setono_sylius_cms.builder.schedule_stopped', { ...at, '%reason%': schedule.reason ?? '' }),
+        publishes_at_a_time: () => t('setono_sylius_cms.builder.locked', timeParameters),
+        scheduled_publish_overdue: () => t('setono_sylius_cms.builder.locked_overdue', timeParameters),
+        scheduled_publish_failed: () => t('setono_sylius_cms.builder.schedule_stopped', { ...timeParameters, '%reason%': schedule.reason ?? '' }),
     }[schedule.status];
 
     return (

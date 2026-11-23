@@ -32,6 +32,7 @@ const config: BuilderConfig = {
         { code: 'retail', name: 'Retail' },
         { code: 'wholesale', name: 'Wholesale' },
     ],
+    timeZone: 'UTC',
 };
 
 /** The server saves what it's sent onto what it has, and answers with all of it. */

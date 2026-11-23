@@ -43,6 +43,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 const LAUNCH = '0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a';

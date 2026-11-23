@@ -104,9 +104,9 @@ export interface BuilderConfig {
     customerGroups: CustomerGroup[];
     /**
      * The time zone scheduled publishes are entered and shown in, PHP's default time zone on the server, which the admin
-     * shows times in, such as Europe/Copenhagen. Without it, the editor's own.
+     * shows times in, such as Europe/Copenhagen, whatever the editor's own is.
      */
-    timeZone?: string;
+    timeZone: string;
     /** Where the preview's Shown to and Date start, from the entry's audience and date window. Guests and now without it. */
     preview?: ShownToAndDate;
     /** A snippet's placements, by slot, which the More tab lists. Null or absent for an entry that isn't a snippet. */

@@ -26,6 +26,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 /** Pages live at the root of the shop, and a project's stores under stores. */

@@ -6,7 +6,6 @@ import type { BindablePropertyDefinition } from './bindings';
 import { BuilderBindingsProvider } from './bindingsContext';
 import { withUuid, type BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession, type PresetEditing } from './context';
-import { ownTimeZone } from './dates';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import type { LinkTargetDefinition } from './links';
 import { LinkTargetsProvider } from './linkTargets';
@@ -231,7 +230,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                         channels: config.channels,
                         locales: config.locales ?? [],
                         customerGroups: config.customerGroups,
-                        timeZone: config.timeZone ?? ownTimeZone(),
+                        timeZone: config.timeZone,
                         urlPrefix,
                         homepage: contentType?.homepage ?? false,
                         hasBlockTree: contentType?.blocks !== null,

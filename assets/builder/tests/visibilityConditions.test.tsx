@@ -173,6 +173,7 @@ const config: BuilderConfig = {
         { code: 'da_DK', name: 'Danish (Denmark)', fallbackChain: ['da_DK', 'en_US'] },
     ],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 const conditionStrings: Record<string, string> = {

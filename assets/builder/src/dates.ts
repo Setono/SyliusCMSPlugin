@@ -54,11 +54,6 @@ export function formatDateTime(utc: string, timeZone?: string): string {
     return toLocalInput(utc, timeZone).replace('T', ' ');
 }
 
-/** The editor's own time zone, such as Europe/Copenhagen. */
-export function ownTimeZone(): string {
-    return new Intl.DateTimeFormat().resolvedOptions().timeZone;
-}
-
 interface WallTime {
     year: number;
     month: number;

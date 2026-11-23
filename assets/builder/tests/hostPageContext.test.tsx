@@ -221,6 +221,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 function fakeApi(edited: Entry, saveChanges = vi.fn(async (_changes: readonly Change[]): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1 }))) {

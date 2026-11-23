@@ -284,6 +284,7 @@ describe('the builder', () => {
             { code: 'B2B', name: 'Wholesale' },
         ],
         customerGroups: [],
+        timeZone: 'UTC',
     };
 
     function fakeApi(listed: Entry = listEntry()): BuilderApi {

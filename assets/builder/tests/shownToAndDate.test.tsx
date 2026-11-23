@@ -29,6 +29,7 @@ const config: BuilderConfig = {
         { code: 'retail', name: 'Retail' },
         { code: 'wholesale', name: 'Wholesale' },
     ],
+    timeZone: 'UTC',
 };
 
 /** Answers each preview request with a new URL that says what it shows. */

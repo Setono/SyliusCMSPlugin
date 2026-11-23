@@ -27,6 +27,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
     strings: { 'setono_sylius_cms.builder.loading': 'Loading…' },
 };
 
