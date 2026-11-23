@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Validation;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Condition\Kind\ChannelKind;
+use Setono\SyliusCMSPlugin\Condition\Kind\CustomerGroupKind;
+use Setono\SyliusCMSPlugin\Condition\Kind\LocaleKind;
 use Setono\SyliusCMSPlugin\Condition\Kind\ProductInTaxonKind;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
@@ -13,6 +18,9 @@ use Setono\SyliusCMSPlugin\Field\ListFieldHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Targeting\ChannelChoicesProvider;
+use Setono\SyliusCMSPlugin\Targeting\CustomerGroupChoicesProvider;
+use Setono\SyliusCMSPlugin\Targeting\LocaleChoicesProvider;
 use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
@@ -20,8 +28,14 @@ use Setono\SyliusCMSPlugin\Validation\ConditionValidator;
 use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 use Setono\SyliusCMSPlugin\Validation\FieldValidator;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
+use Sylius\Component\Channel\Model\ChannelInterface;
+use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
+use Sylius\Component\Customer\Model\CustomerGroupInterface;
+use Sylius\Component\Locale\Model\LocaleInterface;
+use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Translation\Provider\ImmutableTranslationLocaleProvider;
 use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\Translation\IdentityTranslator;
 use Symfony\Component\Validator\Validation;
 
 /**
@@ -31,6 +45,8 @@ use Symfony\Component\Validator\Validation;
  */
 final class ConditionValidatorTest extends TestCase
 {
+    use ProphecyTrait;
+
     /**
      * @test
      */
@@ -59,6 +75,33 @@ final class ConditionValidatorTest extends TestCase
             [new ValidationError(null, 'taxons', null, 'This field is required.')],
             $this->validator()->validate(['kind' => 'product_in_taxon', 'negate' => false, 'params' => ['taxons' => [], 'includeChildren' => true]]),
         );
+    }
+
+    /**
+     * A code the store no longer has is a broken reference, which the admin flags, not a value that doesn't fit, so a
+     * deleted channel, locale or customer group doesn't block publish (ADR 0002). See "Validation" in
+     * docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_accepts_a_channel_locale_or_customer_group_the_store_no_longer_has(): void
+    {
+        self::assertSame([], $this->validator()->validate(['kind' => 'channel', 'negate' => false, 'params' => ['channels' => ['WEB', 'OUTLET']]]));
+        self::assertSame([], $this->validator()->validate(['kind' => 'locale', 'negate' => true, 'params' => ['locales' => ['sv_SE']]]));
+        self::assertSame([], $this->validator()->validate(['kind' => 'customer_group', 'negate' => false, 'params' => ['groups' => ['@guest', 'wholesale']]]));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_channel_locale_or_customer_group_parameter_of_the_wrong_shape(): void
+    {
+        foreach ([['channel', 'channels', 'WEB'], ['locale', 'locales', ['en_US', 7]], ['customer_group', 'groups', ['a' => 'retail']]] as [$kind, $param, $value]) {
+            self::assertEquals(
+                [new ValidationError(null, $param, null, 'The value you selected is not a valid choice.')],
+                $this->validator()->validate(['kind' => $kind, 'negate' => false, 'params' => [$param => $value]]),
+            );
+        }
     }
 
     /**
@@ -94,14 +137,20 @@ final class ConditionValidatorTest extends TestCase
     private function validator(): ConditionValidator
     {
         $translator = BlockTreeValidatorTest::translator();
+        $providers = $this->storeChoices();
         $handlers = new FieldHandlerLocator(new ServiceLocator([
-            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
+            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator, $providers),
             DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
             ListFieldHandler::class => static fn (): ListFieldHandler => Sources::listFieldHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
         ]));
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
-        $registry = Conditions::registry(['product_in_taxon' => new ProductInTaxonKind()]);
+        $registry = Conditions::registry([
+            'product_in_taxon' => new ProductInTaxonKind(),
+            'channel' => new ChannelKind(),
+            'locale' => new LocaleKind(),
+            'customer_group' => new CustomerGroupKind(),
+        ]);
 
         return new ConditionValidator(
             $registry,
@@ -114,5 +163,38 @@ final class ConditionValidatorTest extends TestCase
             ),
             $translator,
         );
+    }
+
+    /**
+     * The store's channel WEB, locale en_US and customer group retail
+     */
+    private function storeChoices(): ServiceLocator
+    {
+        $web = $this->prophesize(ChannelInterface::class);
+        $web->getCode()->willReturn('WEB');
+        $web->getName()->willReturn('Web store');
+        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $channels->findBy([], ['name' => 'ASC'])->willReturn([$web->reveal()]);
+
+        $english = $this->prophesize(LocaleInterface::class);
+        $english->getCode()->willReturn('en_US');
+        $english->getName('en')->willReturn('English (United States)');
+        /** @var ObjectProphecy<RepositoryInterface<LocaleInterface>> $locales */
+        $locales = $this->prophesize(RepositoryInterface::class);
+        $locales->findBy([], ['code' => 'ASC'])->willReturn([$english->reveal()]);
+
+        $retail = $this->prophesize(CustomerGroupInterface::class);
+        $retail->getCode()->willReturn('retail');
+        $retail->getName()->willReturn('Retail');
+        /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> $groups */
+        $groups = $this->prophesize(RepositoryInterface::class);
+        $groups->findBy([], ['name' => 'ASC'])->willReturn([$retail->reveal()]);
+
+        return new ServiceLocator([
+            ChannelChoicesProvider::class => static fn (): ChannelChoicesProvider => new ChannelChoicesProvider($channels->reveal()),
+            LocaleChoicesProvider::class => static fn (): LocaleChoicesProvider => new LocaleChoicesProvider($locales->reveal()),
+            CustomerGroupChoicesProvider::class => static fn (): CustomerGroupChoicesProvider => new CustomerGroupChoicesProvider($groups->reveal(), new IdentityTranslator()),
+        ]);
     }
 }

@@ -11,7 +11,8 @@ use Symfony\Contracts\Translation\LocaleAwareInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * Handles Choice fields: one of the fixed choices, or of the choices its provider gives, or a list of them when multiple
+ * Handles Choice fields: one of the fixed choices, or of the choices its provider gives, or a list of them when multiple.
+ * A provider of the store's records gives codes, which hold references (RecordChoicesProviderInterface)
  */
 final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
 {
@@ -71,15 +72,17 @@ final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
     }
 
     /**
-     * One of the choices the field still offers, or for a multiple choice a list of them
+     * One of the choices the field still offers, or for a multiple choice a list of them. Choices of the store's records
+     * (RecordChoicesProviderInterface) are codes: one the store no longer has is a broken reference, not a value that
+     * doesn't fit
      */
     public function fits(Field $field, mixed $value): bool
     {
         $field = self::choice($field);
-        $values = $this->values($field, $this->locale());
+        $fitsOne = $this->holdsRecords($field) ? Codes::isCode(...) : fn (mixed $item): bool => in_array($item, $this->values($field, $this->locale()), true);
 
         if (!$field->multiple) {
-            return in_array($value, $values, true);
+            return $fitsOne($value);
         }
 
         if (!is_array($value) || !array_is_list($value)) {
@@ -87,12 +90,17 @@ final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
         }
 
         foreach ($value as $item) {
-            if (!in_array($item, $values, true)) {
+            if (!$fitsOne($item)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private function holdsRecords(Choice $field): bool
+    {
+        return null !== $field->choicesProvider && $this->provider($field->choicesProvider) instanceof RecordChoicesProviderInterface;
     }
 
     /**

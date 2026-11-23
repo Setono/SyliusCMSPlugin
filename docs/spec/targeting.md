@@ -23,7 +23,7 @@ A [visibility condition](../../GLOSSARY.md#visibility) on a block hides it unles
 - **Combining.** A block's conditions combine with AND, and the values within one condition with OR.
 - **"Is one of" and "is not one of".** Every kind offers both, as the condition's `negate` flag. For a date window, that's inside or outside it, such as hiding a block during one weekend.
 - **Any block** can carry conditions, such as a single carousel slide.
-- **Validated on publish.** A condition of a kind the code no longer has, or whose parameter values don't fit its kind, is refused, and the builder shows the error at the condition ([Publishing](publishing.md#validation)).
+- **Validated on publish.** A condition of a kind the code no longer has, or whose parameter values don't fit its kind, is refused, and the builder shows the error at the condition ([Publishing](publishing.md#validation)). A deleted record it names isn't refused, but flagged ([Deleted records in conditions](#deleted-records-in-conditions)).
 - **The builder** strikes through blocks that the preview's channel and locale hide, with an eye-slash icon in the tree, and drops them from the preview ([Builder](builder.md)).
 
 ## Condition kinds
@@ -94,7 +94,17 @@ A deleted customer group leaves a dangling code ([ADR 0002](../adr/0002-referenc
 - In a visibility condition, "is one of" no longer matches through it, and "is not one of" no longer excludes anyone through it.
 - In an audience, "Only these" no longer lets anyone in through it, and "Everyone except these" no longer keeps anyone out through it.
 
-The admin flags each one as a broken reference ([Admin](admin.md#problems)). The same applies to a deleted channel, locale, product, taxon or entry in a condition, or any other record a condition's parameter refers to, and the entries that name one are counted again when it's deleted.
+The admin flags each one as a broken reference ([Admin](admin.md#problems)), and counts the entries that name the group again when it's deleted.
+
+## Deleted records in conditions
+
+A visibility condition that names a record the store no longer has keeps its dangling code or UUID ([ADR 0002](../adr/0002-references-by-code-and-uuid.md)) and no longer counts it: "is one of" no longer matches through it, and "is not one of" no longer excludes anything through it. Publish doesn't refuse it ([Publishing](publishing.md#validation)). The admin flags it as a broken reference, and counts the entries that may name it again when it's deleted or its code or UUID changes ([Admin](admin.md#problems)). That covers:
+
+- a channel or a locale in a parameter that picks from the store's channels or locales, such as the channel and locale kinds' own
+- a customer group in a customer group condition ([Deleted customer groups](#deleted-customer-groups))
+- a product, taxon, entry or media item that a parameter's field type refers to, such as the product kind's products, in a shipped kind or a project's own
+
+A project's kind whose Choice parameter picks from records of its own, through its own choices provider ([Extending](extending.md#field-types)), isn't covered: a value its provider no longer gives doesn't fit the kind, so publish refuses it, and the admin doesn't flag it.
 
 ## Caching contract
 

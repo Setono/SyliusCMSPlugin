@@ -141,7 +141,7 @@ The admin flags problems on the entry, in the lists' problem marker, on the Over
 
 - a scheduled publish that's overdue
 - a scheduled publish that failed, with its reason
-- a broken reference: a deleted product, taxon, entry, snippet or media item in a field or link, a deleted customer group in a condition or an audience, a deleted channel, locale, product, taxon, entry or other record in a condition, or a deleted category ([Content model](content-model.md#references))
+- a broken reference: a deleted product, taxon, entry, snippet or media item in a field or link, a deleted customer group in a condition or an audience, a deleted channel, locale, product, taxon, entry or media item in a condition ([Targeting](targeting.md#deleted-records-in-conditions)), or a deleted category ([Content model](content-model.md#references))
 - a Snippet block through which its snippet would render inside itself, directly or through other snippets' published trees, which publish refuses, so it comes from imported or older data ([Rendering](rendering.md#rendering-a-block-tree))
 
 **Warnings:**

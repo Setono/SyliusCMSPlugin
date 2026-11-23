@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Field\HydrationContext;
 use Setono\SyliusCMSPlugin\Field\Text;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\ChannelsByLocale;
+use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\StoreChannels;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\IdentityTranslator;
@@ -252,6 +253,59 @@ final class ChoiceHandlerTest extends TestCase
         self::assertTrue($this->providing($translator)->fits(self::fromProvider(), ['WEB', '42']));
         self::assertFalse($this->providing($translator)->fits(self::fromProvider(), ['WEB', 'B2B']));
         self::assertTrue($this->providing(new IdentityTranslator())->fits(self::fromProvider(), ['WEB', 'B2B']));
+    }
+
+    /**
+     * A code the store no longer has is a broken reference, as a deleted product's code is in a Product field, which the
+     * admin flags (ADR 0002), so it fits and isn't refused. It doesn't count, so hydrating leaves it out
+     *
+     * @test
+     */
+    public function it_fits_and_accepts_a_code_a_record_choices_provider_no_longer_gives_and_hydrates_it_as_missing(): void
+    {
+        $handler = new ChoiceHandler(new IdentityTranslator(), new ServiceLocator([StoreChannels::class => static fn (): StoreChannels => new StoreChannels()]));
+        $channels = new Choice(label: 'Channels', multiple: true, choicesProvider: StoreChannels::class);
+        $channel = new Choice(label: 'Channel', choicesProvider: StoreChannels::class);
+        $context = $this->prophesize(ExecutionContextInterface::class);
+        $context->buildViolation(Argument::cetera())->shouldNotBeCalled();
+
+        self::assertTrue($handler->fits($channels, ['WEB', 'OUTLET']));
+        self::assertTrue($handler->fits($channel, 'OUTLET'));
+        $handler->validate($channels, ['WEB', 'OUTLET'], $context->reveal());
+        $handler->validate($channel, 'OUTLET', $context->reveal());
+
+        self::assertSame(['WEB'], $handler->hydrate($channels, ['WEB', 'OUTLET'], $this->hydrationContext()));
+        self::assertNull($handler->hydrate($channel, 'OUTLET', $this->hydrationContext()));
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideValuesOfTheWrongShape
+     */
+    public function it_refuses_a_value_of_the_wrong_shape_from_a_record_choices_provider(bool $multiple, mixed $value): void
+    {
+        $handler = new ChoiceHandler(new IdentityTranslator(), new ServiceLocator([StoreChannels::class => static fn (): StoreChannels => new StoreChannels()]));
+        $field = new Choice(label: 'Channels', multiple: $multiple, choicesProvider: StoreChannels::class);
+        $builder = $this->prophesize(ConstraintViolationBuilderInterface::class);
+        $builder->addViolation()->shouldBeCalledOnce();
+        $context = $this->prophesize(ExecutionContextInterface::class);
+        $context->buildViolation('setono_sylius_cms.field.invalid_choice')->willReturn($builder->reveal())->shouldBeCalledOnce();
+
+        self::assertFalse($handler->fits($field, $value));
+        $handler->validate($field, $value, $context->reveal());
+    }
+
+    /**
+     * @return iterable<string, array{bool, mixed}>
+     */
+    public function provideValuesOfTheWrongShape(): iterable
+    {
+        yield 'a number for a single choice' => [false, 7];
+        yield 'a list for a single choice' => [false, ['WEB']];
+        yield 'a string for a multiple choice' => [true, 'WEB'];
+        yield 'a non-string in a multiple choice' => [true, ['WEB', 7]];
+        yield 'a map for a multiple choice' => [true, ['a' => 'WEB']];
     }
 
     /**
