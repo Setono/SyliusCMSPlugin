@@ -103,6 +103,14 @@
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>
 
+        <!-- A block's condition of a kind a project removed, on purpose or not: a warning in the admin, so lint leaves it out -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownConditionKind" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownConditionKind">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
         <!-- A list filled by a source the code no longer has, which lists nothing -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownSource" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownSource">
             <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
@@ -221,6 +229,23 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
+        <!--
+        A condition naming a channel or locale the store no longer has, or with a parameter referring to a deleted record,
+        such as a product, which setono:cms:lint reports
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\BrokenConditionReference" class="Setono\SyliusCMSPlugin\Problem\Kind\BrokenConditionReference">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="sylius.repository.locale"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <!-- A snippet that would render inside itself, which setono:cms:lint reports -->

@@ -8,6 +8,7 @@ app:
             store_hours: Store hours
         condition_kind:
             product_available: Product is available
+            signed_in: Signed in
         greeting: Hello
         # The test application's code preset sale_hero.json, as a plugin ships its presets' texts
         preset:

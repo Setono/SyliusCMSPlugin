@@ -488,6 +488,7 @@ setono_sylius_cms:
         products: Products
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
+        broken_condition_reference: '%field% in a condition of the %block% block refers to %type% that was deleted, so the condition no longer counts it.'
         broken_entry_reference: '%field% refers to %type% that was deleted, so it isn''t shown.'
         broken_entry_rich_text_reference: 'A link in %field% leads to %type% that was deleted, so it shows as plain text.'
         broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'
@@ -496,9 +497,11 @@ setono_sylius_cms:
         broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
         capped_slot_without_catch_all: '"%slot%" is capped at %cap% and has no catch-all placement, with no page scope and a published, enabled snippet for everyone, so some pages or shoppers may see nothing there.'
         category_archive_without_entries: 'Its page lists none of the category''s entries, as no Entries block is left in its blocks. Add an Entries block filled by %source%.'
+        deleted_channel_in_condition: 'The channel "%code%" in a condition of the %block% block was deleted, so the condition no longer counts it.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
+        deleted_locale_in_condition: 'The locale "%code%" in a condition of the %block% block was deleted, so the condition no longer counts it.'
         misfit_entry_value: '%field% holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
@@ -514,6 +517,7 @@ setono_sylius_cms:
         snippet_inside_itself: 'The %block% block shows this snippet inside itself, directly or through other snippets, so it''s skipped there.'
         unknown_bindable_property: '%field% in the %block% block is bound to "%property%", which the code no longer has, so it shows its fallback.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
+        unknown_condition_kind: 'A condition of the %block% block is of the kind "%kind%", which the code no longer has, so the block isn''t shown.'
         unknown_layout_bindable_property: '%field% in the layout is bound to "%property%", which the code no longer has, so it shows its fallback.'
         unknown_entry_source: '%field% is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unknown_layout_source: '%field% in the layout is filled by the source "%source%", which the code no longer has, so it lists nothing.'
@@ -522,6 +526,7 @@ setono_sylius_cms:
         url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
     # Each kind of problem, by its code, as the Overview's Needs attention groups them. A project names its own kinds here
     problem_kind:
+        broken_condition_reference: Broken references in conditions
         broken_reference: Broken references
         capped_slot_without_catch_all: Capped slots without a catch-all placement
         category_archive_without_entries: Category pages without an Entries block
@@ -537,6 +542,7 @@ setono_sylius_cms:
         snippet_inside_itself: Snippets inside themselves
         unknown_bindable_property: Bindings of removed properties
         unknown_block_type: Blocks of removed types
+        unknown_condition_kind: Conditions of removed kinds
         unknown_source: Lists filled by removed sources
         url_taken_by_route: URLs taken by Sylius routes
     publish:
