@@ -423,11 +423,11 @@ final class Configuration implements ConfigurationInterface
                             ->validate()->always(self::assertMimeTypesInOneKind(...))->end()
                         ->end()
                         ->scalarNode('max_upload_size')
-                            ->info('In bytes, or as php.ini writes it, such as 20M. null means PHP\'s effective limit, and a value above it is lowered to it. An import checks its files against this value alone, and takes any size when it\'s null')
+                            ->info('In bytes, or as php.ini writes it, such as 20M. null means PHP\'s effective limit, and a value above it is lowered to it. An import checks its files against the smaller of this value and transfer.max_file_size, which PHP\'s limit doesn\'t lower')
                             ->defaultNull()
                             ->validate()
                                 ->ifTrue(static fn (mixed $size): bool => null !== $size)
-                                ->then(static fn (mixed $size): int => FileSize::parse(is_int($size) || is_string($size) ? $size : ''))
+                                ->then(self::size(...))
                             ->end()
                         ->end()
                         ->scalarNode('grace_period')
@@ -506,8 +506,8 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
-     * Where the export zips uploaded on the Transfer screen wait for the Messenger worker to import them. See "Who runs it"
-     * in docs/spec/transfer.md
+     * Where the export zips uploaded on the Transfer screen wait for the Messenger worker to import them, and the bounds
+     * of what an import unpacks. See "Who runs it" and "Media files" in docs/spec/transfer.md
      */
     private function addTransferSection(ArrayNodeDefinition $node): void
     {
@@ -520,6 +520,16 @@ final class Configuration implements ConfigurationInterface
                             ->info('A Flysystem storage service the uploaded export zips are kept in until their import finishes. The default writes to %kernel.project_dir%/private/cms, outside the web root, which a Messenger worker on another server can\'t read: give such a worker a storage both servers share')
                             ->defaultValue(SetonoSyliusCMSExtension::TRANSFER_STORAGE)
                             ->cannotBeEmpty()
+                        ->end()
+                        ->scalarNode('max_file_size')
+                            ->info('In bytes, or as php.ini writes it, such as 100M: the largest media file an import takes. When media.max_upload_size is smaller, that one is the limit')
+                            ->defaultValue(100 * 1024 * 1024)
+                            ->validate()->always(self::size(...))->end()
+                        ->end()
+                        ->scalarNode('max_unpacked_size')
+                            ->info('In bytes, or as php.ini writes it, such as 1G: the most an export zip unpacks to, checked from its directory before anything is extracted and again while extracting')
+                            ->defaultValue(1024 * 1024 * 1024)
+                            ->validate()->always(self::size(...))->end()
                         ->end()
                     ->end()
                 ->end()
@@ -597,6 +607,16 @@ final class Configuration implements ConfigurationInterface
         }
 
         return $width;
+    }
+
+    /**
+     * A size in bytes, given in bytes or as php.ini writes it, such as 20M
+     *
+     * @throws \InvalidArgumentException when it isn't a positive number of bytes, optionally followed by K, M or G
+     */
+    private static function size(mixed $size): int
+    {
+        return FileSize::parse(is_int($size) || is_string($size) ? $size : '');
     }
 
     /**

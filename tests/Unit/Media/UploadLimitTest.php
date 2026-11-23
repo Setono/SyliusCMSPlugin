@@ -51,28 +51,31 @@ final class UploadLimitTest extends TestCase
 
     /**
      * An import doesn't upload its files through PHP, so the PHP that runs it, such as the CLI's with its 2 MB, doesn't
-     * lower the configured limit
+     * lower the configured limit. transfer.max_file_size, 100 MB here, does when it's smaller
      *
      * @test
      */
-    public function it_checks_imported_files_against_the_configured_limit_alone(): void
+    public function it_checks_imported_files_against_the_smaller_of_the_configured_limit_and_the_imports(): void
     {
-        $limit = (new UploadLimit(64 * 1024 * 1024, 2 * 1024 * 1024))->forImports();
+        $limit = (new UploadLimit(64 * 1024 * 1024, 2 * 1024 * 1024))->forImports(100 * 1024 * 1024);
 
         self::assertSame(64 * 1024 * 1024, $limit->bytes());
         self::assertTrue($limit->allows(64 * 1024 * 1024));
         self::assertFalse($limit->allows(64 * 1024 * 1024 + 1));
+
+        self::assertSame(100 * 1024 * 1024, (new UploadLimit(500 * 1024 * 1024, 2 * 1024 * 1024))->forImports(100 * 1024 * 1024)->bytes());
     }
 
     /**
      * @test
      */
-    public function it_sets_imported_files_no_limit_when_none_is_configured(): void
+    public function it_checks_imported_files_against_the_imports_limit_when_none_is_configured(): void
     {
-        $limit = (new UploadLimit(null, 2 * 1024 * 1024))->forImports();
+        $limit = (new UploadLimit(null, 2 * 1024 * 1024))->forImports(100 * 1024 * 1024);
 
-        self::assertSame(\PHP_INT_MAX, $limit->bytes());
-        self::assertTrue($limit->allows(3 * 1024 * 1024));
+        self::assertSame(100 * 1024 * 1024, $limit->bytes());
+        self::assertTrue($limit->allows(100 * 1024 * 1024));
+        self::assertFalse($limit->allows(100 * 1024 * 1024 + 1));
     }
 
     /**

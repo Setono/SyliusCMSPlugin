@@ -207,9 +207,10 @@ When it's done, the import dispatches `ImportFinished` ([Extending](extending.md
 An export is untrusted input: any admin user can import one. So every file in it goes through the same checks as an upload ([Media](media.md#uploading)), whether its media item is picked, a dependency, or new in the target:
 
 - **The zip.** Every entry must resolve inside the export's root. An absolute path, a `..` segment or a link refuses the import, and so does a link in an export folder.
+- **What a zip unpacks to.** A zip unpacks to no more than `transfer.max_unpacked_size`, 1 GB by default ([Extending](extending.md#configuration)). That's checked from the zip's directory before anything is extracted, and again while extracting, since a zip's headers can lie: extracting stops one byte past the limit. A zip over it refuses the import, naming its total. A folder isn't unpacked, so it has no such limit.
 - **The filename.** `filename` must be a plain basename: no `/`, `\`, `..` or control characters. Anything else refuses the import.
 - **The checksum.** The file's SHA-256 must match `checksum`. A mismatch refuses the import.
-- **The file itself.** Its type is checked against `media.types` and its size against `media.max_upload_size`. PHP's own `upload_max_filesize` and `post_max_size` don't lower that limit, as they do an upload's: the import doesn't upload the file through PHP, and the CLI or worker that runs it often has much lower limits than the web server. Without a configured limit, a file of any size is imported. Its kind, MIME type, size and dimensions are read from the file, and the values in the JSON are ignored, so metadata of another kind, such as alt text in the JSON of what's a document, is left out. SVG is sanitised.
+- **The file itself.** Its type is checked against `media.types` and its size against `transfer.max_file_size`, 100 MB by default, or `media.max_upload_size` when that's smaller. It's extracted no further than one byte past that limit, so a file over it can't fill the disk. PHP's own `upload_max_filesize` and `post_max_size` don't lower the limit, as they do an upload's: the import doesn't upload the file through PHP, and the CLI or worker that runs it often has much lower limits than the web server. Its kind, MIME type, size and dimensions are read from the file, and the values in the JSON are ignored, so metadata of another kind, such as alt text in the JSON of what's a document, is left out. SVG is sanitised.
 
 A file that fails a check refuses the whole import, with the media item named.
 
@@ -274,7 +275,7 @@ setono:cms:import <path> [--dry-run] [--publish] [--overwrite]
   | Code | Meaning |
   | --- | --- |
   | `0` | It applied, or the dry run would. |
-  | `1` | It refused for a reason `--overwrite` doesn't fix: unknown code, a URL clash, a failed publish, a file that fails its checks, an `embed_code` block while it's off, or an entry whose UUID is an entry of another content type in the target. |
+  | `1` | It refused for a reason `--overwrite` doesn't fix: unknown code, a URL clash, a failed publish, a file that fails its checks, a zip that unpacks to more than `transfer.max_unpacked_size`, an `embed_code` block while it's off, or an entry whose UUID is an entry of another content type in the target. |
   | `2` (`Command::INVALID`) | `<path>` isn't a readable export folder or zip, its `format` is unknown, a file in it isn't in the export format, or a media item's file is missing. |
   | `3` | It refused only because of conflicts that `--overwrite` would resolve. |
 

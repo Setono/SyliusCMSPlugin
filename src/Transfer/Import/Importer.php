@@ -13,7 +13,7 @@ use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 
 /**
  * Reads the export, plans, and applies the plan in one database transaction: any conflict, refusal or error means
- * nothing changes. A dry run applies it too, in a transaction it rolls back, so it checks everything the real run
+ * nothing changes. A zip that unpacks to more than it may refuses the import before anything is planned. A dry run applies it too, in a transaction it rolls back, so it checks everything the real run
  * would, publish validation included, and exits as the real run would. Media come first, then the entries and presets
  * that use them. The media files are written to storage only once the plan is complete, right before the commit, and
  * removed again when it can't commit, so an import that refuses or rolls back writes none. The events and messages of
@@ -45,6 +45,8 @@ final readonly class Importer implements ImporterInterface
             $export = $this->reader->read($source);
         } catch (InvalidExportException $e) {
             return ImportResult::invalid($e->getMessage());
+        } catch (ExportTooBigException $e) {
+            return ImportResult::refused(new ImportPlan([], refusals: [new ImportRefusal(null, $e->reason)]));
         }
 
         try {

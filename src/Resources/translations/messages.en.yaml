@@ -250,6 +250,8 @@ setono_sylius_cms:
         media_file:
             checksum: '%filename% doesn''t match its checksum, so it isn''t the file that was exported.'
             filename: '"%filename%" isn''t a plain filename.'
+            # Over the smaller of transfer.max_file_size and media.max_upload_size
+            over_limit: '%filename% is over the import limit of %limit% per file.'
         media_refused: 'The media item %name% can''t be imported: %reason%'
         newer_version: '%title% can''t be imported: %reason%. Deploy the code first.'
         not_publishable: '%title% can''t be published: %reason%'
@@ -259,6 +261,10 @@ setono_sylius_cms:
         unknown_block_type: '%title% has blocks of the type "%type%", which the code here doesn''t have. Deploy the code first.'
         unknown_content_type: '%title% is of the content type "%content_type%", which the code here doesn''t have. Deploy the code first.'
         unknown_layout: '%title% has the layout "%layout%", which the code here doesn''t have for its content type. Deploy the code first.'
+        # An export zip over transfer.max_unpacked_size, by its directory, or by what's extracted when its headers lie
+        zip:
+            over_limit: 'The export zip unpacks to more than the import limit of %limit%, more than its directory says.'
+            too_big: 'The export zip unpacks to %size%, over the import limit of %limit%.'
     layout:
         blog_category:
             standard: Standard
