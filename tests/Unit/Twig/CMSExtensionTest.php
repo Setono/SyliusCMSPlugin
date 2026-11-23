@@ -225,13 +225,14 @@ final class CMSExtensionTest extends IntegrationTestCase
     }
 
     /**
-     * A channel with these locales, and its default locale, when it has one
+     * A channel with these locales, its default locale, when it has one, and its name, when it has one
      *
      * @param list<string> $locales
      */
-    public function channel(array $locales, ?string $defaultLocale = null): ChannelInterface
+    public function channel(array $locales, ?string $defaultLocale = null, ?string $name = null): ChannelInterface
     {
         $channel = new Channel();
+        $channel->setName($name);
         foreach ($locales as $code) {
             $locale = new Locale();
             $locale->setCode($code);

@@ -35,7 +35,24 @@ final class HomepageTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello shoppers');
         self::assertSelectorTextSame('h1', 'Welcome', 'The page renders in its layout, Standard, which shows its title');
-        self::assertSame('Welcome', $crawler->filter('head title')->text());
+        self::assertSame('Welcome | Setono CMS Test Store', $crawler->filter('head title')->text(), 'Its title, followed by the channel\'s name');
+    }
+
+    /**
+     * @test
+     */
+    public function it_titles_the_homepage_with_its_meta_title_exactly(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('Welcome', 'welcome', 'Hello shoppers', published: true);
+        self::setHomepageOf($page, 'WEB');
+        self::reloadPage($page)->getTranslation('en_US')->setMetaTitle('Fashion for everyone');
+        self::pageManager()->flush();
+
+        $crawler = $client->request('GET', '/en_US/');
+
+        self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello shoppers');
+        self::assertSame('Fashion for everyone', $crawler->filter('head title')->text());
     }
 
     /**
@@ -207,7 +224,7 @@ final class HomepageTest extends WebTestCase
 
         $head = $client->request('GET', '/da_DK/')->filter('head');
 
-        self::assertSame('Velkommen', $head->filter('title')->text());
+        self::assertSame('Velkommen | Setono CMS Test Store', $head->filter('title')->text());
         self::assertSame('http://localhost/da_DK/', self::attribute($head, 'link[rel="canonical"]', 'href'));
     }
 

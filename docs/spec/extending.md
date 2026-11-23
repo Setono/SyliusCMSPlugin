@@ -427,6 +427,8 @@ interface TimeDependentConditionKindInterface extends ConditionKindInterface
 
 `matches` and `matchesNot` are optional translation keys for how the builder words a condition and its negation: "is one of" and "is not one of". A kind that matches otherwise words them its own way, as the shipped date window does with "is inside" and "is outside".
 
+Publish checks a condition's parameter values by their fields, and then together against the Symfony Validator constraints on the parameters class, such as `Setono\SyliusCMSPlugin\Validation\Constraint\EndsAfterStart`, which the shipped date window's parameters carry: `#[EndsAfterStart(start: 'from', end: 'until')]` refuses an end that doesn't come after its start, at the end field ([Publishing](publishing.md#validation)).
+
 `matches()` answers the condition. The plugin provides the negation by negating it, so kinds never implement it. It's asked only when the render context holds every context key the kind `needs`: without one, the condition never matches, negated or not ([Targeting](targeting.md#condition-kinds)). Kinds work in visibility conditions on blocks and in page scopes, never on entries ([ADR 0010](../adr/0010-entries-have-an-audience-not-visibility-conditions.md)). The shipped kinds are in [Targeting](targeting.md#condition-kinds).
 
 ## Bindable properties
@@ -671,7 +673,7 @@ Every event that changes shopper output implements `StorefrontChangedInterface`,
 | `cms_link(link)` | `?ResolvedLink` | Resolves a `Link` value. `null` means don't render the link. |
 | `cms_url(entry)` | `?string` | An entry's path in the current channel and locale, as the `entry` link target builds it (`/{locale}/` for the channel's homepage), or `null` when it has none or isn't visible. Given a taxon, its product listing's path, as the `taxon` link target builds it, or `null` without a translation in the locale. Relative, as Sylius's `path()` gives. |
 | `cms_head_tags(entry)` | safe HTML | Prints the meta and link tags of an entry shown at its own URL or as a homepage, for the shop layout's `metatags` block: the meta description, robots, the canonical link and the hreflang links ([URLs and SEO](urls-and-seo.md#head-tags)). A tag added later reaches every layout that calls it. |
-| `cms_meta_title(entry)` | `string` | The title text of an entry shown at its own URL or as a homepage, for the shop layout's `title` block: the meta title, or else the title, each through the fallback chain. |
+| `cms_meta_title(entry)` | `string` | The title text of an entry shown at its own URL or as a homepage, for the shop layout's `title` block: the meta title exactly, or else the title followed by the channel's name ("About us \| Fashion Web Store"), each through the fallback chain ([URLs and SEO](urls-and-seo.md#head-tags)). |
 | `cms_preview_mode()` | `?string` | `builder` in the builder's preview, `share` on a share link, otherwise `null`. Themes use it to leave out analytics and other tracking ([Rendering](rendering.md#preview-mode-and-share-links)). |
 
 **Templates** are overridden the Symfony way, under `templates/bundles/SetonoSyliusCMSPlugin/`, or in a Sylius theme. There's no template suggestion chain. The shipped templates are at:
@@ -770,6 +772,8 @@ setono_sylius_cms:
 
     transfer:
         storage: 'setono_sylius_cms.transfer_storage'  # a Flysystem storage service uploaded export zips wait in for the worker; the default writes to %kernel.project_dir%/private/cms, outside the web root, so a worker on another server needs a storage both share
+        max_file_size: 100M      # the largest media file an import takes; media.max_upload_size is the limit when it's smaller
+        max_unpacked_size: 1G    # the most an export zip unpacks to, checked from its directory before anything is extracted and again while extracting
 
     media:
         storage: 'setono_sylius_cms.storage'     # a Flysystem storage service; the default writes to %kernel.project_dir%/public/media/cms, served at /media/cms; another needs MediaUrlGeneratorInterface aliased (Images)
@@ -780,7 +784,7 @@ setono_sylius_cms:
             image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml']
             video: ['video/mp4', 'video/webm']
             document: ['application/pdf']
-        max_upload_size: null  # null means PHP's effective limit; a value above it is lowered to it. Imports check against this value alone, and take any size when it's null
+        max_upload_size: null  # null means PHP's effective limit; a value above it is lowered to it. Imports check against the smaller of this value and transfer.max_file_size, which PHP's limit doesn't lower
         widths: [320, 640, 960, 1280, 1600, 1920, 2560]
         grace_period: 'P1D'  # ISO 8601 duration before a replaced file is deleted
 

@@ -1,8 +1,12 @@
 --TEST--
-cms_meta_title() gives the meta title of the locale the render context's locale falls back to when it has none, before any title
+cms_meta_title() gives the meta title of the locale the render context's locale falls back to when it has none, before any title, exactly
 --TEMPLATE--
 {{ cms_meta_title(entry) }}
 --DATA--
-return $this->rendering(['entry' => $this->pageWith(['de_DE' => ['title' => 'Über uns', 'slug' => 'ueber-uns', 'metaTitle' => 'Über uns | Laden'], 'de_CH' => ['title' => 'Über uns (CH)', 'slug' => 'ueber-uns']])], locale: 'de_CH')
+return $this->rendering(
+    ['entry' => $this->pageWith(['de_DE' => ['title' => 'Über uns', 'slug' => 'ueber-uns', 'metaTitle' => 'Über uns | Laden'], 'de_CH' => ['title' => 'Über uns (CH)', 'slug' => 'ueber-uns']])],
+    locale: 'de_CH',
+    channel: $this->channel([], name: 'Fashion Web Store'),
+)
 --EXPECT--
 Über uns | Laden

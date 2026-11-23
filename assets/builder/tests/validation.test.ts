@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { ValidationError } from '../src/types';
-import { blockHasErrors, blockMessages, entryMessages, fieldMessages, firstBlockWithError } from '../src/validation';
+import {
+    blockHasErrors,
+    blockMessages,
+    conditionFieldMessages,
+    conditionMessages,
+    entryFieldMessages,
+    entryMessages,
+    fieldMessages,
+    firstBlockWithError,
+    layoutFieldMessages,
+} from '../src/validation';
 import { block, blockOf } from './fixtures';
 
 const errors: ValidationError[] = [
@@ -54,5 +64,40 @@ describe('mapping validation errors onto fields', () => {
     it('should give the entry its own messages, naming the entry field each is in', () => {
         expect(entryMessages(errors, 'en_US')).toEqual(['Needs at least one Heading block inside.', 'campaign: This value should not be blank.']);
         expect(entryMessages([{ block: null, field: 'teaser', locale: 'da_DK', message: 'Too long.' }], 'en_US')).toEqual(['teaser: Too long. (da_DK)']);
+    });
+});
+
+describe('mapping validation errors onto visibility conditions and the layout', () => {
+    const elsewhere: ValidationError[] = [
+        { block: 'heading', field: 'until', locale: null, message: 'Until must come after From.', condition: 1 },
+        { block: 'heading', field: null, locale: null, message: 'The condition kind "brand" no longer exists.', condition: 2 },
+        { block: null, field: 'headline', locale: 'en_US', message: 'This field is required.', layout: true },
+        { block: null, field: 'headline', locale: 'da_DK', message: 'This field is required.', layout: true },
+    ];
+
+    it('should flag a block whose condition has an error, and select it when publish refuses', () => {
+        expect(blockHasErrors(elsewhere, 'heading')).toBe(true);
+        expect(firstBlockWithError([block('a'), blockOf('heading', 'heading', [])], elsewhere)).toBe('heading');
+    });
+
+    it("should give a condition its messages, each parameter its own, and leave them out of the block's and its fields'", () => {
+        expect(conditionMessages(elsewhere, 'heading', 2)).toEqual(['The condition kind "brand" no longer exists.']);
+        expect(conditionMessages(elsewhere, 'heading', 1)).toEqual([]);
+        expect(conditionFieldMessages(elsewhere, 'heading', 1, 'until')).toEqual(['Until must come after From.']);
+        expect(conditionFieldMessages(elsewhere, 'heading', 0, 'until')).toEqual([]);
+        expect(conditionFieldMessages(elsewhere, 'other', 1, 'until')).toEqual([]);
+        expect(blockMessages(elsewhere, 'heading')).toEqual([]);
+        expect(fieldMessages(elsewhere, 'heading', 'until', 'en_US')).toEqual([]);
+    });
+
+    it("should give a layout field its messages, saying which locale those of another locale are in, and leave them out of the entry's fields", () => {
+        expect(layoutFieldMessages(elsewhere, 'headline', 'en_US')).toEqual(['This field is required.', 'This field is required. (da_DK)']);
+        expect(layoutFieldMessages(errors, 'campaign', 'en_US')).toEqual([]);
+        expect(entryFieldMessages(elsewhere, 'headline', 'en_US')).toEqual([]);
+        expect(entryFieldMessages(errors, 'campaign', 'en_US')).toEqual(['This value should not be blank.']);
+    });
+
+    it("should list the layout's messages with the entry's, naming the field each is in", () => {
+        expect(entryMessages(elsewhere, 'en_US')).toEqual(['headline: This field is required.', 'headline: This field is required. (da_DK)']);
     });
 });

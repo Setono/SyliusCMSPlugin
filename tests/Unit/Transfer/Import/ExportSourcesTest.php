@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 use Setono\SyliusCMSPlugin\Transfer\Import\DirectorySource;
 use Setono\SyliusCMSPlugin\Transfer\Import\ExportSourceInterface;
 use Setono\SyliusCMSPlugin\Transfer\Import\ExportSources;
+use Setono\SyliusCMSPlugin\Transfer\Import\ExportTooBigException;
 use Setono\SyliusCMSPlugin\Transfer\Import\ZipSource;
 
 /**
@@ -33,9 +34,9 @@ final class ExportSourcesTest extends TestCase
      */
     public function it_reads_an_export_folder_and_the_same_folder_in_a_zip_alike(): void
     {
-        $folder = ExportSources::open(self::FIXTURE);
+        $folder = self::sources()->open(self::FIXTURE);
         self::assertInstanceOf(DirectorySource::class, $folder);
-        $zip = ExportSources::open($this->zipOfFixture());
+        $zip = self::sources()->open($this->zipOfFixture());
         self::assertInstanceOf(ZipSource::class, $zip);
 
         foreach ([$folder, $zip] as $source) {
@@ -46,11 +47,47 @@ final class ExportSourcesTest extends TestCase
             self::assertTrue($source->has('media/folders.json'));
             self::assertFalse($source->has('media/missing.json'));
 
-            $stream = $source->readStream('media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/autumn-banner.png');
-            self::assertSame(file_get_contents(self::FIXTURE . '/media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/autumn-banner.png'), stream_get_contents($stream));
-            fclose($stream);
+            $banner = (string) file_get_contents(self::FIXTURE . '/media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/autumn-banner.png');
+            self::assertSame([130, $banner], self::extract($source, 'media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/autumn-banner.png', 1000));
 
             $this->assertUnreadable($source, 'entries/missing.json');
+            $this->assertNotExtracted($source, 'media/missing.png');
+        }
+    }
+
+    /**
+     * So a file bigger than an import takes can't fill the disk
+     *
+     * @test
+     */
+    public function it_extracts_no_more_of_a_file_than_it_is_asked_to(): void
+    {
+        $banner = (string) file_get_contents(self::FIXTURE . '/media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/autumn-banner.png');
+
+        foreach ([self::sources()->open(self::FIXTURE), self::sources()->open($this->zipOfFixture())] as $source) {
+            self::assertSame([11, substr($banner, 0, 11)], self::extract($source, 'media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/autumn-banner.png', 11));
+        }
+    }
+
+    /**
+     * A folder isn't unpacked, so what its files add up to isn't limited. See "Media files" in docs/spec/transfer.md
+     *
+     * @test
+     */
+    public function it_opens_a_zip_that_unpacks_to_no_more_than_transfer_max_unpacked_size(): void
+    {
+        $sources = new ExportSources(100);
+
+        self::assertSame(file_get_contents(self::FIXTURE . '/manifest.json'), $sources->open(self::FIXTURE)->read('manifest.json'));
+
+        $zip = $this->zipOfFixture();
+        foreach ([$sources->open($zip), $sources->zip($zip)] as $source) {
+            try {
+                $source->read('manifest.json');
+                self::fail('It unpacked a zip over the limit');
+            } catch (ExportTooBigException $e) {
+                self::assertSame('setono_sylius_cms.import.zip.too_big', $e->reason->getMessage());
+            }
         }
     }
 
@@ -73,7 +110,7 @@ final class ExportSourcesTest extends TestCase
     {
         foreach ([$this->temporaryDirectory() . '/missing', $this->temporaryDirectory(), $this->temporaryFile('export.zip', 'Not a zip')] as $path) {
             try {
-                ExportSources::open($path);
+                self::sources()->open($path);
                 self::fail(sprintf('It opened %s', $path));
             } catch (InvalidExportException) {
                 $this->addToAssertionCount(1);
@@ -111,6 +148,11 @@ final class ExportSourcesTest extends TestCase
         self::assertSame(['media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/autumn-banner.png'], (new DirectorySource($folder))->pathsOutsideRoot());
     }
 
+    private static function sources(): ExportSources
+    {
+        return new ExportSources(\PHP_INT_MAX);
+    }
+
     private function assertUnreadable(ExportSourceInterface $source, string $path): void
     {
         try {
@@ -119,6 +161,29 @@ final class ExportSourcesTest extends TestCase
         } catch (InvalidExportException) {
             $this->addToAssertionCount(1);
         }
+    }
+
+    private function assertNotExtracted(ExportSourceInterface $source, string $path): void
+    {
+        try {
+            self::extract($source, $path, 1000);
+            self::fail(sprintf('It extracted %s', $path));
+        } catch (InvalidExportException) {
+            $this->addToAssertionCount(1);
+        }
+    }
+
+    /**
+     * @return array{int, string} how many bytes it extracted, and what
+     */
+    private static function extract(ExportSourceInterface $source, string $path, int $length): array
+    {
+        $target = fopen('php://memory', 'w+b');
+        self::assertIsResource($target);
+        $extracted = $source->extract($path, $target, $length);
+        rewind($target);
+
+        return [$extracted, (string) stream_get_contents($target)];
     }
 
     /**

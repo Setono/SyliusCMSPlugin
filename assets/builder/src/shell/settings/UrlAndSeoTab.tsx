@@ -30,8 +30,9 @@ export function UrlAndSeoTab() {
 
 /**
  * The edited locale's meta title or meta description. While it's empty, it shows the value the fallback chain gives it,
- * which the head tags print; past the chain, the meta title falls back to the title and the meta description to the
- * field its content type names. The head prints it whatever the layout. See "SEO fields" in docs/spec/urls-and-seo.md
+ * which the head tags print; past the chain, the meta title falls back to the title followed by the channel's name and
+ * the meta description to the field its content type names. The head prints it whatever the layout. See "SEO fields"
+ * and "Head tags" in docs/spec/urls-and-seo.md
  */
 function MetaField({ field, type, label, help }: { field: 'metaTitle' | 'metaDescription'; type: 'text' | 'textarea'; label: MessageKey; help: MessageKey }) {
     const t = useTranslator();

@@ -1,9 +1,10 @@
 import { useId } from 'react';
 import { newCondition } from '../conditions';
-import { useBuilder, useBuilderState } from '../context';
+import { useBuilder, useBuilderState, useValidationState } from '../context';
 import { contextNames, missingContext, providedContext } from '../hostPageContext';
 import { useTranslator } from '../i18n';
 import type { ConditionKindDefinition, StoredBlock, VisibilityCondition } from '../types';
+import { conditionFieldMessages, conditionMessages } from '../validation';
 import { Condition } from './Condition';
 import { PlusIcon } from './icons';
 import styles from './SelectionPane.module.css';
@@ -22,9 +23,9 @@ function useMissingContext(): (kind: ConditionKindDefinition) => string[] {
 
 /**
  * The selected block's visibility conditions, which all have to match for it to show: each one's kind, "is one of" or
- * "is not one of", and its parameters through their fields. A new condition starts with the first kind the entry
- * provides the context of. A kind that needs context the entry doesn't provide is named with what it needs, and can't
- * be picked. See "Visibility conditions" in docs/spec/targeting.md
+ * "is not one of", and its parameters through their fields, with what publish would refuse in them. A new condition
+ * starts with the first kind the entry provides the context of. A kind that needs context the entry doesn't provide is
+ * named with what it needs, and can't be picked. See "Visibility conditions" in docs/spec/targeting.md
  */
 export function VisibilityConditions({ block }: { block: StoredBlock }) {
     const t = useTranslator();
@@ -33,6 +34,7 @@ export function VisibilityConditions({ block }: { block: StoredBlock }) {
     const kinds = useBuilderState((state) => state.conditionKinds);
     const contextKeys = useBuilderState((state) => state.contextKeys);
     const locale = useBuilderState((state) => state.locale);
+    const errors = useValidationState((state) => state.errors);
     const missing = useMissingContext();
     const set = (conditions: VisibilityCondition[]): void => store.getState().setConditions(block.key, conditions);
     const first = kinds.find((kind) => missing(kind).length === 0);
@@ -61,6 +63,8 @@ export function VisibilityConditions({ block }: { block: StoredBlock }) {
                                 kinds={kinds}
                                 unavailable={unavailable}
                                 locale={locale}
+                                errors={conditionMessages(errors, block.key, index)}
+                                paramErrors={(name) => conditionFieldMessages(errors, block.key, index, name)}
                                 onChange={(changed) => set(block.conditions.map((other, i) => (i === index ? changed : other)))}
                                 onRemove={() => set(block.conditions.filter((_, i) => i !== index))}
                             />

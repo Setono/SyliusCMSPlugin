@@ -17,6 +17,8 @@ interface Tab {
     shown?: (session: BuilderSession) => boolean;
     /** The entry fields the panel shows with their errors, which the errors above the tabs leave out while it's open. */
     fields?: (session: BuilderSession) => readonly string[];
+    /** Whether the panel shows the layout's fields with their errors, which the errors above the tabs then leave out. */
+    layout?: boolean;
 }
 
 /**
@@ -31,6 +33,7 @@ const tabs: Tab[] = [
         label: 'setono_sylius_cms.builder.settings',
         panel: () => <SettingsTab />,
         fields: ({ entryFields }) => entryFields.map(({ name }) => name),
+        layout: true,
     },
     {
         code: 'url_and_seo',
@@ -77,7 +80,7 @@ export function SettingsPane({ onSaveStartingPoint }: SettingsPaneProps = {}) {
     return (
         <div className={styles.pane}>
             {onSaveStartingPoint !== undefined && <SaveStartingPoint onSave={onSaveStartingPoint} />}
-            <EntryErrors shownElsewhere={tab?.fields?.(session) ?? []} />
+            <EntryErrors shownElsewhere={tab?.fields?.(session) ?? []} layoutShown={tab?.layout ?? false} />
             <div
                 ref={tabList}
                 role="tablist"
@@ -141,14 +144,14 @@ function SaveStartingPoint({ onSave }: { onSave: () => void }) {
 }
 
 /**
- * What publish would refuse in the entry itself: its fields, and what its top level holds, except in the fields the open
- * tab shows with their errors, so each one names its field
+ * What publish would refuse in the entry itself: its fields, the layout's fields and what its top level holds, except in
+ * the fields the open tab shows with their errors, so each one names its field
  */
-function EntryErrors({ shownElsewhere }: { shownElsewhere: readonly string[] }) {
+function EntryErrors({ shownElsewhere, layoutShown }: { shownElsewhere: readonly string[]; layoutShown: boolean }) {
     const errors = useValidationState((state) => state.errors);
     const locale = useBuilderState((state) => state.locale);
     const messages = entryMessages(
-        errors.filter(({ field }) => field === null || !shownElsewhere.includes(field)),
+        errors.filter(({ field, layout }) => (layout === true ? !layoutShown : field === null || !shownElsewhere.includes(field))),
         locale,
     );
 

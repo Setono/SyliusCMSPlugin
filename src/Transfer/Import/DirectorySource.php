@@ -79,7 +79,10 @@ final readonly class DirectorySource implements ExportSourceInterface
         return $paths;
     }
 
-    public function readStream(string $path)
+    /**
+     * Copies the file, as a folder isn't unpacked
+     */
+    public function extract(string $path, $target, int $length): int
     {
         $file = $this->file($path);
         $stream = null === $file || !is_file($file) ? false : @fopen($file, 'rb');
@@ -87,7 +90,13 @@ final readonly class DirectorySource implements ExportSourceInterface
             throw new InvalidExportException(sprintf('The export has no readable file %s', $path));
         }
 
-        return $stream;
+        try {
+            $copied = stream_copy_to_stream($stream, $target, $length);
+        } finally {
+            fclose($stream);
+        }
+
+        return false === $copied ? throw new InvalidExportException(sprintf('The export\'s file %s can\'t be read', $path)) : $copied;
     }
 
     private function file(string $path): ?string

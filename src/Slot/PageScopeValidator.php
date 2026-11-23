@@ -10,13 +10,14 @@ use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
-use Setono\SyliusCMSPlugin\Validation\FieldValidator;
+use Setono\SyliusCMSPlugin\Validation\ConditionValidator;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
  * Holds a page scope to the slot it's for. Its conditions name what's wrong by their number, from 1, and their kind's
- * label. Parameter values are checked by their fields as publish checks a block's, so a required parameter, such as a
- * product condition's products, must have a value
+ * label. Parameter values are checked as publish checks a block's visibility conditions (ConditionValidator): by their
+ * fields, so a required parameter, such as a product condition's products, must have a value, and together, against
+ * the constraints on the kind's parameters class
  *
  * @internal
  */
@@ -28,7 +29,7 @@ final readonly class PageScopeValidator implements PageScopeValidatorInterface
         private ConditionKindRegistryInterface $conditionKinds,
         private SlotRegistryInterface $slots,
         private ContextKeyRegistryInterface $contextKeys,
-        private FieldValidator $fieldValidator,
+        private ConditionValidator $conditionValidator,
     ) {
     }
 
@@ -88,20 +89,17 @@ final readonly class PageScopeValidator implements PageScopeValidatorInterface
      */
     private function validateParams(ConditionKindMetadata $kind, int $number, TranslatableMessage $label, array $params): array
     {
-        if (null === $kind->params) {
-            return [];
-        }
-
         $errors = [];
-        foreach ($kind->fields as $name => $field) {
-            foreach ($this->fieldValidator->validateShared($kind->params, $field, $params[$name] ?? null) as $error) {
-                $errors[] = new TranslatableMessage('setono_sylius_cms.page_scope.field', [
+        foreach ($this->conditionValidator->validateParams($kind, $params) as $error) {
+            $field = null === $error->field ? null : ($kind->fields[$error->field] ?? null);
+            $errors[] = null === $field
+                ? new TranslatableMessage('setono_sylius_cms.page_scope.condition', ['%number%' => $number, '%kind%' => $label, '%message%' => $error->message], self::DOMAIN)
+                : new TranslatableMessage('setono_sylius_cms.page_scope.field', [
                     '%number%' => $number,
                     '%kind%' => $label,
                     '%field%' => new TranslatableMessage($field->field->label),
                     '%message%' => $error->message,
                 ], self::DOMAIN);
-            }
         }
 
         return $errors;

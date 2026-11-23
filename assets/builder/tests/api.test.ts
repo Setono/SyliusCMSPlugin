@@ -193,6 +193,8 @@ describe('the JSON endpoints', () => {
         const errors = [
             { block: 'a', field: null, locale: null, message: 'Needs at least 2 Column blocks inside.' },
             { block: null, field: 'campaign', locale: null, message: 'This value should not be blank.' },
+            { block: 'a', field: 'until', locale: null, message: 'Until must come after From.', condition: 1 },
+            { block: null, field: 'headline', locale: 'en_US', message: 'This field is required.', layout: true },
         ];
         const fetch = respond(200, { errors });
 
@@ -208,6 +210,8 @@ describe('the JSON endpoints', () => {
     it('should fail when the validation answer has no list of errors', async () => {
         await expect(createApi(config, respond(200, {})).validate()).rejects.toBeInstanceOf(ApiError);
         await expect(createApi(config, respond(200, { errors: [{ block: 'a' }] })).validate()).rejects.toBeInstanceOf(ApiError);
+        await expect(createApi(config, respond(200, { errors: [{ block: 'a', field: null, locale: null, message: 'Wrong', condition: '1' }] })).validate()).rejects.toBeInstanceOf(ApiError);
+        await expect(createApi(config, respond(200, { errors: [{ block: null, field: 'x', locale: null, message: 'Wrong', layout: 'yes' }] })).validate()).rejects.toBeInstanceOf(ApiError);
     });
 
     it('should ask for a preview token for the entry in a channel and a locale, shown to someone at a date, and answer with the preview URL', async () => {

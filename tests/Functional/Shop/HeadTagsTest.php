@@ -12,8 +12,8 @@ use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * The head tags of an entry shown at its own URL, which layout/base.html.twig prints into the shop layout's title block
- * with cms_meta_title() and its metatags block with cms_head_tags(). The test app's channel WEB is on localhost, with
- * en_US as its default locale.
+ * with cms_meta_title() and its metatags block with cms_head_tags(). The test app's channel WEB, "Setono CMS Test Store",
+ * is on localhost, with en_US as its default locale.
  * See "SEO fields" and "Head tags" in docs/spec/urls-and-seo.md
  */
 final class HeadTagsTest extends WebTestCase
@@ -69,7 +69,7 @@ final class HeadTagsTest extends WebTestCase
 
         $head = $client->request('GET', '/da_DK/om-os')->filter('head');
 
-        self::assertSame('Om os', $head->filter('title')->text());
+        self::assertSame('Om os | Setono CMS Test Store', $head->filter('title')->text());
         self::assertSame('http://localhost/da_DK/om-os', self::attribute($head, 'link[rel="canonical"]', 'href'));
         self::assertSame([
             'da-DK' => 'http://localhost/da_DK/om-os',
@@ -79,16 +79,18 @@ final class HeadTagsTest extends WebTestCase
     }
 
     /**
+     * As Sylius titles a product page, while a meta title is printed exactly
+     *
      * @test
      */
-    public function it_gives_a_page_without_seo_fields_its_title_and_neither_a_description_nor_a_robots_tag(): void
+    public function it_gives_a_page_without_seo_fields_its_title_followed_by_the_channels_name_and_neither_a_description_nor_a_robots_tag(): void
     {
         $client = self::createClient();
         self::createPage('About us', 'about-us', 'Hello', published: true);
 
         $head = $client->request('GET', '/en_US/about-us')->filter('head');
 
-        self::assertSame('About us', $head->filter('title')->text());
+        self::assertSame('About us | Setono CMS Test Store', $head->filter('title')->text());
         self::assertCount(0, $head->filter('meta[name="description"]'));
         self::assertCount(0, $head->filter('meta[name="robots"]'));
     }
@@ -141,7 +143,7 @@ final class HeadTagsTest extends WebTestCase
         ]);
 
         $head = $client->request('GET', '/en_US/about-us')->filter('head');
-        self::assertSame('About us', $head->filter('title')->text());
+        self::assertSame('About us | Setono CMS Test Store', $head->filter('title')->text());
         self::assertCount(0, $head->filter('meta[name="robots"]'));
 
         self::publishEntry(self::reloadPage($page));

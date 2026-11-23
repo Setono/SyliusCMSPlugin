@@ -40,6 +40,7 @@ final class ImportCommand extends Command
     public function __construct(
         private readonly ImporterInterface $importer,
         private readonly TranslatorInterface $translator,
+        private readonly ExportSources $sources,
     ) {
         parent::__construct();
     }
@@ -62,7 +63,7 @@ final class ImportCommand extends Command
         $path = $input->getArgument('path');
 
         try {
-            $source = ExportSources::open($path);
+            $source = $this->sources->open($path);
         } catch (InvalidExportException $e) {
             $io->error($e->getMessage());
 

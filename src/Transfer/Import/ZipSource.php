@@ -8,9 +8,12 @@ use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 
 /**
  * Reads an export from a zip holding the export's folder at its root. It reads files by their names and never extracts
- * the zip, and finds the entries that don't resolve inside the export's root, which refuse an import
+ * the zip as a whole, and finds the entries that don't resolve inside the export's root, which refuse an import. It
+ * unpacks no more than transfer.max_unpacked_size: what its directory says it unpacks to is checked before anything is
+ * read from it, and what it reads and extracts is counted, since a zip's headers can lie, so it stops one byte past the
+ * limit. See "Media files" in docs/spec/transfer.md
  */
-final readonly class ZipSource implements ExportSourceInterface
+final class ZipSource implements ExportSourceInterface
 {
     /** The Unix file mode's type bits (S_IFMT) */
     private const FILE_TYPE = 0170000;
@@ -18,13 +21,23 @@ final readonly class ZipSource implements ExportSourceInterface
     /** The type of a symbolic link (S_IFLNK) */
     private const SYMBOLIC_LINK = 0120000;
 
-    private \ZipArchive $zip;
+    private readonly \ZipArchive $zip;
+
+    /** Whether its directory was checked, which it is the first time it's to unpack anything */
+    private bool $checked = false;
+
+    /** How many bytes it has unpacked */
+    private int $unpacked = 0;
 
     /**
+     * @param int $maxUnpackedSize transfer.max_unpacked_size in bytes; no limit by default, for only seeing what it holds
+     *
      * @throws InvalidExportException when the file isn't a zip that can be read
      */
-    public function __construct(private string $file)
-    {
+    public function __construct(
+        private readonly string $file,
+        private readonly int $maxUnpackedSize = \PHP_INT_MAX,
+    ) {
         $this->zip = new \ZipArchive();
         $opened = $this->zip->open($file, \ZipArchive::RDONLY);
         if (true !== $opened) {
@@ -37,12 +50,18 @@ final readonly class ZipSource implements ExportSourceInterface
         return false !== $this->zip->locateName($path);
     }
 
+    /**
+     * Reads no more of the file than its headers say it holds, which its directory's check bounds
+     */
     public function read(string $path): string
     {
+        $this->checkDirectory();
         $contents = $this->zip->getFromName($path);
         if (false === $contents) {
             throw new InvalidExportException(sprintf('The export has no readable file %s', $path));
         }
+
+        $this->count(strlen($contents));
 
         return $contents;
     }
@@ -91,14 +110,70 @@ final readonly class ZipSource implements ExportSourceInterface
         return $paths;
     }
 
-    public function readStream(string $path)
+    /**
+     * Extracts the file as far as it goes, whatever its headers say, but no further than one byte past what the zip may
+     * still unpack
+     */
+    public function extract(string $path, $target, int $length): int
     {
+        $this->checkDirectory();
+        $left = $this->maxUnpackedSize - $this->unpacked;
         $stream = $this->zip->getStream($path);
         if (false === $stream) {
             throw new InvalidExportException(sprintf('The export has no readable file %s in %s', $path, $this->file));
         }
 
-        return $stream;
+        try {
+            // libzip fails a read that reaches the end of a file that doesn't match its checksum, with a warning
+            $copied = @stream_copy_to_stream($stream, $target, $left < $length ? $left + 1 : $length);
+        } finally {
+            fclose($stream);
+        }
+
+        if (false === $copied) {
+            throw new InvalidExportException(sprintf('The export\'s file %s can\'t be read from %s', $path, $this->file));
+        }
+
+        $this->count($copied);
+
+        return $copied;
+    }
+
+    /**
+     * Refuses the zip when its directory says it unpacks to more than it may, the first time it's to unpack anything
+     *
+     * @throws ExportTooBigException
+     */
+    private function checkDirectory(): void
+    {
+        if ($this->checked) {
+            return;
+        }
+
+        $size = 0;
+        for ($index = 0; $index < $this->zip->numFiles; ++$index) {
+            $file = $this->zip->statIndex($index);
+            $fileSize = false === $file ? 0 : $file['size'];
+            // A size past PHP's integers reads as negative
+            $size = $fileSize < 0 || $fileSize > \PHP_INT_MAX - $size ? \PHP_INT_MAX : $size + $fileSize;
+        }
+
+        if ($size > $this->maxUnpackedSize) {
+            throw ExportTooBigException::declared($size, $this->maxUnpackedSize);
+        }
+
+        $this->checked = true;
+    }
+
+    /**
+     * @throws ExportTooBigException once it has unpacked more than it may
+     */
+    private function count(int $bytes): void
+    {
+        $this->unpacked += $bytes;
+        if ($this->unpacked > $this->maxUnpackedSize) {
+            throw ExportTooBigException::unpacked($this->maxUnpackedSize);
+        }
     }
 
     private function isLink(int $index): bool

@@ -176,6 +176,20 @@ describe('the layout in the entry settings', () => {
         );
     });
 
+    it("should show what publish would refuse in a layout field under it, and above the tabs only while another tab is open", async () => {
+        const api = fakeApi(inLayout({ code: 'landing', version: 2, fields: {}, translated: {} }));
+        api.validate.mockResolvedValue([{ block: null, field: 'tagline', locale: 'en_US', message: 'This field is required.', layout: true }]);
+        await openBuilder(api);
+
+        await waitFor(() => expect(settingsPanel().getByRole('textbox', { name: 'Tagline' })).toHaveAccessibleDescription('This field is required.'));
+        expect(screen.getAllByText('This field is required.')).toHaveLength(1);
+        expect(settingsPanel().getByRole('textbox', { name: 'Title' })).not.toHaveAccessibleDescription('This field is required.');
+
+        fireEvent.click(screen.getByRole('tab', { name: 'More' }));
+
+        expect(screen.getByText('tagline: This field is required.')).toBeInTheDocument();
+    });
+
     it('should flag a disabled layout, and offer only the others', async () => {
         const disabled = { ...page.layouts[1]!, disabled: true };
         await openBuilder(fakeApi(inLayout({ code: 'landing', version: 2, fields: {}, translated: {} }), { ...titled, contentTypes: [{ ...page, layouts: [standard, disabled] }] }));

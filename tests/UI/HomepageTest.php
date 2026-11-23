@@ -37,7 +37,7 @@ final class HomepageTest extends UITestCase
 
         $shop = $this->visit('/en_US/');
 
-        self::assertSame('Welcome', $shop->title());
+        self::assertSame('Welcome | Setono CMS Test Store', $shop->title());
         Expect::locator($shop->locator('.cms-tree .cms-heading'))->toHaveText('Hello shoppers');
         self::assertSame($this->getBaseUrl() . '/en_US/', $shop->locator('link[rel="canonical"]')->getAttribute('href'));
 

@@ -8,23 +8,28 @@ use Setono\SyliusCMSPlugin\Transfer\Format\ExportFormat;
 use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 
 /**
- * Opens an export folder or zip, as setono:cms:import takes either
+ * Opens an export folder or zip, as setono:cms:import and the Sylius fixture take either, and the zips uploaded on the
+ * Transfer screen. A zip unpacks to no more than transfer.max_unpacked_size (ZipSource), while a folder, which isn't
+ * unpacked, has no such limit. See "Media files" in docs/spec/transfer.md
  */
-final class ExportSources
+final readonly class ExportSources
 {
-    private function __construct()
+    /**
+     * @param int $maxUnpackedSize transfer.max_unpacked_size in bytes
+     */
+    public function __construct(private int $maxUnpackedSize)
     {
     }
 
     /**
      * @throws InvalidExportException when the path is neither a folder nor a zip that can be read, or holds no manifest
      */
-    public static function open(string $path): ExportSourceInterface
+    public function open(string $path): ExportSourceInterface
     {
         if (is_dir($path)) {
             $source = new DirectorySource($path);
         } elseif (is_file($path) && is_readable($path)) {
-            $source = new ZipSource($path);
+            $source = $this->zip($path);
         } else {
             throw new InvalidExportException(sprintf('%s is neither an export folder nor a zip', $path));
         }
@@ -34,5 +39,13 @@ final class ExportSources
         }
 
         return $source;
+    }
+
+    /**
+     * @throws InvalidExportException when the file isn't a zip that can be read
+     */
+    public function zip(string $file): ZipSource
+    {
+        return new ZipSource($file, $this->maxUnpackedSize);
     }
 }
