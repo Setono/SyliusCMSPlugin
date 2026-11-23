@@ -15,9 +15,9 @@ use Setono\SyliusCMSPlugin\Model\HomepageInterface;
  * onFlush listener plays the first save: as a flush is about to write a page's homepage row, it writes another page's
  * row for the same channel, after the save looked for the channel's homepage
  */
-final class HomepageClash
+final readonly class HomepageClash
 {
-    private function __construct(private readonly mixed $otherPageId)
+    private function __construct(private mixed $otherPageId)
     {
     }
 
