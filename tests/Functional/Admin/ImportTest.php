@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\HomepageClash;
 use Setono\SyliusCMSPlugin\Tests\Support\Imports;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tests\Support\SentMessages;
@@ -300,6 +301,39 @@ final class ImportTest extends WebTestCase
         self::assertStringContainsString('The import refused. Nothing changed.', $crawler->filter('[data-cms-import-result]')->text());
         self::assertStringContainsString('Autumn sale would have the URL /en_US/autumn-sale, which Autumn sale here has in WEB.', $crawler->filter('[data-cms-import-conflicts]')->text());
         self::assertCount(0, $crawler->filter('form[data-cms-import-confirm]'));
+    }
+
+    /**
+     * Another page becomes WEB's homepage while the dry run writes, after it found WEB without one, so the page's
+     * homepage row clashes with it. The worker records the refusal, rather than failing on the entity manager the failed
+     * flush closed
+     *
+     * @test
+     */
+    public function it_records_the_refusal_of_an_import_whose_page_another_page_just_took_a_channels_homepage_from(): void
+    {
+        self::forgetSentMessages();
+        $client = self::signedIn();
+        $other = self::createPage('Sale', 'sale', channels: ['WEB']);
+        $export = $this->copyOfFixture();
+        $file = sprintf('%s/entries/%s.json', $export, self::PAGE);
+        file_put_contents($file, str_replace('"homepageOf": []', '"homepageOf": ["WEB"]', (string) file_get_contents($file)));
+        $this->upload($client, $this->zipOf($export));
+        $import = self::latestImport();
+        HomepageClash::withAnotherPage(self::entityManager(), $other->getId());
+
+        self::consumeMessages();
+
+        $import = self::import($import->getUuid());
+        self::assertSame(ImportState::Finished, $import->getState());
+        self::assertSame(ImportStatus::Refused, self::resultOf($import)->status);
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+        $crawler = $client->request('GET', sprintf('/admin/cms/transfer/imports/%s', $import->getUuid()));
+        self::assertStringContainsString('The import refused. Nothing changed.', $crawler->filter('[data-cms-import-result]')->text());
+        self::assertStringContainsString(
+            'The settings of Autumn sale can\'t be saved: Another page just became this channel\'s homepage. Choose the channel again to make this page its homepage instead.',
+            $crawler->filter('[data-cms-import-reasons]')->text(),
+        );
     }
 
     /**

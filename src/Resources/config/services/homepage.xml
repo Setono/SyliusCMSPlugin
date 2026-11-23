@@ -2,10 +2,11 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <!-- Everything that changes the channels a page is the homepage of goes through it -->
+        <!-- Everything that changes the channels a page is the homepage of goes through it, with the rules -->
         <service id="Setono\SyliusCMSPlugin\Homepage\HomepageModifier" class="Setono\SyliusCMSPlugin\Homepage\HomepageModifier">
             <argument type="service" id="setono_sylius_cms.factory.homepage"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface"/>
+            <argument type="service" id="translator"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Homepage\HomepageModifierInterface" alias="Setono\SyliusCMSPlugin\Homepage\HomepageModifier"/>
 

@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\ORM\Event\OnFlushEventArgs;
-use Doctrine\ORM\Events;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
-use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
+use Setono\SyliusCMSPlugin\Tests\Support\HomepageClash;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -324,23 +322,8 @@ final class EntrySettingsTest extends BuilderApiTestCase
         $client->disableReboot();
         $page = self::createPage('Home', 'home', 'Welcome', channels: ['WEB']);
         $other = self::createPage('Sale', 'sale', 'Everything must go', channels: ['WEB']);
-        $otherId = $other->getId();
         $csrfToken = self::openBuilder($client, $page);
-        self::entityManager()->getEventManager()->addEventListener(Events::onFlush, new class($otherId) {
-            public function __construct(private readonly mixed $otherPageId)
-            {
-            }
-
-            public function onFlush(OnFlushEventArgs $args): void
-            {
-                $manager = $args->getObjectManager();
-                foreach ($manager->getUnitOfWork()->getScheduledEntityInsertions() as $entity) {
-                    if ($entity instanceof HomepageInterface) {
-                        $manager->getConnection()->insert($manager->getClassMetadata($entity::class)->getTableName(), ['channel_code' => $entity->getChannelCode(), 'page_id' => $this->otherPageId]);
-                    }
-                }
-            }
-        });
+        HomepageClash::withAnotherPage(self::entityManager(), $other->getId());
 
         $response = self::saveSettings($client, $page, ['homepageOf' => ['WEB']], $csrfToken);
 

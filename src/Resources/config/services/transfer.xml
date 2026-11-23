@@ -135,6 +135,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitMessageBus"/>
             <argument type="service" id="setono_sylius_cms.storage"/>
+            <argument type="service" id="doctrine"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface" alias="Setono\SyliusCMSPlugin\Transfer\Import\Importer"/>
 

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Homepage;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\DBAL\Driver\Exception as DriverException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -14,8 +17,10 @@ use Setono\SyliusCMSPlugin\Homepage\HomepageModifier;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Publishing\InvalidEntrySettingsException;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
+use Setono\SyliusCMSPlugin\Tests\Unit\Validation\BlockTreeValidatorTest;
 
 final class HomepageModifierTest extends TestCase
 {
@@ -189,9 +194,104 @@ final class HomepageModifierTest extends TestCase
         $this->repository->findByChannelCodes(Argument::any())->shouldNotHaveBeenCalled();
     }
 
+    /**
+     * A page can only become the homepage of a channel it's in, as shoppers of any other channel never see it, while one
+     * it has left stays its homepage. See "Homepage" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_refuses_to_make_a_page_the_homepage_of_a_channel_it_will_not_be_in_unless_it_already_is_its_homepage(): void
+    {
+        $page = new Page();
+        $page->addHomepage(self::homepage($page, 'WEB'));
+
+        $this->modifier()->checkHomepageOf($page, ['WEB', 'B2B'], ['B2B']);
+
+        try {
+            $this->modifier()->checkHomepageOf($page, ['WEB', 'MOBILE', 'B2B', 'OUTLET', 'MOBILE'], ['B2B']);
+            self::fail('The homepage was not refused');
+        } catch (InvalidEntrySettingsException $e) {
+            self::assertSame('A page can only be the homepage of a channel it\'s in, and this page isn\'t in MOBILE, OUTLET.', $e->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_runs_the_writes_in_a_transaction_of_the_manager(): void
+    {
+        $manager = $this->prophesize(EntityManagerInterface::class);
+        $written = false;
+        $manager->wrapInTransaction(Argument::type(\Closure::class))->will(static function (array $arguments): mixed {
+            $writes = $arguments[0] ?? null;
+            self::assertInstanceOf(\Closure::class, $writes);
+
+            return $writes();
+        })->shouldBeCalledOnce();
+
+        $this->modifier()->inTransaction($manager->reveal(), static function () use (&$written): void {
+            $written = true;
+        });
+
+        self::assertTrue($written);
+    }
+
+    /**
+     * Two saves that make different pages a channel's homepage at the same moment both find no other page to take it
+     * off, so the second one's row clashes with the first one's on the unique channel code, which the database names
+     *
+     * @test
+     */
+    public function it_tells_that_another_page_just_became_the_channels_homepage_when_the_homepage_rows_clash(): void
+    {
+        $clash = self::uniqueConstraintViolation("SQLSTATE[23505]: Unique violation: 7 ERROR:  duplicate key value violates unique constraint \"setono_sylius_cms__homepage_channel_uniq\"");
+        $manager = $this->prophesize(EntityManagerInterface::class);
+        $manager->wrapInTransaction(Argument::any())->willThrow($clash);
+
+        try {
+            $this->modifier()->inTransaction($manager->reveal(), static function (): void {
+            });
+            self::fail('The clash was not turned into a message');
+        } catch (InvalidEntrySettingsException $e) {
+            self::assertSame('Another page just became this channel\'s homepage. Choose the channel again to make this page its homepage instead.', $e->getMessage());
+            self::assertSame($clash, $e->getPrevious());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_a_clash_on_another_unique_key_as_it_is(): void
+    {
+        $clash = self::uniqueConstraintViolation("SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '42-WEB' for key 'setono_sylius_cms__entry_channel.setono_sylius_cms__entry_channel_uniq'");
+        $manager = $this->prophesize(EntityManagerInterface::class);
+        $manager->wrapInTransaction(Argument::any())->willThrow($clash);
+
+        try {
+            $this->modifier()->inTransaction($manager->reveal(), static function (): void {
+            });
+            self::fail('The clash was not thrown');
+        } catch (UniqueConstraintViolationException $e) {
+            self::assertSame($clash, $e);
+        }
+    }
+
+    /**
+     * What DBAL throws when a write breaks a unique key, with the database's message, which names the key
+     */
+    private static function uniqueConstraintViolation(string $message): UniqueConstraintViolationException
+    {
+        return new UniqueConstraintViolationException(new class($message) extends \Exception implements DriverException {
+            public function getSQLState(): string
+            {
+                return '23000';
+            }
+        }, null);
+    }
+
     private function modifier(): HomepageModifier
     {
-        return new HomepageModifier($this->factory->reveal(), $this->repository->reveal());
+        return Homepages::modifier($this->repository->reveal(), BlockTreeValidatorTest::translator(), $this->factory->reveal());
     }
 
     private static function homepage(Page $page, string $channelCode): HomepageInterface

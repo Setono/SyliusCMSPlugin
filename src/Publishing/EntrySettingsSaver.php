@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Publishing;
 
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
@@ -18,25 +16,18 @@ use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Saves the on-save settings onto the entry's rows. It never reads or writes the draft, so changing a setting never
  * publishes someone's unfinished changes. See "What takes effect on save" in docs/spec/publishing.md. A change of the
  * channels that would give a published URL of the entry to two entries in a channel is refused, since it would take
  * effect at once (docs/spec/urls-and-seo.md#unique-per-channel-and-locale). Choosing a page as a channel's homepage takes
- * the channel off the page that was its homepage, whose "Homepage of" changes too, and is refused for a channel the page
- * isn't in, or when another save has just made another page that channel's homepage (docs/spec/urls-and-seo.md#homepage).
- * Only an entry of a content type ordered by position has a position
+ * the channel off the page that was its homepage, whose "Homepage of" changes too, with the rules of
+ * HomepageModifierInterface (docs/spec/urls-and-seo.md#homepage). Only an entry of a content type ordered by position
+ * has a position
  */
 final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
 {
-    /**
-     * The homepage rows' unique key on the channel code, which the database names when a write breaks it. See
-     * Homepage.orm.xml
-     */
-    private const HOMEPAGE_CHANNEL_KEY = 'setono_sylius_cms__homepage_channel_uniq';
-
     public function __construct(
         private ManagerRegistry $managerRegistry,
         private ClockInterface $clock,
@@ -46,7 +37,6 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         private EntryUrlValidatorInterface $urlValidator,
         private HomepageModifierInterface $homepageModifier,
         private ContentTypeRegistryInterface $contentTypes,
-        private TranslatorInterface $translator,
     ) {
     }
 
@@ -74,20 +64,14 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         $homepage = null;
         if (in_array(EntrySettingsChanged::HOMEPAGE, $changed, true)) {
             $homepage = $entry instanceof PageInterface ? $entry : throw new InvalidEntrySettingsException('Only a page can be a channel\'s homepage');
-
-            // A page only becomes the homepage of a channel it's in. One it has left stays its homepage, which the
-            // admin flags until the page is back in the channel or no longer its homepage
-            $outside = array_values(array_diff($settings->homepageOf, $homepage->getHomepageChannelCodes(), $settings->channels));
-            if ([] !== $outside) {
-                throw new InvalidEntrySettingsException($this->translator->trans('setono_sylius_cms.homepage.not_in_channels', ['%channels%' => implode(', ', $outside)], 'validators'));
-            }
+            $this->homepageModifier->checkHomepageOf($homepage, $settings->homepageOf, $settings->channels);
         }
 
         $now = $this->clock->now()->setTimezone(new \DateTimeZone('UTC'));
 
         /** @var list<PageInterface> $takenFrom */
         $takenFrom = [];
-        $this->inTransaction($manager, function () use ($manager, $entry, $settings, $homepage, $now, &$takenFrom): void {
+        $this->homepageModifier->inTransaction($manager, function () use ($manager, $entry, $settings, $homepage, $now, &$takenFrom): void {
             // A channel has one homepage, which the rows' unique channel code holds to, and Doctrine inserts rows before
             // it deletes others: the pages that were the chosen channels' homepages lose them in a flush of their own
             if (null !== $homepage) {
@@ -110,23 +94,6 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         $this->eventDispatcher->dispatch(new EntrySettingsChanged($entry->getUuid(), $changed));
         foreach ($takenFrom as $page) {
             $this->eventDispatcher->dispatch(new EntrySettingsChanged($page->getUuid(), [EntrySettingsChanged::HOMEPAGE]));
-        }
-    }
-
-    /**
-     * Two saves that make different pages one channel's homepage at the same moment both find no other page to take it
-     * off, so the second one's row breaks the homepage rows' unique channel code, which is refused with a message
-     */
-    private function inTransaction(EntityManagerInterface $manager, \Closure $writes): void
-    {
-        try {
-            $manager->wrapInTransaction($writes);
-        } catch (UniqueConstraintViolationException $e) {
-            if (!str_contains($e->getMessage(), self::HOMEPAGE_CHANNEL_KEY)) {
-                throw $e;
-            }
-
-            throw new InvalidEntrySettingsException($this->translator->trans('setono_sylius_cms.homepage.taken', [], 'validators'), previous: $e);
         }
     }
 

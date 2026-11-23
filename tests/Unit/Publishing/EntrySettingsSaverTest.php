@@ -390,23 +390,6 @@ final class EntrySettingsSaverTest extends TestCase
     }
 
     /**
-     * @test
-     */
-    public function it_leaves_a_clash_on_another_unique_key_as_it_is(): void
-    {
-        $page = new Page();
-        $clash = self::uniqueConstraintViolation("SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '42-WEB' for key 'setono_sylius_cms__entry_channel.setono_sylius_cms__entry_channel_uniq'");
-        $this->manager->wrapInTransaction(Argument::type('callable'))->willThrow($clash);
-
-        try {
-            $this->saver()->save($page, new EntrySettings(true, new DateWindow(), ['WEB'], Audience::everyone()));
-            self::fail('The clash was not thrown');
-        } catch (UniqueConstraintViolationException $e) {
-            self::assertSame($clash, $e);
-        }
-    }
-
-    /**
      * Only a page can be a channel's homepage. See "Homepage" in docs/spec/urls-and-seo.md
      *
      * @test
@@ -466,12 +449,11 @@ final class EntrySettingsSaverTest extends TestCase
             ChannelsAndAudience::modifier(),
             new EditRecorder($tokenStorage, $clock),
             $this->urlValidator->reveal(),
-            Homepages::modifier($this->homepageRepository->reveal()),
+            Homepages::modifier($this->homepageRepository->reveal(), BlockTreeValidatorTest::translator()),
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'announcement' => ['model' => Announcement::class, 'translation' => EntryTranslation::class, 'resource' => 'app.announcement'],
             ]),
-            BlockTreeValidatorTest::translator(),
         );
     }
 }
