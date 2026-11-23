@@ -1178,7 +1178,7 @@ setono_sylius_cms:
         meta_description: Meta description
         meta_description_help: Search engines may show it under the title in their results.
         meta_title: Meta title
-        meta_title_help: The page's title in search results and the browser tab. Leave it empty to use the title.
+        meta_title_help: The page's title in search results and the browser tab. Leave it empty to use the title followed by the channel's name.
         mobile: Mobile
         more: More
         more_help: Publishing history, revisions, share links and placements are on the entry's overview page.

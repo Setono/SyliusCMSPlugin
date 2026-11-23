@@ -21,7 +21,7 @@ final class SeoFieldsTest extends UITestCase
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
 
         $shop = $this->visit('/en_US/about-us');
-        self::assertSame('About us', $shop->title(), 'Without a meta title, the page is titled with its title');
+        self::assertSame('About us | Setono CMS Test Store', $shop->title(), 'Without a meta title, the page is titled with its title, followed by the channel\'s name');
         Expect::locator($shop->locator('meta[name="robots"]'))->toHaveCount(0);
 
         $browser = $this->visit(sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
@@ -37,7 +37,7 @@ final class SeoFieldsTest extends UITestCase
 
         $shop = $this->visit('/en_US/about-us');
 
-        self::assertSame('About our shop | Setono', $shop->title());
+        self::assertSame('About our shop | Setono', $shop->title(), 'A meta title is the page\'s title exactly');
         Expect::locator($shop->locator('meta[name="robots"]'))->toHaveAttribute('content', 'noindex');
         Expect::locator($shop->locator('.cms-tree .cms-heading'))->toHaveText('Hello');
     }

@@ -62,7 +62,8 @@ final readonly class HeadTagsRuntime implements RuntimeExtensionInterface
     }
 
     /**
-     * The meta title, or else the title, each through the fallback chain, as text. Empty when neither has a value
+     * The meta title through the fallback chain, exactly, or else the title through the chain followed by the channel's
+     * name, as text. Empty when none has a value
      *
      * @param array<string, mixed> $context
      */
@@ -84,7 +85,7 @@ final readonly class HeadTagsRuntime implements RuntimeExtensionInterface
         $canonicalUrl = $this->canonicalUrls->generate($entry, $renderContext->channel, $renderContext->localeCode);
 
         return new HeadTags(
-            $this->metaValues->title($entry, $renderContext->localeCode),
+            $this->metaValues->title($entry, $renderContext->channel, $renderContext->localeCode),
             $this->metaValues->description($entry, $renderContext->localeCode),
             $entry->isNoindex(),
             // Page 2 onwards of the paginated Entries block is a page of its own, and another locale's page N needn't hold
