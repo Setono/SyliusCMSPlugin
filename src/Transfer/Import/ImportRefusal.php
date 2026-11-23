@@ -8,8 +8,8 @@ use Symfony\Contracts\Translation\TranslatableInterface;
 
 /**
  * A reason the import refuses that overwriting doesn't fix: code the target lacks or is older than, an Embed code
- * block while it's off, or a publish that fails. See "Code the target must have" and "Commands" in
- * docs/spec/transfer.md
+ * block while it's off, a publish that fails, or a file or zip over what an import takes. See "Code the target must
+ * have", "Media files" and "Commands" in docs/spec/transfer.md
  */
 final readonly class ImportRefusal
 {

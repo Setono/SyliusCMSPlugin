@@ -13,8 +13,8 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
 
 /**
- * An import checks each media file's size against media.max_upload_size, 1 KB here, and nothing else. See "Media
- * files" in docs/spec/transfer.md
+ * An import checks each media file's size against media.max_upload_size, 1 KB here, as it's smaller than
+ * transfer.max_file_size, and not against the limits of the PHP running it. See "Media files" in docs/spec/transfer.md
  */
 final class ImportUploadLimitTest extends KernelTestCase
 {
@@ -55,6 +55,6 @@ final class ImportUploadLimitTest extends KernelTestCase
         $tester = self::import(['path' => $export]);
 
         self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('The media item lookbook can\'t be imported: lookbook.mp4 is over the upload limit of 1 KB.', self::display($tester));
+        self::assertStringContainsString('The media item lookbook can\'t be imported: lookbook.mp4 is over the import limit of 1 KB per file.', self::display($tester));
     }
 }

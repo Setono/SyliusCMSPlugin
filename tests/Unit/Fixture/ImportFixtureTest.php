@@ -10,6 +10,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Fixture\ImportFixture;
 use Setono\SyliusCMSPlugin\Transfer\Import\ConflictKind;
 use Setono\SyliusCMSPlugin\Transfer\Import\DirectorySource;
+use Setono\SyliusCMSPlugin\Transfer\Import\ExportSources;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImportConflict;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImportOptions;
@@ -32,7 +33,7 @@ final class ImportFixtureTest extends TestCase
      */
     public function it_is_the_sylius_fixture_setono_cms_import_with_a_path(): void
     {
-        $fixture = new ImportFixture($this->prophesize(ImporterInterface::class)->reveal(), new IdentityTranslator());
+        $fixture = new ImportFixture($this->prophesize(ImporterInterface::class)->reveal(), new IdentityTranslator(), new ExportSources(\PHP_INT_MAX));
 
         self::assertSame('setono_cms_import', $fixture->getName());
         self::assertSame(['path' => '/fixtures/cms'], (new Processor())->processConfiguration($fixture, [['path' => '/fixtures/cms']]));
@@ -48,7 +49,7 @@ final class ImportFixtureTest extends TestCase
             static fn (ImportOptions $options): bool => $options->publish && !$options->dryRun && !$options->overwrite,
         ))->willReturn(ImportResult::applied(new ImportPlan([]), false))->shouldBeCalledOnce();
 
-        (new ImportFixture($importer->reveal(), new IdentityTranslator()))->load(['path' => self::EXPORT]);
+        (new ImportFixture($importer->reveal(), new IdentityTranslator(), new ExportSources(\PHP_INT_MAX)))->load(['path' => self::EXPORT]);
     }
 
     /**
@@ -68,7 +69,7 @@ final class ImportFixtureTest extends TestCase
 
         $this->expectExceptionObject(new \RuntimeException(sprintf('The import of %s refused, so nothing changed: Autumn sale has unpublished changes here. The export holds ../evil, which isn\'t inside its folder.', self::EXPORT)));
 
-        (new ImportFixture($importer->reveal(), $translator->reveal()))->load(['path' => self::EXPORT]);
+        (new ImportFixture($importer->reveal(), $translator->reveal(), new ExportSources(\PHP_INT_MAX)))->load(['path' => self::EXPORT]);
     }
 
     /**
@@ -81,7 +82,7 @@ final class ImportFixtureTest extends TestCase
 
         $this->expectExceptionObject(new \RuntimeException(sprintf('%s couldn\'t be read, so nothing changed: entries/x.json isn\'t in the export format', self::EXPORT)));
 
-        (new ImportFixture($importer->reveal(), new IdentityTranslator()))->load(['path' => self::EXPORT]);
+        (new ImportFixture($importer->reveal(), new IdentityTranslator(), new ExportSources(\PHP_INT_MAX)))->load(['path' => self::EXPORT]);
     }
 
     /**
@@ -93,7 +94,7 @@ final class ImportFixtureTest extends TestCase
     {
         $importer = $this->prophesize(ImporterInterface::class);
         $importer->import(Argument::cetera())->shouldNotBeCalled();
-        $fixture = new ImportFixture($importer->reveal(), new IdentityTranslator());
+        $fixture = new ImportFixture($importer->reveal(), new IdentityTranslator(), new ExportSources(\PHP_INT_MAX));
 
         $this->expectExceptionObject(new \InvalidArgumentException('The fixture setono_cms_import needs the path of an export folder'));
 
@@ -111,6 +112,6 @@ final class ImportFixtureTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('/nowhere is neither an export folder nor a zip');
 
-        (new ImportFixture($importer->reveal(), new IdentityTranslator()))->load(['path' => '/nowhere']);
+        (new ImportFixture($importer->reveal(), new IdentityTranslator(), new ExportSources(\PHP_INT_MAX)))->load(['path' => '/nowhere']);
     }
 }

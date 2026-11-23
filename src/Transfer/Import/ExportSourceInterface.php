@@ -17,6 +17,7 @@ interface ExportSourceInterface
 
     /**
      * @throws InvalidExportException when there's no such file, or it can't be read
+     * @throws ExportTooBigException when a zip unpacks to more than transfer.max_unpacked_size
      */
     public function read(string $path): string;
 
@@ -36,11 +37,15 @@ interface ExportSourceInterface
     public function pathsOutsideRoot(): array;
 
     /**
-     * A media item's original file
+     * Extracts a media item's original file into the stream, no more than $length bytes of it, so a file bigger than an
+     * import takes can't fill the disk
      *
-     * @return resource read it to its end; the caller closes it
+     * @param resource $target the caller opens and closes it
+     *
+     * @return int how many bytes it extracted
      *
      * @throws InvalidExportException when there's no such file, or it can't be read
+     * @throws ExportTooBigException when a zip unpacks to more than transfer.max_unpacked_size
      */
-    public function readStream(string $path);
+    public function extract(string $path, $target, int $length): int;
 }

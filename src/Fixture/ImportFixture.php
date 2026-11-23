@@ -23,6 +23,7 @@ final class ImportFixture extends AbstractFixture
     public function __construct(
         private readonly ImporterInterface $importer,
         private readonly TranslatorInterface $translator,
+        private readonly ExportSources $sources,
     ) {
     }
 
@@ -44,7 +45,7 @@ final class ImportFixture extends AbstractFixture
         }
 
         try {
-            $source = ExportSources::open($path);
+            $source = $this->sources->open($path);
         } catch (InvalidExportException $e) {
             throw new \RuntimeException($e->getMessage(), previous: $e);
         }

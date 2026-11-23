@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Model\Import;
 use Setono\SyliusCMSPlugin\Model\ImportInterface;
 use Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface;
 use Setono\SyliusCMSPlugin\Transfer\Import\ConflictKind;
+use Setono\SyliusCMSPlugin\Transfer\Import\ExportSources;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImportAction;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImportConflict;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface;
@@ -255,6 +256,7 @@ final class RunImportHandlerTest extends TestCase
             new UploadedExports($this->storage->reveal(), new NullLogger()),
             $this->manager->reveal(),
             new MockClock('2026-11-20 08:00:00', 'UTC'),
+            new ExportSources(\PHP_INT_MAX),
         );
     }
 

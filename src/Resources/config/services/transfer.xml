@@ -33,6 +33,12 @@
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker" class="Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker">
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaFileCheckerInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
+            <argument>%setono_sylius_cms.transfer.max_file_size%</argument>
+        </service>
+
+        <!-- Opens an export folder or zip; a zip unpacks to no more than transfer.max_unpacked_size -->
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ExportSources" class="Setono\SyliusCMSPlugin\Transfer\Import\ExportSources">
+            <argument>%setono_sylius_cms.transfer.max_unpacked_size%</argument>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader" class="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader">
@@ -159,6 +165,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports"/>
             <argument type="service" id="setono_sylius_cms.manager.import"/>
             <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ExportSources"/>
 
             <tag name="messenger.message_handler" handles="Setono\SyliusCMSPlugin\Transfer\Import\RunImport"/>
         </service>
@@ -184,6 +191,7 @@
         <service id="Setono\SyliusCMSPlugin\Fixture\ImportFixture" class="Setono\SyliusCMSPlugin\Fixture\ImportFixture">
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface"/>
             <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ExportSources"/>
 
             <tag name="sylius_fixtures.fixture"/>
         </service>
