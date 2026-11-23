@@ -3,6 +3,7 @@ import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator, type MessageKey } from '../i18n';
 import type { ConditionKindDefinition, VisibilityCondition } from '../types';
+import { ErrorList } from './ErrorList';
 import { TrashIcon } from './icons';
 import styles from './SelectionPane.module.css';
 
@@ -76,13 +77,7 @@ export function Condition({
                     <TrashIcon />
                 </button>
             </div>
-            {errors.length > 0 && (
-                <ul className={styles.errors}>
-                    {errors.map((message) => (
-                        <li key={message}>{message}</li>
-                    ))}
-                </ul>
-            )}
+            <ErrorList messages={errors} />
             {kind === undefined ? (
                 <p className={styles.unknown}>{t(unknownHelp)}</p>
             ) : (

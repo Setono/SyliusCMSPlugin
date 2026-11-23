@@ -21,7 +21,8 @@ final readonly class ValidationError implements \JsonSerializable
      * @param string|\Stringable $message translated, such as a constraint violation's message
      * @param int|null $condition the index, from 0, of the block's visibility condition it's in, or null when it isn't
      *                            in one
-     * @param bool $layout whether it's in one of the fields of the tree's layout, rather than of the entry
+     * @param bool $inLayout whether it's in the tree's layout, in one of its fields or about them together, rather
+     *                       than in the entry
      */
     public function __construct(
         public ?string $block,
@@ -29,7 +30,7 @@ final readonly class ValidationError implements \JsonSerializable
         public ?string $locale,
         string|\Stringable $message,
         public ?int $condition = null,
-        public bool $layout = false,
+        public bool $inLayout = false,
     ) {
         $this->message = (string) $message;
     }
@@ -48,7 +49,7 @@ final readonly class ValidationError implements \JsonSerializable
      */
     public function inLayout(): self
     {
-        return new self(null, $this->field, $this->locale, $this->message, layout: true);
+        return new self(null, $this->field, $this->locale, $this->message, inLayout: true);
     }
 
     /**
@@ -64,7 +65,7 @@ final readonly class ValidationError implements \JsonSerializable
             $json['condition'] = $this->condition;
         }
 
-        if ($this->layout) {
+        if ($this->inLayout) {
             $json['layout'] = true;
         }
 

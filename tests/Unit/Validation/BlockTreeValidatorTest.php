@@ -444,8 +444,8 @@ final class BlockTreeValidatorTest extends TestCase
 
         self::assertEquals(
             [
-                new ValidationError(null, 'headline', 'en_US', 'This field is required.', layout: true),
-                new ValidationError(null, 'badge', null, 'This value should be text.', layout: true),
+                new ValidationError(null, 'headline', 'en_US', 'This field is required.', inLayout: true),
+                new ValidationError(null, 'badge', null, 'This value should be text.', inLayout: true),
             ],
             $this->validator()->validate(new StoredTree($layout, [self::heading(self::A, 'Hello')]), 'page', ['en_US', 'da_DK']),
         );
@@ -453,7 +453,7 @@ final class BlockTreeValidatorTest extends TestCase
         $layout->setValue('headline', 'en_US', 'Winter sale');
         $layout->setValue('badge', null, 'Winter only');
         self::assertEquals(
-            [new ValidationError(null, 'badge', null, 'This value is too long. It should have 5 characters or less.', layout: true)],
+            [new ValidationError(null, 'badge', null, 'This value is too long. It should have 5 characters or less.', inLayout: true)],
             $this->validator()->validate(new StoredTree($layout, []), 'page', ['en_US', 'da_DK']),
         );
     }
@@ -468,7 +468,7 @@ final class BlockTreeValidatorTest extends TestCase
         $validator = $this->validator(new LayoutRegistry(['page' => ['standard' => Standard::class, 'campaign' => Campaign::class]], new FieldReader(), ['page' => 'campaign']));
 
         self::assertEquals(
-            [new ValidationError(null, 'headline', 'en_US', 'This field is required.', layout: true)],
+            [new ValidationError(null, 'headline', 'en_US', 'This field is required.', inLayout: true)],
             $validator->validate(new StoredTree(null, []), 'page', ['en_US']),
         );
     }

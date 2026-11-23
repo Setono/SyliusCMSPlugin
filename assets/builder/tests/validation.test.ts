@@ -10,6 +10,7 @@ import {
     fieldMessages,
     firstBlockWithError,
     layoutFieldMessages,
+    placeOf,
 } from '../src/validation';
 import { block, blockOf } from './fixtures';
 
@@ -99,5 +100,37 @@ describe('mapping validation errors onto visibility conditions and the layout', 
 
     it("should list the layout's messages with the entry's, naming the field each is in", () => {
         expect(entryMessages(elsewhere, 'en_US')).toEqual(['headline: This field is required.', 'headline: This field is required. (da_DK)']);
+    });
+});
+
+describe('working out where an error is', () => {
+    it('should place an error once from where the server says it is', () => {
+        const at = (error: Partial<ValidationError>) => placeOf({ block: null, field: null, locale: null, message: 'Wrong', ...error });
+
+        expect(at({})).toEqual({ at: 'entry' });
+        expect(at({ field: 'campaign' })).toEqual({ at: 'entryField', field: 'campaign' });
+        expect(at({ layout: true })).toEqual({ at: 'layout' });
+        expect(at({ field: 'headline', layout: true })).toEqual({ at: 'layoutField', field: 'headline' });
+        expect(at({ block: 'heading' })).toEqual({ at: 'block', block: 'heading' });
+        expect(at({ block: 'heading', field: 'text' })).toEqual({ at: 'blockField', block: 'heading', field: 'text' });
+        expect(at({ block: 'heading', condition: 0 })).toEqual({ at: 'condition', block: 'heading', condition: 0 });
+        expect(at({ block: 'heading', field: 'until', condition: 1 })).toEqual({ at: 'conditionParameter', block: 'heading', condition: 1, field: 'until' });
+    });
+
+    it("should leave the messages a settings tab shows at its fields out of the entry's, but not those about the layout as a whole", () => {
+        const entryErrors: ValidationError[] = [
+            { block: null, field: null, locale: null, message: 'Needs at least one Heading block inside.' },
+            { block: null, field: 'campaign', locale: null, message: 'This value should not be blank.' },
+            { block: null, field: 'teaser', locale: null, message: 'Too long.' },
+            { block: null, field: 'headline', locale: null, message: 'This field is required.', layout: true },
+            { block: null, field: null, locale: null, message: 'Fill in a headline or a badge.', layout: true },
+        ];
+
+        expect(entryMessages(entryErrors, 'en_US', { entryFields: ['campaign'], layoutFields: true })).toEqual([
+            'Needs at least one Heading block inside.',
+            'teaser: Too long.',
+            'Fill in a headline or a badge.',
+        ]);
+        expect(entryMessages(entryErrors, 'en_US', { entryFields: [], layoutFields: false })).toHaveLength(5);
     });
 });

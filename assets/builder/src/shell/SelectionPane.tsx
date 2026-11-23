@@ -11,6 +11,7 @@ import { locks } from '../store';
 import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
 import type { BlockStyleDefinition, JsonValue, StoredBlock } from '../types';
 import { blockMessages, fieldMessages } from '../validation';
+import { ErrorList } from './ErrorList';
 import { translatedValues } from '../bindings';
 import { useOfferedDisplays } from '../sources/context';
 import { readFieldValue } from '../values';
@@ -160,19 +161,8 @@ function SharedSnippet({ block }: { block: StoredBlock }) {
 /** The errors about the block as a whole, such as a block type its spot can't hold, which publish would refuse. */
 function BlockErrors({ blockKey }: { blockKey: string }) {
     const errors = useValidationState((state) => state.errors);
-    const messages = blockMessages(errors, blockKey);
 
-    if (messages.length === 0) {
-        return null;
-    }
-
-    return (
-        <ul className={styles.errors}>
-            {messages.map((message) => (
-                <li key={message}>{message}</li>
-            ))}
-        </ul>
-    );
+    return <ErrorList messages={blockMessages(errors, blockKey)} />;
 }
 
 /** Where the block is in the tree: the blocks it's inside, each selectable, and then the block itself. */

@@ -42,7 +42,7 @@ final class ValidationErrorTest extends TestCase
     {
         self::assertSame(
             '{"block":null,"field":"headline","locale":"en_US","message":"This field is required.","layout":true}',
-            json_encode(new ValidationError(null, 'headline', 'en_US', 'This field is required.', layout: true), \JSON_THROW_ON_ERROR),
+            json_encode(new ValidationError(null, 'headline', 'en_US', 'This field is required.', inLayout: true), \JSON_THROW_ON_ERROR),
         );
     }
 
@@ -54,7 +54,7 @@ final class ValidationErrorTest extends TestCase
         $error = new ValidationError(null, 'until', 'en_US', 'Until must come after From.');
 
         self::assertEquals(new ValidationError('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'until', 'en_US', 'Until must come after From.', condition: 2), $error->inCondition('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 2));
-        self::assertEquals(new ValidationError(null, 'until', 'en_US', 'Until must come after From.', layout: true), $error->inLayout());
+        self::assertEquals(new ValidationError(null, 'until', 'en_US', 'Until must come after From.', inLayout: true), $error->inLayout());
     }
 
     /**
