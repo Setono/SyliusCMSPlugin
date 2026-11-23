@@ -118,22 +118,7 @@ final class ZipSource implements ExportSourceInterface
     {
         $this->checkDirectory();
         $left = $this->maxUnpackedSize - $this->unpacked;
-        $stream = $this->zip->getStream($path);
-        if (false === $stream) {
-            throw new InvalidExportException(sprintf('The export has no readable file %s in %s', $path, $this->file));
-        }
-
-        try {
-            // libzip fails a read that reaches the end of a file that doesn't match its checksum, with a warning
-            $copied = @stream_copy_to_stream($stream, $target, $left < $length ? $left + 1 : $length);
-        } finally {
-            fclose($stream);
-        }
-
-        if (false === $copied) {
-            throw new InvalidExportException(sprintf('The export\'s file %s can\'t be read from %s', $path, $this->file));
-        }
-
+        $copied = ExportFileCopy::copy($this->zip->getStream($path), $target, $left < $length ? $left + 1 : $length, sprintf('%s in %s', $path, $this->file));
         $this->count($copied);
 
         return $copied;

@@ -85,18 +85,8 @@ final readonly class DirectorySource implements ExportSourceInterface
     public function extract(string $path, $target, int $length): int
     {
         $file = $this->file($path);
-        $stream = null === $file || !is_file($file) ? false : @fopen($file, 'rb');
-        if (false === $stream) {
-            throw new InvalidExportException(sprintf('The export has no readable file %s', $path));
-        }
 
-        try {
-            $copied = stream_copy_to_stream($stream, $target, $length);
-        } finally {
-            fclose($stream);
-        }
-
-        return false === $copied ? throw new InvalidExportException(sprintf('The export\'s file %s can\'t be read', $path)) : $copied;
+        return ExportFileCopy::copy(null === $file || !is_file($file) ? false : @fopen($file, 'rb'), $target, $length, $path);
     }
 
     private function file(string $path): ?string
