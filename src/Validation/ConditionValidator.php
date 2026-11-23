@@ -12,9 +12,10 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * Validates a visibility condition as publish does: it's in the stored condition format, of a kind the code has, and
  * its parameter values fit the kind. The parameters are checked as a block's shared fields are, each by its field, then
- * together against the constraints on the kind's parameters class, such as the date window's EndsAfterStart. A page
- * scope's conditions get the same parameter checks when a placement is saved (Slot\PageScopeValidator). See
- * "Validation" in docs/spec/publishing.md
+ * together against the constraints on the kind's parameters class, such as the date window's EndsAfterStart. A
+ * channel, locale or customer group the store no longer has still fits (Field\RecordChoicesProviderInterface), as a
+ * deleted product does: it's a broken reference the admin flags, not refused. A page scope's conditions get the same
+ * parameter checks when a placement is saved (Slot\PageScopeValidator). See "Validation" in docs/spec/publishing.md
  *
  * @internal
  */
