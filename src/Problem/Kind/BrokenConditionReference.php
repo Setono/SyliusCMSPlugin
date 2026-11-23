@@ -200,7 +200,11 @@ final class BrokenConditionReference implements ReferenceProblemKindInterface, R
     private function deletedInStore(EntryInterface $entry, StoredBlock $block, FieldMetadata $field, mixed $value): \Generator
     {
         $choice = $field->field;
-        $type = $choice instanceof Choice ? (self::STORE_CHOICES[(string) $choice->choicesProvider] ?? null) : null;
+        if (!$choice instanceof Choice) {
+            return;
+        }
+
+        $type = self::STORE_CHOICES[(string) $choice->choicesProvider] ?? null;
         if (null === $type) {
             return;
         }
