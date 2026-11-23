@@ -41,4 +41,12 @@ interface PageInterface extends EntryInterface
     public function getHomepageChannelCodes(): array;
 
     public function isHomepageOf(string $channelCode): bool;
+
+    /**
+     * The codes of the channels it's the homepage of but isn't in, sorted: it has left them since it became their
+     * homepage, so shoppers there never see it, and the store's own homepage shows
+     *
+     * @return list<string>
+     */
+    public function getHomepageChannelCodesOutsideChannels(): array;
 }

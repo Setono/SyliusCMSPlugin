@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
+use Setono\SyliusCMSPlugin\Targeting\ChannelNames;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Symfony\Component\Translation\TranslatableMessage;
@@ -38,23 +39,12 @@ final readonly class HomepageNotInChannel implements ProblemKindInterface
             return;
         }
 
-        $outside = array_values(array_diff($entry->getHomepageChannelCodes(), $entry->getChannelCodes()));
-        if ([] === $outside) {
-            return;
-        }
-
-        // A deleted channel is named by its code
-        $names = [];
-        foreach ($this->channels->findBy(['code' => $outside]) as $channel) {
-            $names[(string) $channel->getCode()] = $channel->getName() ?? (string) $channel->getCode();
-        }
-
-        foreach ($outside as $code) {
+        foreach (ChannelNames::of($this->channels, $entry->getHomepageChannelCodesOutsideChannels()) as $name) {
             yield new Problem(
                 self::CODE,
                 Severity::Warning,
                 $entry,
-                new TranslatableMessage('setono_sylius_cms.problem.homepage_not_in_channel', ['%channel%' => $names[$code] ?? $code]),
+                new TranslatableMessage('setono_sylius_cms.problem.homepage_not_in_channel', ['%channel%' => $name]),
                 Fix::inBuilder($entry),
             );
         }

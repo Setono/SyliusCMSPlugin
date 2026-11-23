@@ -9,6 +9,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -152,6 +153,25 @@ final class PageTest extends TestCase
         self::assertFalse($page->hasHomepage($web));
         self::assertSame(['B2B'], $page->getHomepageChannelCodes());
         self::assertFalse($page->isHomepageOf('WEB'));
+    }
+
+    /**
+     * A page only becomes the homepage of a channel it's in, so it has left such a channel since. See "Homepage" in
+     * docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_gives_the_channels_it_is_the_homepage_of_but_is_not_in(): void
+    {
+        $page = new Page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['B2B']);
+        self::assertSame([], $page->getHomepageChannelCodesOutsideChannels());
+
+        $page->addHomepage(self::homepage($page, 'WEB'));
+        $page->addHomepage(self::homepage($page, 'B2B'));
+        $page->addHomepage(self::homepage($page, 'MOBILE'));
+
+        self::assertSame(['MOBILE', 'WEB'], $page->getHomepageChannelCodesOutsideChannels());
     }
 
     /**
