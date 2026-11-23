@@ -15,24 +15,29 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Seo\MetaValues;
 use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\Post;
 use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\PostTranslation;
+use Sylius\Component\Core\Model\Channel;
+use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
 /**
- * Each SEO field falls back through the fallback chain first, and only then to the field it names.
- * See "SEO fields" in docs/spec/urls-and-seo.md
+ * Each SEO field falls back through the fallback chain first, and only then to the field it names. The title a page
+ * prints is its meta title exactly, or else its title followed by the channel's name.
+ * See "SEO fields" and "Head tags" in docs/spec/urls-and-seo.md
  */
 final class MetaValuesTest extends TestCase
 {
     use ProphecyTrait;
 
     /**
+     * Exactly, without the channel's name, so editors keep full control
+     *
      * @test
      */
-    public function it_gives_the_meta_title_in_the_locale(): void
+    public function it_gives_the_meta_title_in_the_locale_exactly(): void
     {
         $page = self::page(['de_CH' => ['title' => 'Über uns', 'metaTitle' => 'Über uns | Schweiz']]);
 
-        self::assertSame('Über uns | Schweiz', $this->metaValues()->title($page, 'de_CH'));
+        self::assertSame('Über uns | Schweiz', $this->metaValues()->title($page, self::channel('Fashion Web Store'), 'de_CH'));
     }
 
     /**
@@ -45,13 +50,16 @@ final class MetaValuesTest extends TestCase
             'de_DE' => ['title' => 'Über uns', 'metaTitle' => 'Über uns | Deutschland'],
         ]);
 
-        self::assertSame('Über uns | Deutschland', $this->metaValues()->title($page, 'de_CH'));
+        self::assertSame('Über uns | Deutschland', $this->metaValues()->title($page, self::channel('Fashion Web Store'), 'de_CH'));
     }
 
     /**
+     * As Sylius titles a product page: {{ product.name }} | {{ parent() }}, where the shop layout's title is the
+     * channel's name
+     *
      * @test
      */
-    public function it_falls_back_to_the_title_through_the_chain_when_the_chain_has_no_meta_title(): void
+    public function it_falls_back_to_the_title_through_the_chain_followed_by_the_channels_name_when_the_chain_has_no_meta_title(): void
     {
         $page = self::page([
             'de_CH' => ['title' => '', 'metaTitle' => null],
@@ -59,15 +67,36 @@ final class MetaValuesTest extends TestCase
             'en_US' => ['title' => 'About us', 'metaTitle' => null],
         ]);
 
-        self::assertSame('Über uns', $this->metaValues()->title($page, 'de_CH'));
+        self::assertSame('Über uns | Fashion Web Store', $this->metaValues()->title($page, self::channel('Fashion Web Store'), 'de_CH'));
     }
 
     /**
      * @test
      */
-    public function it_gives_no_meta_title_without_a_title(): void
+    public function it_gives_the_title_alone_in_a_channel_without_a_name(): void
     {
-        self::assertNull($this->metaValues()->title(self::page(['de_CH' => ['title' => null]]), 'de_CH'));
+        $page = self::page(['de_CH' => ['title' => 'Über uns']]);
+
+        self::assertSame('Über uns', $this->metaValues()->title($page, self::channel(null), 'de_CH'));
+        self::assertSame('Über uns', $this->metaValues()->title($page, self::channel(''), 'de_CH'));
+    }
+
+    /**
+     * As Sylius's shop layout titles a page, such as an untitled draft in the builder's preview
+     *
+     * @test
+     */
+    public function it_gives_the_channels_name_alone_without_a_title(): void
+    {
+        self::assertSame('Fashion Web Store', $this->metaValues()->title(self::page(['de_CH' => ['title' => null]]), self::channel('Fashion Web Store'), 'de_CH'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_gives_no_title_without_a_title_in_a_channel_without_a_name(): void
+    {
+        self::assertNull($this->metaValues()->title(self::page(['de_CH' => ['title' => null]]), self::channel(null), 'de_CH'));
     }
 
     /**
@@ -173,6 +202,14 @@ final class MetaValuesTest extends TestCase
         $translation->setTitle(array_key_exists('title', $fields) ? $fields['title'] : 'Title');
         $translation->setMetaTitle($fields['metaTitle'] ?? null);
         $translation->setMetaDescription($fields['metaDescription'] ?? null);
+    }
+
+    private static function channel(?string $name): ChannelInterface
+    {
+        $channel = new Channel();
+        $channel->setName($name);
+
+        return $channel;
     }
 
     private function metaValues(): MetaValues

@@ -120,7 +120,7 @@ Every content type with its own URL gets three SEO fields:
 
 | Field | Translatable | Falls back to |
 | --- | --- | --- |
-| Meta title (`metaTitle`) | yes | the entry's title |
+| Meta title (`metaTitle`) | yes | the entry's title, followed by the channel's name ([Head tags](#head-tags)) |
 | Meta description (`metaDescription`) | yes | the field the content type names in `descriptionField`, such as a blog post's excerpt, and otherwise nothing |
 | Hide from search engines (`noindex`) | no | off |
 
@@ -130,7 +130,7 @@ These fallbacks are separate from the fallback chain: each SEO field first falls
 
 An entry shown at its own URL, or as a homepage, prints these into the shop layout. `@SetonoSyliusCMSPlugin/layout/base.html.twig` fills the shop layout's `title` and `metatags` blocks with them, through `cms_meta_title(entry)` and `cms_head_tags(entry)`, so every layout that extends it gets them ([Extending](extending.md#layout-templates)).
 
-- **Title:** the meta title, or the title.
+- **Title:** the meta title exactly, so editors keep full control. Without one, the title followed by the channel's name, as in "About us | Fashion Web Store", the way Sylius titles a product page.
 - **Meta description:** `<meta name="description">`, left out when empty.
 - **Robots:** `<meta name="robots" content="noindex">` when "Hide from search engines" is on.
 - **Canonical:** `<link rel="canonical">` with the entry's own absolute URL in the current channel and locale, without the query string. For a homepage it's `/{locale}/`. On page 2 onwards of a paginated Entries block, it's the entry's own URL with `?page=N`, the one exception to dropping the query string ([ADR 0019](../adr/0019-categories-are-entries-and-collections-are-listed-by-pages.md)).

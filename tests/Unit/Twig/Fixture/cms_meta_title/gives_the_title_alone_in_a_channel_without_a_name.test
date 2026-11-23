@@ -1,0 +1,8 @@
+--TEST--
+cms_meta_title() gives the title alone, without a separator, in a channel without a name
+--TEMPLATE--
+[{{ cms_meta_title(entry) }}]
+--DATA--
+return $this->rendering(['entry' => $this->pageWith(['en_US' => ['title' => 'About us', 'slug' => 'about-us']])], channel: $this->channel([], name: ''))
+--EXPECT--
+[About us]
