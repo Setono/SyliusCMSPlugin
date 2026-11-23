@@ -11,7 +11,7 @@ import { fieldFallback, localeOf, outdatedValue } from '../../locales';
 import { locks } from '../../store';
 import { entryTranslated, entryValues } from '../../translationState';
 import type { AudienceMode, FieldSchema } from '../../types';
-import { entryFieldMessages } from '../../validation';
+import { entryFieldMessages, layoutFieldMessages } from '../../validation';
 import { readFieldValue } from '../../values';
 import { saveStateText } from '../saveStateText';
 import styles from '../SettingsPane.module.css';
@@ -140,9 +140,10 @@ export function useShownByLayout(field: string): boolean {
 }
 
 /**
- * The entry's layout: a card per layout to pick from, when there's more than one, the fields of the layout it's in, and a
- * warning when its layout was removed from code or disabled, until another is picked. Switching layout and the layout's
- * fields are drafted. See "Picking and switching" in docs/spec/layouts-and-presets.md
+ * The entry's layout: a card per layout to pick from, when there's more than one, the fields of the layout it's in, with
+ * what publish would refuse in them, and a warning when its layout was removed from code or disabled, until another is
+ * picked. Switching layout and the layout's fields are drafted. See "Picking and switching" in
+ * docs/spec/layouts-and-presets.md
  */
 function Layout() {
     const t = useTranslator();
@@ -150,6 +151,7 @@ function Layout() {
     const layouts = useBuilderState((state) => state.layouts);
     const stored = useBuilderState((state) => state.entry.tree.layout);
     const locale = useBuilderState((state) => state.locale);
+    const errors = useValidationState((state) => state.errors);
     const name = useId();
 
     if (layouts.length === 0) {
@@ -207,6 +209,7 @@ function Layout() {
                             locale={locale}
                             value={readFieldValue(values, field, schema['x-cms-translatable'], locale)}
                             onChange={(value) => store.getState().setLayoutValue(field, value)}
+                            errors={layoutFieldMessages(errors, field, locale)}
                             // A bound field's fallback is translated like its value
                             fallback={schema['x-cms-translatable'] ? fieldFallback(locales, translatedValues(values[field]), locale) : undefined}
                             binding={{ stored: values[field], set: (value) => store.getState().setLayoutBinding(field, value) }}

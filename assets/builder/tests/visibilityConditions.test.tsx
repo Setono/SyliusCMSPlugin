@@ -195,13 +195,18 @@ const conditionStrings: Record<string, string> = {
 };
 
 async function openBuilder(...blocks: StoredBlock[]) {
+    return openBuilderWithErrors([], ...blocks);
+}
+
+/** Opens the builder, whose validation finds the errors. */
+async function openBuilderWithErrors(errors: ValidationError[], ...blocks: StoredBlock[]) {
     const edited = entry(blocks);
     const withDanish: Entry = { ...edited, translations: { ...edited.translations, da_DK: { shown: true, fields: { title: 'Om os', slug: 'om-os' }, translated: {} } } };
     const api = {
         fetchRegistry: vi.fn(async () => ({ ...registry, strings: conditionStrings })),
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: withDanish, settings: settings(), status: 'never_published', lockToken: 0, editors: [] })),
         saveChanges: vi.fn(async (_changes: readonly Change[]): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1 })),
-        validate: vi.fn(async (): Promise<ValidationError[]> => []),
+        validate: vi.fn(async (): Promise<ValidationError[]> => errors),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
         discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: withDanish, settings: settings(), status: 'published', lockToken: 0, editors: [] })),
         saveSettings: vi.fn(async () => settings()),
@@ -281,6 +286,31 @@ describe('the visibility conditions in the right pane', () => {
         expect(within(condition).getByRole('option', { name: 'Unknown condition: weekday' })).toBeInTheDocument();
         expect(within(condition).getByText("The code no longer has this kind of condition, so the block doesn't show.")).toBeInTheDocument();
         expect(within(condition).queryByRole('combobox', { name: 'Matches when it' })).not.toBeInTheDocument();
+    });
+});
+
+describe('what publish would refuse in a condition', () => {
+    it('should show an error at the parameter it is in, and one about the condition as a whole in the condition, and flag the block', async () => {
+        const reversed: VisibilityCondition = { kind: 'date_window', negate: false, params: { from: '2026-12-24T00:00:00Z', until: '2026-12-01T00:00:00Z' } };
+        const unknown: VisibilityCondition = { kind: 'weekday', negate: false, params: { days: ['monday'] } };
+        await openBuilderWithErrors(
+            [
+                { block: 'a', field: 'until', locale: null, message: 'Until must come after From.', condition: 1 },
+                { block: 'a', field: null, locale: null, message: 'The condition kind "weekday" no longer exists.', condition: 2 },
+            ],
+            withConditions(block('a', { text: { en_US: 'Hello' } }), notDanish, reversed, unknown),
+        );
+
+        await waitFor(() => expect(within(tree()).getByRole('img', { name: 'Has errors' })).toBeInTheDocument());
+        fireEvent.click(within(tree()).getByRole('button', { name: 'Heading Hello' }));
+
+        const window = within(selectionPane()).getByRole('group', { name: 'Condition 2' });
+        expect(within(window).getByLabelText('Until')).toHaveAccessibleDescription('Until must come after From.');
+        expect(within(window).getByLabelText('From')).not.toHaveAccessibleDescription('Until must come after From.');
+        expect(within(within(selectionPane()).getByRole('group', { name: 'Condition 3' })).getByText('The condition kind "weekday" no longer exists.')).toBeInTheDocument();
+        expect(within(within(selectionPane()).getByRole('group', { name: 'Condition 1' })).queryByRole('list')).not.toBeInTheDocument();
+        // They're the condition's, not the block's
+        expect(within(selectionPane()).getAllByText('The condition kind "weekday" no longer exists.')).toHaveLength(1);
     });
 });
 

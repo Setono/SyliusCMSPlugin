@@ -85,20 +85,35 @@ export function firstBlockWithError(blocks: readonly StoredBlock[], errors: read
 
 /** The messages of one of a block's fields. Those of another locale than the edited one say which locale they're in. */
 export function fieldMessages(errors: readonly ValidationError[], key: string, field: string, locale: string): string[] {
-    return errors.filter((error) => error.block === key && error.field === field).map((error) => messageIn(error, locale));
+    return errors.filter((error) => error.block === key && error.condition === undefined && error.field === field).map((error) => messageIn(error, locale));
 }
 
 /** The messages about a block as a whole, such as a block type it can't hold. */
 export function blockMessages(errors: readonly ValidationError[], key: string): string[] {
-    return errors.filter((error) => error.block === key && error.field === null).map((error) => error.message);
+    return errors.filter((error) => error.block === key && error.condition === undefined && error.field === null).map((error) => error.message);
+}
+
+/** The messages about one of a block's visibility conditions as a whole, by its index, such as a kind the code no longer has. */
+export function conditionMessages(errors: readonly ValidationError[], key: string, index: number): string[] {
+    return errors.filter((error) => error.block === key && error.condition === index && error.field === null).map((error) => error.message);
+}
+
+/** The messages of one of the parameters of a block's visibility condition, such as a date window's end before its start. */
+export function conditionFieldMessages(errors: readonly ValidationError[], key: string, index: number, field: string): string[] {
+    return errors.filter((error) => error.block === key && error.condition === index && error.field === field).map((error) => error.message);
 }
 
 /** The messages about one of the entry's own fields, such as a content type's required field. */
 export function entryFieldMessages(errors: readonly ValidationError[], field: string, locale: string): string[] {
-    return errors.filter((error) => error.block === null && error.field === field).map((error) => messageIn(error, locale));
+    return errors.filter((error) => error.block === null && error.layout !== true && error.field === field).map((error) => messageIn(error, locale));
 }
 
-/** The entry's own messages, each naming the entry field it's in, if any. */
+/** The messages about one of the fields of the layout, such as a required one. Those of another locale say which locale they're in. */
+export function layoutFieldMessages(errors: readonly ValidationError[], field: string, locale: string): string[] {
+    return errors.filter((error) => error.layout === true && error.field === field).map((error) => messageIn(error, locale));
+}
+
+/** The entry's own messages, and those of the layout's fields, each naming the field it's in, if any. */
 export function entryMessages(errors: readonly ValidationError[], locale: string): string[] {
     return errors.filter((error) => error.block === null).map((error) => (error.field === null ? '' : `${error.field}: `) + messageIn(error, locale));
 }

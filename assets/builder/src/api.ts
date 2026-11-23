@@ -396,7 +396,14 @@ function entryStatus(body: unknown): EntryStatus {
 function validationErrors(list: unknown): ValidationError[] | null {
     const isNullableString = (value: unknown): boolean => value === null || typeof value === 'string';
     const isError = (error: unknown): boolean =>
-        isObject(error) && isNullableString(error.block) && isNullableString(error.field) && isNullableString(error.locale) && typeof error.message === 'string';
+        isObject(error) &&
+        isNullableString(error.block) &&
+        isNullableString(error.field) &&
+        isNullableString(error.locale) &&
+        typeof error.message === 'string' &&
+        // Only an error in a visibility condition has its index, and only one in the layout's fields says so
+        (error.condition === undefined || Number.isInteger(error.condition)) &&
+        (error.layout === undefined || error.layout === true);
 
     return Array.isArray(list) && list.every(isError) ? (list as ValidationError[]) : null;
 }
