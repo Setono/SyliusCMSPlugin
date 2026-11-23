@@ -10,8 +10,8 @@ use Setono\SyliusCMSPlugin\Condition\Reads;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 
 /**
- * A project's condition kind without parameters, which matches a signed-in shopper. GreetingKernel registers it, so a
- * test can save a condition of it and then run the code without it, as after a deploy that removed it
+ * A project's condition kind without parameters, which matches a signed-in shopper. SignedInConditionKernel registers
+ * it, so a test can save a condition of it and then run the code without it, as after a deploy that removed it
  */
 #[AsConditionKind(code: 'app_signed_in', label: 'app.cms.condition_kind.signed_in', reads: [Reads::Customer])]
 final class SignedIn implements ConditionKindInterface

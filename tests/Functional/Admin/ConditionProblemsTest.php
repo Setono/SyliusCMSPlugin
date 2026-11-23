@@ -10,7 +10,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface;
 use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;
-use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\GreetingKernel;
+use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\SignedInConditionKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Sylius\Component\Channel\Model\ChannelInterface;
@@ -78,7 +78,7 @@ final class ConditionProblemsTest extends WebTestCase
     public function it_shows_a_condition_kind_a_deploy_removed_on_the_next_admin_page(): void
     {
         // The code had the condition kind when the page was saved
-        static::$class = GreetingKernel::class;
+        static::$class = SignedInConditionKernel::class;
         self::bootKernel();
         $page = self::pageWithACondition('Members', 'members', ['kind' => 'app_signed_in', 'negate' => false, 'params' => []]);
         self::assertEquals(new ProblemCount(), self::storedCount($page));
