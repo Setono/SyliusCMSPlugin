@@ -427,6 +427,8 @@ interface TimeDependentConditionKindInterface extends ConditionKindInterface
 
 `matches` and `matchesNot` are optional translation keys for how the builder words a condition and its negation: "is one of" and "is not one of". A kind that matches otherwise words them its own way, as the shipped date window does with "is inside" and "is outside".
 
+Publish checks a condition's parameter values by their fields, and then together against the Symfony Validator constraints on the parameters class, such as `Setono\SyliusCMSPlugin\Validation\Constraint\EndsAfterStart`, which the shipped date window's parameters carry: `#[EndsAfterStart(start: 'from', end: 'until')]` refuses an end that doesn't come after its start, at the end field ([Publishing](publishing.md#validation)).
+
 `matches()` answers the condition. The plugin provides the negation by negating it, so kinds never implement it. It's asked only when the render context holds every context key the kind `needs`: without one, the condition never matches, negated or not ([Targeting](targeting.md#condition-kinds)). Kinds work in visibility conditions on blocks and in page scopes, never on entries ([ADR 0010](../adr/0010-entries-have-an-audience-not-visibility-conditions.md)). The shipped kinds are in [Targeting](targeting.md#condition-kinds).
 
 ## Bindable properties

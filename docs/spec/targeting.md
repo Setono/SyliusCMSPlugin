@@ -23,6 +23,7 @@ A [visibility condition](../../GLOSSARY.md#visibility) on a block hides it unles
 - **Combining.** A block's conditions combine with AND, and the values within one condition with OR.
 - **"Is one of" and "is not one of".** Every kind offers both, as the condition's `negate` flag. For a date window, that's inside or outside it, such as hiding a block during one weekend.
 - **Any block** can carry conditions, such as a single carousel slide.
+- **Validated on publish.** A condition of a kind the code no longer has, or whose parameter values don't fit its kind, is refused, and the builder shows the error at the condition ([Publishing](publishing.md#validation)).
 - **The builder** strikes through blocks that the preview's channel and locale hide, with an eye-slash icon in the tree, and drops them from the preview ([Builder](builder.md)).
 
 ## Condition kinds
@@ -44,11 +45,11 @@ These kinds ship. Each declares the context keys it needs and what it reads ([Ex
 - **Customer group.** Sylius gives a customer at most one group, so the condition checks one value: the group's code, `@guest` for a shopper who isn't signed in, or `@no_group` for one signed in without a group ([Content model](content-model.md#reserved-customer-group-values)).
 - **Product in taxon** matches when the product is in any of the taxons, through any of its taxons, not only its main one. With `includeChildren`, the taxons' descendants count too.
 - **Entry in category** matches an entry whose content type has categories and which is in any of them.
-- **Date window** compares the time from the render context, so the preview's Date applies ([Shown to and Date](#shown-to-and-date)).
+- **Date window** compares the time from the render context, so the preview's Date applies ([Shown to and Date](#shown-to-and-date)). When it has both ends, `until` must come after `from`, or publish refuses it, as a window that ends where it starts never shows.
 
 Kinds that read `HostPage` work in visibility conditions and in page scopes. The others work only in visibility conditions.
 
-**A condition whose kind needs a context key the page doesn't provide never matches**, negated or not, as a condition of a kind the code no longer has doesn't, and a source that needs a missing key yields nothing ([Sources](sources.md)). Its block stays hidden, and a placement it scopes doesn't show. The builder and the placement editor offer a kind only where its needs are provided, so this happens only where the code changed, or on a snippet's preview page without a sample object.
+**A condition whose kind needs a context key the page doesn't provide never matches**, negated or not, as a condition of a kind the code no longer has doesn't, and a source that needs a missing key yields nothing ([Sources](sources.md)). Its block stays hidden, and a placement it scopes doesn't show. The builder and the placement editor offer a kind only where its needs are provided, so this happens only where the code changed, or on a snippet's preview page without a sample object. The admin flags a block's condition of a kind the code no longer has as a warning, and publish refuses it ([Admin](admin.md#problems)).
 
 **Not shipped:** cart contents or total (promotions cover that), device (CSS covers that), currency, URL or UTM parameters, recurring times such as a weekday or an hour, and order history. Developers can add any of these as their own condition kinds, which work on blocks and page scopes, never on entries.
 
@@ -93,7 +94,7 @@ A deleted customer group leaves a dangling code ([ADR 0002](../adr/0002-referenc
 - In a visibility condition, "is one of" no longer matches through it, and "is not one of" no longer excludes anyone through it.
 - In an audience, "Only these" no longer lets anyone in through it, and "Everyone except these" no longer keeps anyone out through it.
 
-The admin flags each one as a broken reference ([Admin](admin.md#problems)). The same applies to a deleted channel, locale, product or taxon in a condition.
+The admin flags each one as a broken reference ([Admin](admin.md#problems)). The same applies to a deleted channel, locale, product, taxon or entry in a condition, or any other record a condition's parameter refers to, and the entries that name one are counted again when it's deleted.
 
 ## Caching contract
 

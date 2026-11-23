@@ -141,7 +141,7 @@ The admin flags problems on the entry, in the lists' problem marker, on the Over
 
 - a scheduled publish that's overdue
 - a scheduled publish that failed, with its reason
-- a broken reference: a deleted product, taxon, entry, snippet or media item in a field or link, a deleted customer group in a condition or an audience, or a deleted category ([Content model](content-model.md#references))
+- a broken reference: a deleted product, taxon, entry, snippet or media item in a field or link, a deleted customer group in a condition or an audience, a deleted channel, locale, product, taxon, entry or other record in a condition, or a deleted category ([Content model](content-model.md#references))
 - a Snippet block through which its snippet would render inside itself, directly or through other snippets' published trees, which publish refuses, so it comes from imported or older data ([Rendering](rendering.md#rendering-a-block-tree))
 
 **Warnings:**
@@ -152,9 +152,10 @@ The admin flags problems on the entry, in the lists' problem marker, on the Over
 - a capped slot without a catch-all placement, one with an empty page scope whose snippet is published, enabled and for everyone, on each snippet placed in it ([Targeting](targeting.md#capped-slots))
 - a placement in a slot on Sylius's own homepage, such as `store_homepage`, in a channel whose homepage is a CMS page, published or not ([URLs and SEO](urls-and-seo.md#homepage))
 - a placement or slot that the code no longer declares, or a block type, context key or layout that was removed
+- a block's visibility condition of a kind that was removed, which never matches, so the block stays hidden ([Targeting](targeting.md#condition-kinds))
 - a field of a block or of the layout bound to a property the code no longer declares (`unknown_bindable_property`), which shows its fallback ([Slots](slots.md#bindings)), and a list filled by a source the code no longer has (`unknown_source`) ([Sources](sources.md))
 - a preset with blocks of removed types
 
 Missing translations and missing alt text are shown by the translation chips and the missing-alt flags, and aren't counted as problems.
 
-The entry's overview page finds its problems as they are now. The lists' marker, the Needs attention filter and the Content badge read counts stored with each entry, so no admin page goes through every entry: a write counts the entries it touches again, a deleted or added customer group the entries that name it, a media item, entry, product or taxon deleted, or given another UUID or code, the entries that may refer to it by its old or new one (any other write of them counts nothing, so a product import runs no extra query), and a deploy that changes the block types, layouts, content types or condition kinds every entry, on the next admin page. Overdue scheduled publishes are found as of now. A URL that a route added later takes is counted when `setono:cms:check-routes` runs ([Extending](extending.md#console-commands)).
+The entry's overview page finds its problems as they are now. The lists' marker, the Needs attention filter and the Content badge read counts stored with each entry, so no admin page goes through every entry: a write counts the entries it touches again, a deleted or added customer group the entries that name it, a media item, entry, product, taxon, channel or locale deleted, or given another UUID or code, the entries that may refer to it by its old or new one (any other write of them counts nothing, so a product import runs no extra query), and a deploy that changes the block types, layouts, content types or condition kinds every entry, on the next admin page. Overdue scheduled publishes are found as of now. A URL that a route added later takes is counted when `setono:cms:check-routes` runs ([Extending](extending.md#console-commands)).
