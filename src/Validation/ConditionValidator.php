@@ -60,12 +60,7 @@ final readonly class ConditionValidator
             return [];
         }
 
-        $errors = [];
-        foreach ($kind->fields as $name => $field) {
-            $errors = [...$errors, ...$this->fieldValidator->validateShared($kind->params, $field, $params[$name] ?? null)];
-        }
-
         // Parameter values are shared by all translations
-        return [...$errors, ...$this->fieldValidator->validateTogether($kind->params, $kind->fields, $params, [])];
+        return $this->fieldValidator->validateFields($kind->params, $kind->fields, $params, null);
     }
 }

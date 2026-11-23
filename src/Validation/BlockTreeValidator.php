@@ -7,7 +7,6 @@ namespace Setono\SyliusCMSPlugin\Validation;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
-use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\NestingRulesInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -73,31 +72,8 @@ final readonly class BlockTreeValidator
 
         return array_map(
             static fn (ValidationError $error): ValidationError => $error->inLayout(),
-            [...$this->validateFields($layout->class, $layout->fields, $values, $locales), ...$this->fieldValidator->validateTogether($layout->class, $layout->fields, $values, $locales)],
+            $this->fieldValidator->validateFields($layout->class, $layout->fields, $values, $locales),
         );
-    }
-
-    /**
-     * Validates the stored values of the fields one class declares, a block type's or a layout's
-     *
-     * @param class-string $class
-     * @param array<string, FieldMetadata> $fields
-     * @param array<string, mixed> $values by field name
-     * @param list<string> $locales
-     *
-     * @return list<ValidationError>
-     */
-    private function validateFields(string $class, array $fields, array $values, array $locales, ?string $block = null): array
-    {
-        $errors = [];
-        foreach ($fields as $name => $field) {
-            $stored = $values[$name] ?? null;
-            $errors = [...$errors, ...($field->translatable
-                ? $this->fieldValidator->validateTranslatable($class, $field, $stored, $locales, $block)
-                : $this->fieldValidator->validateShared($class, $field, $stored, $block))];
-        }
-
-        return $errors;
     }
 
     /**
@@ -129,10 +105,7 @@ final readonly class BlockTreeValidator
                 $errors[] = new ValidationError($block->key, null, null, $this->translator->trans('setono_sylius_cms.block.not_allowed', ['%block%' => $this->label($blockType)], 'validators'));
             }
 
-            $errors = [...$errors, ...$this->validateFields($blockType->class, $blockType->fields, $block->fields, $locales, $block->key)];
-
-            // The constraints on the block type's class, which read its fields together
-            $errors = [...$errors, ...$this->fieldValidator->validateTogether($blockType->class, $blockType->fields, $block->fields, $locales, $block->key)];
+            $errors = [...$errors, ...$this->fieldValidator->validateFields($blockType->class, $blockType->fields, $block->fields, $locales, $block->key)];
 
             foreach ($block->conditions as $index => $condition) {
                 foreach ($this->conditionValidator->validate($condition) as $error) {

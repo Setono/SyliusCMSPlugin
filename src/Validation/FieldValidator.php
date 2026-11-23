@@ -36,6 +36,34 @@ final readonly class FieldValidator
     }
 
     /**
+     * Validates the stored values of the fields one class declares, a block type's, a layout's or a condition kind's
+     * parameters': each by its field, a translatable one in each locale, then together against the constraints on the
+     * class, with validateTogether()
+     *
+     * @param class-string $class the class whose properties declare the fields, and carry their constraints
+     * @param array<string, FieldMetadata> $fields by name
+     * @param array<string, mixed> $values the stored values by field name, a translatable field's as a map from locale
+     *                                     code to value
+     * @param list<string>|null $locales the locales translatable fields are validated in, or null when every value is
+     *                                   shared by all translations, as a condition's parameter values are
+     * @param string|null $block the key of the block the fields are in
+     *
+     * @return list<ValidationError>
+     */
+    public function validateFields(string $class, array $fields, array $values, ?array $locales, ?string $block = null): array
+    {
+        $errors = [];
+        foreach ($fields as $name => $field) {
+            $stored = $values[$name] ?? null;
+            $errors = [...$errors, ...(null !== $locales && $field->translatable
+                ? $this->validateTranslatable($class, $field, $stored, $locales, $block)
+                : $this->validateShared($class, $field, $stored, $block))];
+        }
+
+        return [...$errors, ...$this->validateTogether($class, $fields, $values, $locales ?? [], $block)];
+    }
+
+    /**
      * @param class-string $class the class whose property declares the field, and carries its constraints
      * @param string|null $block the key of the block the field is in, or null for an entry's field
      *
