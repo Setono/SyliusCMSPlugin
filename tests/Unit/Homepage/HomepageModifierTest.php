@@ -244,7 +244,7 @@ final class HomepageModifierTest extends TestCase
      */
     public function it_tells_that_another_page_just_became_the_channels_homepage_when_the_homepage_rows_clash(): void
     {
-        $clash = self::uniqueConstraintViolation("SQLSTATE[23505]: Unique violation: 7 ERROR:  duplicate key value violates unique constraint \"setono_sylius_cms__homepage_channel_uniq\"");
+        $clash = self::uniqueConstraintViolation('SQLSTATE[23505]: Unique violation: 7 ERROR:  duplicate key value violates unique constraint "setono_sylius_cms__homepage_channel_uniq"');
         $manager = $this->prophesize(EntityManagerInterface::class);
         $manager->wrapInTransaction(Argument::any())->willThrow($clash);
 
