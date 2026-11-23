@@ -16,13 +16,14 @@ final readonly class UploadLimit
 {
     /**
      * @param int|null $configured media.max_upload_size in bytes, or null for no limit of its own
-     * @param int $cap in bytes, what a higher configured limit is lowered to, and the limit without one: PHP's effective
-     *                 limit for an upload, the smaller of upload_max_filesize and post_max_size, and
-     *                 transfer.max_file_size for an import
+     * @param int $hardLimit in bytes, the limit no file passes, however media.max_upload_size is configured: a higher
+     *                       configured limit is lowered to it, and without one it's the limit. For an upload, PHP's
+     *                       effective limit, the smaller of upload_max_filesize and post_max_size, and for an import,
+     *                       transfer.max_file_size
      */
     public function __construct(
         private ?int $configured,
-        private int $cap,
+        private int $hardLimit,
     ) {
     }
 
@@ -48,7 +49,7 @@ final readonly class UploadLimit
 
     public function bytes(): int
     {
-        return null === $this->configured ? $this->cap : min($this->configured, $this->cap);
+        return null === $this->configured ? $this->hardLimit : min($this->configured, $this->hardLimit);
     }
 
     public function allows(int $size): bool

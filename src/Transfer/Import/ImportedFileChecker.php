@@ -17,24 +17,20 @@ use Symfony\Component\Translation\TranslatableMessage;
  * Checks a media item's file in an export, whether the media item is picked, a dependency or new in the target. An
  * export is untrusted input, so its filename must be a plain basename and the file must match its checksum, and then it
  * goes through the very checks an upload does (MediaFileCheckerInterface): its type against media.types, its size
- * against the smaller of transfer.max_file_size and media.max_upload_size (UploadLimit::forImports(), which the limits
- * of the PHP running the import don't lower), its MIME type, size and dimensions read from the file, and an SVG
- * sanitised. What the JSON says of the file is never read. The file is extracted from the export into a temporary file
- * for that, no further than that limit, so an export can't fill the disk. See "Media files" in docs/spec/transfer.md
+ * against the import's limit, its MIME type, size and dimensions read from the file, and an SVG sanitised. What the
+ * JSON says of the file is never read. The file is extracted from the export into a temporary file for that, no further
+ * than that limit, so an export can't fill the disk. See "Media files" in docs/spec/transfer.md
  */
 final readonly class ImportedFileChecker
 {
-    private UploadLimit $limit;
-
     /**
-     * @param int $maxFileSize transfer.max_file_size in bytes
+     * @param UploadLimit $limit the import's: the smaller of transfer.max_file_size and media.max_upload_size
+     *                           (UploadLimit::forImports()), which the limits of the PHP running the import don't lower
      */
     public function __construct(
         private MediaFileCheckerInterface $checker,
-        UploadLimit $uploadLimit,
-        int $maxFileSize,
+        private UploadLimit $limit,
     ) {
-        $this->limit = $uploadLimit->forImports($maxFileSize);
     }
 
     /**
@@ -51,7 +47,7 @@ final readonly class ImportedFileChecker
             throw new RefusedFileException(new TranslatableMessage('setono_sylius_cms.import.media_file.filename', ['%filename%' => $filename]));
         }
 
-        $copy = $this->copy($source, ExportFormat::mediaFilePath($mediaItem->uuid, $filename), $filename);
+        $copy = $this->extract($source, ExportFormat::mediaFilePath($mediaItem->uuid, $filename), $filename);
 
         try {
             if (!hash_equals($mediaItem->checksum, (string) hash_file('sha256', $copy))) {
@@ -73,7 +69,7 @@ final readonly class ImportedFileChecker
      * @throws InvalidExportException
      * @throws ExportTooBigException
      */
-    private function copy(ExportSourceInterface $source, string $path, string $filename): string
+    private function extract(ExportSourceInterface $source, string $path, string $filename): string
     {
         $limit = $this->limit->bytes();
         $copy = tempnam(sys_get_temp_dir(), 'setono_sylius_cms_import_');

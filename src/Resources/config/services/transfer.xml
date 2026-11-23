@@ -30,10 +30,18 @@
 
         <!-- Imports: read, plan, apply all or nothing (docs/spec/transfer.md#what-an-import-does) -->
         <!-- Every file of an export goes through the checks an upload does (docs/spec/transfer.md#media-files) -->
+        <!--
+        The limit an imported media file is checked against: the smaller of media.max_upload_size and
+        transfer.max_file_size, which the limits of the PHP running the import don't lower
+        -->
+        <service id="setono_sylius_cms.transfer.import_limit" class="Setono\SyliusCMSPlugin\Media\UploadLimit">
+            <factory service="Setono\SyliusCMSPlugin\Media\UploadLimit" method="forImports"/>
+            <argument>%setono_sylius_cms.transfer.max_file_size%</argument>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker" class="Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker">
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaFileCheckerInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
-            <argument>%setono_sylius_cms.transfer.max_file_size%</argument>
+            <argument type="service" id="setono_sylius_cms.transfer.import_limit"/>
         </service>
 
         <!-- Opens an export folder or zip; a zip unpacks to no more than transfer.max_unpacked_size -->

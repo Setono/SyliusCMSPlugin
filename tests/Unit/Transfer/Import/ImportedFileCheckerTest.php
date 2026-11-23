@@ -45,7 +45,7 @@ final class ImportedFileCheckerTest extends TestCase
             return self::CONTENT === file_get_contents($copy);
         }), 'autumn-banner.png', Argument::type(UploadLimit::class))->willReturn($checked)->shouldBeCalledOnce();
 
-        $read = (new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1000), 1000))->check($this->source(), self::mediaItem(), true);
+        $read = (new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1000)))->check($this->source(), self::mediaItem(), true);
 
         self::assertSame($checked, $read->file);
         self::assertTrue($read->isPicked());
@@ -129,7 +129,7 @@ final class ImportedFileCheckerTest extends TestCase
                 Argument::that(static fn (UploadLimit $limit): bool => $expected === $limit->bytes()),
             )->willReturn($checked)->shouldBeCalledOnce();
 
-            $read = (new ImportedFileChecker($checker->reveal(), new UploadLimit($configured, 10), $maxFileSize))->check($this->source(), self::mediaItem(), true);
+            $read = (new ImportedFileChecker($checker->reveal(), (new UploadLimit($configured, 10))->forImports($maxFileSize)))->check($this->source(), self::mediaItem(), true);
 
             self::assertSame($checked, $read->file);
             $read->cleanUp();
@@ -155,7 +155,7 @@ final class ImportedFileCheckerTest extends TestCase
         });
 
         try {
-            (new ImportedFileChecker($this->prophesize(MediaFileCheckerInterface::class)->reveal(), new UploadLimit(null, 1000), 1000))->check($source->reveal(), self::mediaItem(), true);
+            (new ImportedFileChecker($this->prophesize(MediaFileCheckerInterface::class)->reveal(), new UploadLimit(null, 1000)))->check($source->reveal(), self::mediaItem(), true);
             self::fail('It took a file it couldn\'t extract');
         } catch (ExportTooBigException) {
         }
@@ -174,7 +174,7 @@ final class ImportedFileCheckerTest extends TestCase
         $checker->check(Argument::type(\SplFileInfo::class), 'autumn-banner.png', Argument::type(UploadLimit::class))->willThrow($refused);
 
         try {
-            (new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1000), 1000))->check($this->source(), self::mediaItem(), false);
+            (new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1000)))->check($this->source(), self::mediaItem(), false);
             self::fail('It took a file an upload refuses');
         } catch (RefusedFileException $e) {
             self::assertSame($refused, $e);
@@ -187,7 +187,7 @@ final class ImportedFileCheckerTest extends TestCase
         $checker->check(Argument::cetera())->shouldNotBeCalled();
 
         try {
-            (new ImportedFileChecker($checker->reveal(), $limit ?? new UploadLimit(null, 1000), $maxFileSize))->check($source, $mediaItem, false);
+            (new ImportedFileChecker($checker->reveal(), ($limit ?? new UploadLimit(null, 1000))->forImports($maxFileSize)))->check($source, $mediaItem, false);
         } catch (RefusedFileException $e) {
             return $e->reason;
         }
