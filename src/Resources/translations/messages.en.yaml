@@ -505,6 +505,7 @@ setono_sylius_cms:
         page_scope_removed_kind: 'The page scope of the placement in "%slot%" has a condition of the kind "%kind%", which the code no longer has, so the placement shows nothing.'
         page_scope_unprovided: 'The page scope of the placement in "%slot%" has a condition, %kind%, that needs the host-page context "%context%", which the slot no longer provides, so the placement shows nothing.'
         preset_removed_block_type: 'It has blocks of the type %types%, which the code no longer has, so inserting it leaves them out.'
+        homepage_not_in_channel: 'It''s the homepage of %channel%, but isn''t in that channel, so shoppers there see the store''s own homepage. Put it back in the channel, or take the channel out of "Homepage of".'
         placement_hidden_by_homepage: 'The placement in "%slot%" doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         removed_context_key: 'It needs the context key "%key%", which the code no longer has, so none of its placements shows it.'
@@ -528,6 +529,7 @@ setono_sylius_cms:
         deleted_customer_group: Deleted customer groups
         misfit_value: Values that don't fit their field
         page_scope_mismatch: Page scopes that don't fit their slots
+        homepage_not_in_channel: Homepages of channels the page isn't in
         placement_hidden_by_homepage: Placements a CMS homepage hides
         preset_removed_block_type: Presets with blocks of removed types
         removed_context_key: Removed context keys
@@ -1037,7 +1039,8 @@ setono_sylius_cms:
         has_errors: Has errors
         hidden_in_preview: Hidden in this channel and language
         homepage_of: Homepage of
-        homepage_of_help: It shows at each of these channels' root URL in place of the store's own homepage. A channel has one homepage, so choosing it here takes it off any other page.
+        homepage_of_help: It shows at the root URL of each of these channels, the ones it's in, in place of the store's own homepage. A channel has one homepage, so choosing it here takes it off any other page.
+        homepage_of_left_channel: '%channel% (the page isn''t in this channel)'
         is_inside: is inside
         is_not_one_of: is not one of
         is_one_of: is one of

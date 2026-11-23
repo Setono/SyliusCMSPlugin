@@ -49,6 +49,37 @@ final class HomepageTest extends UITestCase
     }
 
     /**
+     * A page can only be the homepage of a channel it's in, so "Homepage of" lists only those, and follows the channels
+     * picked above it
+     *
+     * @test
+     */
+    public function it_lists_only_the_pages_channels_to_make_it_the_homepage_of(): void
+    {
+        $this->signInAsAdmin();
+        self::createChannel('B2B', 'Wholesale store');
+        $page = self::createPage('Welcome', 'welcome', 'Hello shoppers', channels: ['WEB']);
+
+        $browser = $this->visit(sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
+        $settings = $browser->getByRole('tabpanel', ['name' => 'Settings']);
+        $homepageOf = $settings->getByRole('group', ['name' => 'Homepage of']);
+
+        Expect::locator($homepageOf->getByRole('checkbox'))->toHaveCount(1);
+        Expect::locator($homepageOf->getByRole('checkbox', ['name' => 'Setono CMS Test Store']))->toBeVisible();
+
+        $settings->getByRole('group', ['name' => 'Channels'])->getByRole('checkbox', ['name' => 'Wholesale store'])->check();
+        Expect::locator($browser->getByRole('complementary')->getByText('Saved', ['exact' => true]))->toBeVisible();
+
+        Expect::locator($homepageOf->getByRole('checkbox'))->toHaveCount(2);
+        $wholesale = $homepageOf->getByRole('checkbox', ['name' => 'Wholesale store']);
+        $wholesale->check();
+
+        Expect::locator($browser->getByRole('complementary')->getByText('Saved', ['exact' => true]))->toBeVisible();
+        Expect::locator($wholesale)->toBeChecked();
+        self::assertSame(['B2B'], self::reloadPage($page)->getHomepageChannelCodes());
+    }
+
+    /**
      * @test
      */
     public function it_shows_which_page_is_the_channels_homepage_on_its_overview_page(): void

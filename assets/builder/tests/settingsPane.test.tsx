@@ -358,8 +358,8 @@ describe('the entry settings', () => {
         expect(web).not.toBeChecked();
     });
 
-    it('should pick the channels a page is the homepage of from all the store has', async () => {
-        const api = fakeApi(settings({ homepageOf: ['B2B'] }));
+    it('should pick the channels a page is the homepage of from those it is in', async () => {
+        const api = fakeApi(settings({ channels: ['WEB', 'B2B'], homepageOf: ['B2B'] }));
         await openBuilder(api);
         const homepageOf = within(pane().getByRole('group', { name: 'Homepage of' }));
 
@@ -369,6 +369,41 @@ describe('the entry settings', () => {
         fireEvent.click(homepageOf.getByRole('checkbox', { name: 'Web store' }));
 
         expect(api.saveSettings).toHaveBeenLastCalledWith({ homepageOf: ['B2B', 'WEB'] });
+    });
+
+    // A page can only be the homepage of a channel it's in. See "Homepage" in docs/spec/urls-and-seo.md
+    it("should offer only the page's channels, and follow them", async () => {
+        const api = fakeApi(settings({ channels: ['WEB'] }));
+        await openBuilder(api);
+        const homepageOf = within(pane().getByRole('group', { name: 'Homepage of' }));
+
+        expect(homepageOf.getAllByRole('checkbox').map((checkbox) => (checkbox as HTMLInputElement).labels?.[0]?.textContent)).toEqual(['Web store']);
+
+        fireEvent.click(within(pane().getByRole('group', { name: 'Channels' })).getByRole('checkbox', { name: 'Wholesale store' }));
+
+        expect(homepageOf.getAllByRole('checkbox').map((checkbox) => (checkbox as HTMLInputElement).labels?.[0]?.textContent)).toEqual(['Web store', 'Wholesale store']);
+        await saved();
+
+        fireEvent.click(homepageOf.getByRole('checkbox', { name: 'Wholesale store' }));
+
+        expect(api.saveSettings).toHaveBeenLastCalledWith({ homepageOf: ['B2B'] });
+        await saved();
+    });
+
+    // One it has left stays its homepage, which the admin flags, until it's taken out here or the page is back in it
+    it('should keep a channel the page has left among its homepages, saying so, until it is taken out', async () => {
+        const api = fakeApi(settings({ channels: ['WEB'], homepageOf: ['B2B'] }));
+        await openBuilder(api);
+        const homepageOf = within(pane().getByRole('group', { name: 'Homepage of' }));
+        const left = homepageOf.getByRole('checkbox', { name: "Wholesale store (the page isn't in this channel)" });
+
+        expect(left).toBeChecked();
+
+        fireEvent.click(left);
+
+        expect(api.saveSettings).toHaveBeenLastCalledWith({ homepageOf: [] });
+        await saved();
+        expect(homepageOf.getAllByRole('checkbox').map((checkbox) => (checkbox as HTMLInputElement).labels?.[0]?.textContent)).toEqual(['Web store']);
     });
 
     it('should offer Homepage of only for a content type whose entries can be homepages', async () => {
@@ -382,13 +417,13 @@ describe('the entry settings', () => {
     it("should preview a page at its channel's root once the save makes it that channel's homepage", async () => {
         let homepageOf: string[] = [];
         let release = (): void => {};
-        const api = fakeApi(settings(), {
+        const api = fakeApi(settings({ channels: ['WEB', 'B2B'] }), {
             saveSettings: vi.fn(
                 (changes: Partial<EntrySettings>) =>
                     new Promise<EntrySettings>((resolve) => {
                         release = () => {
                             homepageOf = changes.homepageOf ?? homepageOf;
-                            resolve(settings({ homepageOf }));
+                            resolve(settings({ channels: ['WEB', 'B2B'], homepageOf }));
                         };
                     }),
             ),

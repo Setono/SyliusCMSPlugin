@@ -185,6 +185,16 @@
             <tag name="setono_sylius_cms.problem_kind"/>
         </service>
 
+        <!--
+        A page that's the homepage of a channel it has left, where the store's own homepage shows: a warning in the
+        admin, so lint leaves it out
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\HomepageNotInChannel" class="Setono\SyliusCMSPlugin\Problem\Kind\HomepageNotInChannel">
+            <argument type="service" id="sylius.repository.channel"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
         <!-- A snippet that needs a context key a project removed: a warning in the admin, so lint leaves it out -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedContextKey" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedContextKey">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>

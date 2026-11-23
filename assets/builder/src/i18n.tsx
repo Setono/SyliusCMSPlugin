@@ -142,6 +142,7 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.hidden_in_preview'
     | 'setono_sylius_cms.builder.homepage_of'
     | 'setono_sylius_cms.builder.homepage_of_help'
+    | 'setono_sylius_cms.builder.homepage_of_left_channel'
     | 'setono_sylius_cms.builder.is_inside'
     | 'setono_sylius_cms.builder.is_not_one_of'
     | 'setono_sylius_cms.builder.is_one_of'

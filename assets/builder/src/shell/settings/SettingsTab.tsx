@@ -484,14 +484,16 @@ function Audience() {
 }
 
 /**
- * "Homepage of", for a page: the store's channels it shows at the root URL of, in place of the store's own homepage. A
- * channel has one homepage, so choosing it here takes it off any other page. Unlike the channel picker it shows in a
- * store with one channel too. See "Homepage" in docs/spec/urls-and-seo.md
+ * "Homepage of", for a page: the channels it shows at the root URL of, in place of the store's own homepage. It offers
+ * the channels the page is in, as it can only be the homepage of those. A channel it has left stays its homepage until
+ * it's taken out here, and says so. A channel has one homepage, so choosing it here takes it off any other page. Unlike
+ * the channel picker it shows in a store with one channel too. See "Homepage" in docs/spec/urls-and-seo.md
  */
 function HomepageOf() {
     const t = useTranslator();
     const { settings, channels, homepage } = useBuilder();
     const selected = useSettingsState((state) => state.settings.homepageOf);
+    const inChannels = useSettingsState((state) => state.settings.channels);
     const helpId = useId();
     const hintId = useId();
 
@@ -502,16 +504,18 @@ function HomepageOf() {
     return (
         <fieldset className={styles.setting} aria-describedby={`${helpId} ${hintId}`}>
             <legend className={formStyles.label}>{t('setono_sylius_cms.builder.homepage_of')}</legend>
-            {channels.map(({ code, name }) => (
-                <label key={code} className={styles.check}>
-                    <input
-                        type="checkbox"
-                        checked={selected.includes(code)}
-                        onChange={(event) => void settings.getState().save({ homepageOf: toggle(selected, code, event.currentTarget.checked) })}
-                    />
-                    {name}
-                </label>
-            ))}
+            {channels
+                .filter(({ code }) => inChannels.includes(code) || selected.includes(code))
+                .map(({ code, name }) => (
+                    <label key={code} className={styles.check}>
+                        <input
+                            type="checkbox"
+                            checked={selected.includes(code)}
+                            onChange={(event) => void settings.getState().save({ homepageOf: toggle(selected, code, event.currentTarget.checked) })}
+                        />
+                        {inChannels.includes(code) ? name : t('setono_sylius_cms.builder.homepage_of_left_channel', { '%channel%': name })}
+                    </label>
+                ))}
             <p id={helpId} className={formStyles.help}>
                 {t('setono_sylius_cms.builder.homepage_of_help')}
             </p>
