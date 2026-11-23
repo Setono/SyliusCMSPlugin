@@ -101,7 +101,8 @@ There's no `410` and no redirect to the homepage.
 
 A page can be a channel's [homepage](../../GLOSSARY.md#entries).
 
-- **"Homepage of"** is a list of channels in the page's settings. Each channel has at most one homepage, so choosing a page for a channel takes the channel off any other page.
+- **"Homepage of"** is a list of channels in the page's settings. It offers only the channels the page is in, and the server refuses any other. Each channel has at most one homepage, so choosing a page for a channel takes the channel off any other page. When two saves make different pages one channel's homepage at the same moment, the second gets a message ("Another page just became this channel's homepage"), not a database error.
+- **A page that leaves a channel stays its homepage**, and the admin warns about it ([Admin](admin.md#problems)) until the page is back in the channel or no longer its homepage. Shoppers there can't see the page meanwhile, so Sylius's own homepage shows.
 - **Stored on the CMS side, by channel code**, so projects don't extend Sylius's Channel entity.
 - **It takes effect on save**, like placements, and fires `EntrySettingsChanged` with `homepage` ([Extending](extending.md#events)). It travels in a transfer as an on-save setting ([Transfer](transfer.md)).
 
