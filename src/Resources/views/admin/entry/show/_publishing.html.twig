@@ -3,9 +3,11 @@
  # with Publish and Schedule while there's something to publish, and Discard changes while there's a draft. A scheduled
  # publish that waits locks the draft, so it offers only Cancel the schedule, an overdue one warns that the Messenger
  # worker may not be running and offers Publish now and Cancel the schedule, and a failed one shows its reason and
- # offers Schedule again. Every action is a form that comes back to the overview page. Times are in the time zone the
- # admin shows times in. See "Entry overview page" in docs/spec/admin.md
+ # offers Schedule again. Every action is a form that comes back to the overview page. A scheduled publish's time is
+ # entered and shown in PHP's default time zone, which the admin shows times in, and the builder schedules in, labelled
+ # with its name. See "Entry overview page" in docs/spec/admin.md and "Scheduled publishes" in docs/spec/publishing.md
  #}
+{% set time_zone = cms_admin_time_zone() %}
 {% set scheduled_publish = row.scheduledPublish %}
 {% set scheduled_status = row.scheduledPublishStatus %}
 {% set status = 'Setono\\SyliusCMSPlugin\\Builder\\EntryStatus' %}
@@ -30,10 +32,10 @@
     {% endif %}
 
     {% if scheduled_publish is not null %}
-        {% set at = scheduled_publish.publishAt|date('Y-m-d H:i') %}
+        {% set at = scheduled_publish.publishAt|date('Y-m-d H:i', time_zone) %}
         {% if scheduled_status is same as(constant(status ~ '::PublishesAtATime')) %}
             <div class="ui info message" data-scheduled-publish="{{ scheduled_status.value }}">
-                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.waiting'|trans({'%at%': at}) }}</div>
+                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.waiting'|trans({'%at%': at, '%time_zone%': time_zone}) }}</div>
                 <p>
                     {% if scheduled_publish.scheduledBy is not null %}{{ 'setono_sylius_cms.ui.scheduled_publish.by'|trans({'%name%': scheduled_publish.scheduledBy}) }}{% endif %}
                     {{ 'setono_sylius_cms.ui.scheduled_publish.locked'|trans }}
@@ -41,12 +43,12 @@
             </div>
         {% elseif scheduled_status is same as(constant(status ~ '::ScheduledPublishOverdue')) %}
             <div class="ui negative message" data-scheduled-publish="{{ scheduled_status.value }}">
-                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.overdue'|trans({'%at%': at}) }}</div>
+                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.overdue'|trans({'%at%': at, '%time_zone%': time_zone}) }}</div>
                 <p>{{ 'setono_sylius_cms.ui.scheduled_publish.overdue_help'|trans }}</p>
             </div>
         {% else %}
             <div class="ui negative message" data-scheduled-publish="{{ scheduled_status.value }}">
-                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.failed'|trans({'%at%': at}) }}</div>
+                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.failed'|trans({'%at%': at, '%time_zone%': time_zone}) }}</div>
                 <p data-reason>{{ scheduled_publish.failureReason }}</p>
             </div>
         {% endif %}
@@ -84,7 +86,10 @@
                 <div class="inline fields">
                     <div class="field">
                         <label for="cms-schedule-at">{{ 'setono_sylius_cms.ui.schedule_at'|trans }}</label>
-                        <input type="datetime-local" id="cms-schedule-at" name="at" required>
+                        <div class="ui right labeled input">
+                            <input type="datetime-local" id="cms-schedule-at" name="at" required aria-describedby="cms-schedule-time-zone">
+                            <div class="ui basic label" id="cms-schedule-time-zone">{{ time_zone }}</div>
+                        </div>
                     </div>
                     <div class="field">
                         <button type="submit" class="ui labeled icon button">

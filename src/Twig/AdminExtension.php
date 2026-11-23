@@ -44,6 +44,8 @@ final class AdminExtension extends AbstractExtension
             new TwigFunction('cms_admin_coming_up', [OverviewRuntime::class, 'comingUp']),
             new TwigFunction('cms_admin_translation_completeness', [OverviewRuntime::class, 'translationCompleteness']),
             new TwigFunction('cms_admin_drafts_in_progress', [OverviewRuntime::class, 'draftsInProgress']),
+            // The time zone scheduled publishes are entered and shown in, PHP's default, which the admin shows times in
+            new TwigFunction('cms_admin_time_zone', 'date_default_timezone_get'),
         ];
     }
 }
