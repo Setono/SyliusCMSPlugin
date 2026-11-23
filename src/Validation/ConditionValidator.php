@@ -63,4 +63,14 @@ final readonly class ConditionValidator
         // Parameter values are shared by all translations
         return $this->fieldValidator->validateFields($kind->params, $kind->fields, $params, null);
     }
+
+    /**
+     * The label of the parameter an error validateParams() found for a condition of the kind is at, a translation key,
+     * or null for an error at none, about the parameters together, such as a constraint on the parameters class whose
+     * violation has no property path
+     */
+    public function parameterLabel(ConditionKindMetadata $kind, ValidationError $error): ?string
+    {
+        return null === $error->field ? null : ($kind->fields[$error->field] ?? null)?->field->label;
+    }
 }

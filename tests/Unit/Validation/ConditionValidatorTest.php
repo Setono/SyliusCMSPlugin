@@ -106,6 +106,20 @@ final class ConditionValidatorTest extends TestCase
     }
 
     /**
+     * A page scope names the parameter an error is at by its label
+     *
+     * @test
+     */
+    public function it_gives_the_label_of_the_parameter_an_error_is_at_or_none_for_one_about_the_parameters_together(): void
+    {
+        $kind = Conditions::registry()->get('date_window');
+
+        self::assertSame('setono_sylius_cms.field.date_window_condition.until', $this->validator()->parameterLabel($kind, new ValidationError(null, 'until', null, 'Until must come after From.')));
+        self::assertNull($this->validator()->parameterLabel($kind, new ValidationError(null, null, null, 'Not a window.')));
+        self::assertNull($this->validator()->parameterLabel($kind, new ValidationError(null, 'span', null, 'At a path that is no parameter.')));
+    }
+
+    /**
      * "Until" is exclusive, so a window that ends where it starts never shows either
      *
      * @test

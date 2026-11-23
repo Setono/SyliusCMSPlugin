@@ -91,13 +91,13 @@ final readonly class PageScopeValidator implements PageScopeValidatorInterface
     {
         $errors = [];
         foreach ($this->conditionValidator->validateParams($kind, $params) as $error) {
-            $field = null === $error->field ? null : ($kind->fields[$error->field] ?? null);
+            $field = $this->conditionValidator->parameterLabel($kind, $error);
             $errors[] = null === $field
                 ? new TranslatableMessage('setono_sylius_cms.page_scope.condition', ['%number%' => $number, '%kind%' => $label, '%message%' => $error->message], self::DOMAIN)
                 : new TranslatableMessage('setono_sylius_cms.page_scope.field', [
                     '%number%' => $number,
                     '%kind%' => $label,
-                    '%field%' => new TranslatableMessage($field->field->label),
+                    '%field%' => new TranslatableMessage($field),
                     '%message%' => $error->message,
                 ], self::DOMAIN);
         }
