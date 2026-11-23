@@ -140,7 +140,7 @@ final class ConfigurationTest extends TestCase
             'bestsellers' => ['window' => 'P30D'],
             'builder' => ['scripts' => []],
             'presets' => ['paths' => []],
-            'transfer' => ['storage' => 'setono_sylius_cms.transfer_storage'],
+            'transfer' => ['storage' => 'setono_sylius_cms.transfer_storage', 'max_file_size' => 100 * 1024 * 1024, 'max_unpacked_size' => 1024 * 1024 * 1024],
             'resources' => [
                 'entry' => [
                     'classes' => [
@@ -409,7 +409,28 @@ final class ConfigurationTest extends TestCase
     {
         $this->assertProcessedConfigurationEquals([
             ['transfer' => ['storage' => 'app.shared_storage']],
-        ], ['transfer' => ['storage' => 'app.shared_storage']], 'transfer');
+        ], ['transfer' => ['storage' => 'app.shared_storage', 'max_file_size' => 100 * 1024 * 1024, 'max_unpacked_size' => 1024 * 1024 * 1024]], 'transfer');
+    }
+
+    /**
+     * See "Media files" in docs/spec/transfer.md
+     *
+     * @test
+     */
+    public function it_takes_the_limits_of_what_an_import_unpacks_as_sizes(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['transfer' => ['max_file_size' => '20M', 'max_unpacked_size' => 500_000_000]],
+        ], ['transfer' => ['storage' => 'setono_sylius_cms.transfer_storage', 'max_file_size' => 20 * 1024 * 1024, 'max_unpacked_size' => 500_000_000]], 'transfer');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_limit_of_what_an_import_unpacks_that_is_not_a_size(): void
+    {
+        $this->assertConfigurationIsInvalid([['transfer' => ['max_file_size' => 'lots']]], 'must be a positive number of bytes');
+        $this->assertConfigurationIsInvalid([['transfer' => ['max_unpacked_size' => null]]], 'must be a positive number of bytes');
     }
 
     /**

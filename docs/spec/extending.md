@@ -770,6 +770,8 @@ setono_sylius_cms:
 
     transfer:
         storage: 'setono_sylius_cms.transfer_storage'  # a Flysystem storage service uploaded export zips wait in for the worker; the default writes to %kernel.project_dir%/private/cms, outside the web root, so a worker on another server needs a storage both share
+        max_file_size: 100M      # the largest media file an import takes; media.max_upload_size is the limit when it's smaller
+        max_unpacked_size: 1G    # the most an export zip unpacks to, checked from its directory before anything is extracted and again while extracting
 
     media:
         storage: 'setono_sylius_cms.storage'     # a Flysystem storage service; the default writes to %kernel.project_dir%/public/media/cms, served at /media/cms; another needs MediaUrlGeneratorInterface aliased (Images)
@@ -780,7 +782,7 @@ setono_sylius_cms:
             image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml']
             video: ['video/mp4', 'video/webm']
             document: ['application/pdf']
-        max_upload_size: null  # null means PHP's effective limit; a value above it is lowered to it. Imports check against this value alone, and take any size when it's null
+        max_upload_size: null  # null means PHP's effective limit; a value above it is lowered to it. Imports check against the smaller of this value and transfer.max_file_size, which PHP's limit doesn't lower
         widths: [320, 640, 960, 1280, 1600, 1920, 2560]
         grace_period: 'P1D'  # ISO 8601 duration before a replaced file is deleted
 

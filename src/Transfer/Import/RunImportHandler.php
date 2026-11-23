@@ -30,6 +30,7 @@ final readonly class RunImportHandler
         private UploadedExports $uploadedExports,
         private ObjectManager $manager,
         private ClockInterface $clock,
+        private ExportSources $sources,
     ) {
     }
 
@@ -71,7 +72,7 @@ final readonly class RunImportHandler
 
         return $this->uploadedExports->read($path, function (string $file) use ($filename, $options): ImportResult {
             try {
-                $source = new ZipSource($file);
+                $source = $this->sources->zip($file);
             } catch (InvalidExportException) {
                 return ImportResult::invalid(sprintf('%s isn\'t a zip that can be read.', $filename));
             }

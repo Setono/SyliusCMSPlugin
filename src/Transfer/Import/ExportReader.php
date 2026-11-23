@@ -34,7 +34,8 @@ use Symfony\Component\Translation\TranslatableMessage;
  * the code doesn't have, or one saved with a newer version than the code's, is a reason to refuse, which the plan
  * lists. A disabled one imports like any other. What isn't in the export format makes the export one it can't read.
  * It checks the export as untrusted input too: a path that doesn't resolve inside its root refuses it, and so does a
- * media item's file that fails the checks an upload goes through (ImportedFileChecker), naming the media item. See
+ * media item's file that fails the checks an upload goes through (ImportedFileChecker), naming the media item. A zip
+ * that unpacks to more than it may stops the read (ExportTooBigException). See
  * "What an import does", "Code the target must have" and "Media files" in docs/spec/transfer.md
  */
 final readonly class ExportReader
@@ -53,6 +54,7 @@ final readonly class ExportReader
     /**
      * @throws InvalidExportException when the export has no manifest of a format this code reads, or a file isn't in
      *                                the export format
+     * @throws ExportTooBigException when a zip unpacks to more than transfer.max_unpacked_size
      */
     public function read(ExportSourceInterface $source): ReadExport
     {

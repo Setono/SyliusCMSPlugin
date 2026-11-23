@@ -360,7 +360,7 @@ final class ExportReaderTest extends TestCase
             $upgrader->reveal(),
             new PresetUpgrader($upgrader->reveal()),
             new EntryDenormalizer($registry),
-            new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1_000_000)),
+            new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1_000_000), 1_000_000),
         );
     }
 

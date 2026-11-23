@@ -71,6 +71,8 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
 use Setono\SyliusCMSPlugin\Transfer\Import\AbandonImport;
+use Setono\SyliusCMSPlugin\Transfer\Import\ExportSources;
+use Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker;
 use Setono\SyliusCMSPlugin\Transfer\Import\RunImport;
 use Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
@@ -611,6 +613,21 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->assertContainerBuilderHasAlias('setono_sylius_cms.transfer_storage', 'app.shared_storage');
         self::assertNotContains(self::transferStorage(), $this->container->getExtensionConfig('flysystem'));
+    }
+
+    /**
+     * See "Media files" in docs/spec/transfer.md
+     *
+     * @test
+     */
+    public function it_hands_the_limits_of_what_an_import_unpacks_to_the_services_that_check_them(): void
+    {
+        $this->load(['transfer' => ['max_file_size' => '20M', 'max_unpacked_size' => '2G']]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.transfer.max_file_size', 20 * 1024 * 1024);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.transfer.max_unpacked_size', 2 * 1024 * 1024 * 1024);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ImportedFileChecker::class, 2, '%setono_sylius_cms.transfer.max_file_size%');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ExportSources::class, 0, '%setono_sylius_cms.transfer.max_unpacked_size%');
     }
 
     /**
