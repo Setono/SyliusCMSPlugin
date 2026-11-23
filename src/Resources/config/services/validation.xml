@@ -20,6 +20,15 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldValidator"/>
             <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\ConditionValidator"/>
+        </service>
+
+        <!-- A visibility condition as publish checks it, and a page scope's parameters when a placement is saved -->
+        <service id="Setono\SyliusCMSPlugin\Validation\ConditionValidator" class="Setono\SyliusCMSPlugin\Validation\ConditionValidator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldValidator"/>
+            <argument type="service" id="translator"/>
         </service>
 
         <!-- The checks of an entry's URLs: on publish, on save and when its channels change -->

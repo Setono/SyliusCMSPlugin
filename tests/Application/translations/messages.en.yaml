@@ -27,6 +27,7 @@ app:
             picks: Picks
             city: City
             directions: Directions
+            headline: Headline
             image: Image
             opening_hours: Opening hours
             opening_hours_help: Days without hours are closed.
@@ -38,6 +39,7 @@ app:
             tagline: Tagline
             transparent_header: Transparent header
         layout:
+            campaign: Campaign
             landing: Landing
             promo: Promo
             store: Store

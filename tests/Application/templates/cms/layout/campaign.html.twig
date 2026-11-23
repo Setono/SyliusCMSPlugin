@@ -1,0 +1,10 @@
+{# The template of the Campaign layout (tests/Functional/Fixture/Campaign.php), which CampaignLayoutKernel registers #}
+{% extends '@SetonoSyliusCMSPlugin/layout/base.html.twig' %}
+
+{% block cms_content %}
+    <h2 class="app-campaign__headline">{{ cms_field(layout, 'headline') }}</h2>
+
+    <div class="cms-tree">
+        {{ cms_blocks(blocks) }}
+    </div>
+{% endblock %}

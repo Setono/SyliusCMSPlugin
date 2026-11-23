@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Condition\Kind;
 
 use Setono\SyliusCMSPlugin\Field\DateTime;
+use Setono\SyliusCMSPlugin\Validation\Constraint\EndsAfterStart;
 
+/**
+ * A window that ends before it starts, or where it starts, never shows, so publish refuses it
+ */
+#[EndsAfterStart(start: 'from', end: 'until')]
 final class DateWindowParams
 {
     /** Inclusive, or null for no start */
