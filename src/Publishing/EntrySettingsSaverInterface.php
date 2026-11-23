@@ -15,8 +15,9 @@ interface EntrySettingsSaverInterface
      * dispatches EntrySettingsChanged with homepage too
      *
      * @throws InvalidEntrySettingsException when it refuses the settings, such as channels where another entry has
-     *                                       published one of the entry's published URLs, or homepages for an entry
-     *                                       that isn't a page
+     *                                       published one of the entry's published URLs, homepages for an entry that
+     *                                       isn't a page, a page made the homepage of a channel it isn't in, or one
+     *                                       whose channel another save has just given another page as its homepage
      */
     public function save(EntryInterface $entry, EntrySettings $settings): void;
 }

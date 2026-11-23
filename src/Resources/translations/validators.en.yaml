@@ -66,6 +66,10 @@ setono_sylius_cms:
         too_small: This value should be {{ limit }} or more.
         unknown_binding: 'The bindable property "{{ binding }}" no longer exists, so its fallback shows.'
         unknown_source: 'The source "{{ source }}" no longer exists, so this list shows nothing.'
+    # Why "Homepage of" is refused. See "Homepage" in docs/spec/urls-and-seo.md
+    homepage:
+        not_in_channels: 'A page can only be the homepage of a channel it''s in, and this page isn''t in %channels%.'
+        taken: 'Another page just became this channel''s homepage. Choose the channel again to make this page its homepage instead.'
     # What a placement's page scope may hold. See "Page scopes" in docs/spec/slots.md
     page_scope:
         field: 'Condition %number%, %kind%: %field%: %message%'

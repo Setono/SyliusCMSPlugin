@@ -123,6 +123,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\HomepageModifierInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="translator"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver"/>
 

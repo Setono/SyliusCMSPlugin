@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Publishing;
 
+use Doctrine\DBAL\Driver\Exception as DriverException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\TestCase;
@@ -25,6 +27,7 @@ use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
+use Setono\SyliusCMSPlugin\Tests\Unit\Validation\BlockTreeValidatorTest;
 use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\Clock\MockClock;
@@ -123,13 +126,13 @@ final class EntrySettingsSaverTest extends TestCase
     {
         $page = new Page();
 
-        $this->saver()->save($page, new EntrySettings(false, new DateWindow(new \DateTimeImmutable('2026-12-01T00:00:00Z')), ['WEB', 'B2B', 'WEB'], Audience::except('retail'), ['MOBILE']));
+        $this->saver()->save($page, new EntrySettings(false, new DateWindow(new \DateTimeImmutable('2026-12-01T00:00:00Z')), ['WEB', 'B2B', 'WEB'], Audience::except('retail'), ['B2B']));
 
         self::assertFalse($page->isEnabled());
         self::assertEquals(new \DateTimeImmutable('2026-12-01T00:00:00Z'), $page->getDateWindow()->from);
         self::assertSame(['B2B', 'WEB'], $page->getChannelCodes());
         self::assertTrue($page->getAudience()->equals(Audience::except('retail')));
-        self::assertSame(['MOBILE'], $page->getHomepageChannelCodes());
+        self::assertSame(['B2B'], $page->getHomepageChannelCodes());
     }
 
     /**
@@ -251,6 +254,7 @@ final class EntrySettingsSaverTest extends TestCase
     public function it_takes_the_chosen_channels_off_the_page_that_was_their_homepage_in_a_flush_of_its_own(): void
     {
         $page = new Page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['B2B', 'WEB']);
         $about = new Page();
         $aboutWeb = Homepages::factory()->createForPage($about, 'WEB');
         $about->addHomepage($aboutWeb);
@@ -261,7 +265,7 @@ final class EntrySettingsSaverTest extends TestCase
             $calls[] = sprintf('flush: the page is the homepage of %s, the other page of %s', [] === $page->getHomepageChannelCodes() ? 'none' : implode(', ', $page->getHomepageChannelCodes()), implode(', ', $about->getHomepageChannelCodes()));
         });
 
-        $this->saver()->save($page, new EntrySettings(true, new DateWindow(), [], Audience::everyone(), ['WEB', 'B2B']));
+        $this->saver()->save($page, new EntrySettings(true, new DateWindow(), ['B2B', 'WEB'], Audience::everyone(), ['WEB', 'B2B']));
 
         self::assertSame([
             'begin',
@@ -281,8 +285,9 @@ final class EntrySettingsSaverTest extends TestCase
     public function it_flushes_nothing_more_when_no_other_page_was_the_homepage_of_the_chosen_channels(): void
     {
         $page = new Page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
 
-        $this->saver()->save($page, new EntrySettings(true, new DateWindow(), [], Audience::everyone(), ['WEB']));
+        $this->saver()->save($page, new EntrySettings(true, new DateWindow(), ['WEB'], Audience::everyone(), ['WEB']));
 
         self::assertSame(['begin', 'commit', $page->getUuid() . ': homepage'], $this->calls);
         $this->manager->flush()->shouldNotHaveBeenCalled();
@@ -299,6 +304,106 @@ final class EntrySettingsSaverTest extends TestCase
         $this->saver()->save($page, new EntrySettings(false, new DateWindow(), [], Audience::everyone()));
 
         $this->homepageRepository->findByChannelCodes(Argument::any())->shouldNotHaveBeenCalled();
+    }
+
+    /**
+     * A page can only become the homepage of a channel it's in, as shoppers of any other channel never see it. See
+     * "Homepage" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_refuses_to_make_a_page_the_homepage_of_a_channel_it_is_not_in(): void
+    {
+        $page = new Page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
+
+        try {
+            $this->saver()->save($page, new EntrySettings(false, new DateWindow(), ['WEB'], Audience::everyone(), ['WEB', 'MOBILE', 'B2B']));
+            self::fail('The homepage was not refused');
+        } catch (InvalidEntrySettingsException $e) {
+            self::assertSame('A page can only be the homepage of a channel it\'s in, and this page isn\'t in B2B, MOBILE.', $e->getMessage());
+        }
+
+        self::assertSame([], $this->calls);
+        self::assertSame([], $page->getHomepageChannelCodes());
+        self::assertTrue($page->isEnabled(), 'Nothing is saved');
+    }
+
+    /**
+     * @test
+     */
+    public function it_makes_a_page_the_homepage_of_a_channel_it_is_put_in_by_the_same_save(): void
+    {
+        $page = new Page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
+
+        $this->saver()->save($page, new EntrySettings(true, new DateWindow(), ['B2B', 'WEB'], Audience::everyone(), ['B2B']));
+
+        self::assertSame(['B2B'], $page->getHomepageChannelCodes());
+    }
+
+    /**
+     * A page that leaves a channel it's the homepage of stays its homepage, which the admin flags, until it's back in
+     * the channel or no longer its homepage. So it keeps that channel when it's made the homepage of another
+     *
+     * @test
+     */
+    public function it_keeps_a_page_the_homepage_of_a_channel_it_left(): void
+    {
+        $page = new Page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['B2B', 'WEB']);
+        Homepages::modifier($this->homepageRepository->reveal())->setHomepageOf($page, ['WEB']);
+
+        $this->saver()->save($page, new EntrySettings(true, new DateWindow(), ['B2B'], Audience::everyone(), ['WEB']));
+
+        self::assertSame(['B2B'], $page->getChannelCodes());
+        self::assertSame(['WEB'], $page->getHomepageChannelCodes());
+
+        $this->saver()->save($page, new EntrySettings(true, new DateWindow(), ['B2B'], Audience::everyone(), ['B2B', 'WEB']));
+
+        self::assertSame(['B2B', 'WEB'], $page->getHomepageChannelCodes());
+    }
+
+    /**
+     * Two saves that make different pages a channel's homepage at the same moment both find no other page to take it
+     * off, so the second one's row clashes with the first one's on the unique channel code
+     *
+     * @test
+     */
+    public function it_tells_that_another_page_just_became_the_channels_homepage_when_the_homepage_rows_clash(): void
+    {
+        $page = new Page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
+        $this->manager->wrapInTransaction(Argument::type('callable'))->willThrow(self::uniqueConstraintViolation(
+            "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'WEB' for key 'setono_sylius_cms__homepage.setono_sylius_cms__homepage_channel_uniq'",
+        ));
+
+        try {
+            $this->saver()->save($page, new EntrySettings(true, new DateWindow(), ['WEB'], Audience::everyone(), ['WEB']));
+            self::fail('The clash was not turned into a message');
+        } catch (InvalidEntrySettingsException $e) {
+            self::assertSame('Another page just became this channel\'s homepage. Choose the channel again to make this page its homepage instead.', $e->getMessage());
+            self::assertInstanceOf(UniqueConstraintViolationException::class, $e->getPrevious());
+        }
+
+        self::assertSame([], $this->calls, 'Nothing is dispatched');
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_a_clash_on_another_unique_key_as_it_is(): void
+    {
+        $page = new Page();
+        $clash = self::uniqueConstraintViolation("SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '42-WEB' for key 'setono_sylius_cms__entry_channel.setono_sylius_cms__entry_channel_uniq'");
+        $this->manager->wrapInTransaction(Argument::type('callable'))->willThrow($clash);
+
+        try {
+            $this->saver()->save($page, new EntrySettings(true, new DateWindow(), ['WEB'], Audience::everyone()));
+            self::fail('The clash was not thrown');
+        } catch (UniqueConstraintViolationException $e) {
+            self::assertSame($clash, $e);
+        }
     }
 
     /**
@@ -335,6 +440,19 @@ final class EntrySettingsSaverTest extends TestCase
         $this->saver()->save(new Page(), new EntrySettings(false, new DateWindow(), [], Audience::everyone()));
     }
 
+    /**
+     * What DBAL throws when a write breaks a unique key, with the database's message, which names the key
+     */
+    private static function uniqueConstraintViolation(string $message): UniqueConstraintViolationException
+    {
+        return new UniqueConstraintViolationException(new class($message) extends \Exception implements DriverException {
+            public function getSQLState(): string
+            {
+                return '23000';
+            }
+        }, null);
+    }
+
     private function saver(): EntrySettingsSaver
     {
         $clock = new MockClock(new \DateTimeImmutable('2026-11-14 12:00:00', new \DateTimeZone('Europe/Copenhagen')));
@@ -353,6 +471,7 @@ final class EntrySettingsSaverTest extends TestCase
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'announcement' => ['model' => Announcement::class, 'translation' => EntryTranslation::class, 'resource' => 'app.announcement'],
             ]),
+            BlockTreeValidatorTest::translator(),
         );
     }
 }

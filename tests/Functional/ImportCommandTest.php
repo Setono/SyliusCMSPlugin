@@ -541,6 +541,24 @@ final class ImportCommandTest extends KernelTestCase
     }
 
     /**
+     * "Homepage of" applies as a save in the admin does, which refuses a channel the page isn't in
+     *
+     * @test
+     */
+    public function it_refuses_to_make_a_page_the_homepage_of_a_channel_it_is_not_in(): void
+    {
+        $export = $this->copyOfFixture();
+        $file = sprintf('%s/entries/%s.json', $export, self::PAGE);
+        file_put_contents($file, str_replace('"homepageOf": []', '"homepageOf": ["B2B"]', (string) file_get_contents($file)));
+
+        $tester = self::import(['path' => $export]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('The settings of Autumn sale can\'t be saved: A page can only be the homepage of a channel it\'s in, and this page isn\'t in B2B.', self::display($tester));
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+    }
+
+    /**
      * The export's page isn't the homepage of the channel its copy here is, which changed here after the export
      *
      * @test
