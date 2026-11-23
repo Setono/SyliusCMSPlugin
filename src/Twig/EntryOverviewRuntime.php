@@ -21,6 +21,7 @@ use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface;
+use Setono\SyliusCMSPlugin\Publishing\SchedulingTimeZone;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tree\SnippetUse;
 use Setono\SyliusCMSPlugin\Tree\SnippetUses;
@@ -43,7 +44,16 @@ final readonly class EntryOverviewRuntime implements RuntimeExtensionInterface
         private WhereItShows $whereItShows,
         private EntryPlacements $entryPlacements,
         private SnippetUses $snippetUses,
+        private SchedulingTimeZone $schedulingTimeZone,
     ) {
+    }
+
+    /**
+     * The name of the time zone a scheduled publish is entered and shown in, such as Europe/Copenhagen, which labels it
+     */
+    public function schedulingTimeZone(): string
+    {
+        return $this->schedulingTimeZone->name();
     }
 
     /**

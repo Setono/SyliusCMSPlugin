@@ -65,6 +65,7 @@ use Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
 use Setono\SyliusCMSPlugin\Problem\Severity;
+use Setono\SyliusCMSPlugin\Publishing\SchedulingTimeZone;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -499,7 +500,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             self::contentTypes(),
         );
 
-        $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows, $entryPlacements, $snippetUses);
+        $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows, $entryPlacements, $snippetUses, new SchedulingTimeZone());
 
         $overviewPanels = $this->overviewRuntime($entryRows, $entries, $problemFinder);
         $pageScopeEditor = $this->pageScopeEditorRuntime();

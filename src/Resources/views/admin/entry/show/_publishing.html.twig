@@ -4,8 +4,8 @@
  # publish that waits locks the draft, so it offers only Cancel the schedule, an overdue one warns that the Messenger
  # worker may not be running and offers Publish now and Cancel the schedule, and a failed one shows its reason and
  # offers Schedule again. Every action is a form that comes back to the overview page. A scheduled publish's time is
- # entered and shown in PHP's default time zone, which the admin shows times in, and the builder schedules in, labelled
- # with its name. See "Entry overview page" in docs/spec/admin.md and "Scheduled publishes" in docs/spec/publishing.md
+ # entered and shown in the scheduling time zone, PHP's default, which the builder schedules in too, labelled with its
+ # name. See "Entry overview page" in docs/spec/admin.md and "Scheduled publishes" in docs/spec/publishing.md
  #}
 {% set time_zone = cms_admin_time_zone() %}
 {% set scheduled_publish = row.scheduledPublish %}
@@ -32,10 +32,11 @@
     {% endif %}
 
     {% if scheduled_publish is not null %}
-        {% set at = scheduled_publish.publishAt|date('Y-m-d H:i', time_zone) %}
+        {# The time and its zone's name, which every message about it shows #}
+        {% set time_parameters = {'%at%': scheduled_publish.publishAt|date('Y-m-d H:i', time_zone), '%time_zone%': time_zone} %}
         {% if scheduled_status is same as(constant(status ~ '::PublishesAtATime')) %}
             <div class="ui info message" data-scheduled-publish="{{ scheduled_status.value }}">
-                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.waiting'|trans({'%at%': at, '%time_zone%': time_zone}) }}</div>
+                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.waiting'|trans(time_parameters) }}</div>
                 <p>
                     {% if scheduled_publish.scheduledBy is not null %}{{ 'setono_sylius_cms.ui.scheduled_publish.by'|trans({'%name%': scheduled_publish.scheduledBy}) }}{% endif %}
                     {{ 'setono_sylius_cms.ui.scheduled_publish.locked'|trans }}
@@ -43,12 +44,12 @@
             </div>
         {% elseif scheduled_status is same as(constant(status ~ '::ScheduledPublishOverdue')) %}
             <div class="ui negative message" data-scheduled-publish="{{ scheduled_status.value }}">
-                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.overdue'|trans({'%at%': at, '%time_zone%': time_zone}) }}</div>
+                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.overdue'|trans(time_parameters) }}</div>
                 <p>{{ 'setono_sylius_cms.ui.scheduled_publish.overdue_help'|trans }}</p>
             </div>
         {% else %}
             <div class="ui negative message" data-scheduled-publish="{{ scheduled_status.value }}">
-                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.failed'|trans({'%at%': at, '%time_zone%': time_zone}) }}</div>
+                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.failed'|trans(time_parameters) }}</div>
                 <p data-reason>{{ scheduled_publish.failureReason }}</p>
             </div>
         {% endif %}

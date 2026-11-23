@@ -94,6 +94,9 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface" alias="Setono\SyliusCMSPlugin\Publishing\PublishScheduler"/>
 
+        <!-- The one time zone scheduled publishes are entered and shown in, in the builder as on the overview page -->
+        <service id="Setono\SyliusCMSPlugin\Publishing\SchedulingTimeZone" class="Setono\SyliusCMSPlugin\Publishing\SchedulingTimeZone"/>
+
         <service id="Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDueHandler" class="Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDueHandler">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface"/>
