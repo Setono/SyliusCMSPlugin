@@ -35,12 +35,6 @@ final class ImportLimitsTest extends WebTestCase
     use SentMessages;
     use TemporaryDirectory;
 
-    /** A video in Unsorted, of 28 bytes */
-    private const VIDEO = '0193a5be-70ab-7c12-8e2d-1b2c3d4e5f61';
-
-    /** What the committed export's files add up to, in bytes */
-    private const EXPORT_SIZE = 9583;
-
     protected static function getKernelClass(): string
     {
         return SmallImportLimitsKernel::class;
@@ -52,11 +46,11 @@ final class ImportLimitsTest extends WebTestCase
     public function it_refuses_a_media_file_over_the_limit_and_stores_why(): void
     {
         $export = $this->copyOfFixture();
-        self::growVideo($export, self::VIDEO, 1024 - 28 - 8 + 1);
+        self::growVideoTo($export, 1025);
 
         [$refusal, $page] = $this->refusalOf($this->zipOf($export));
 
-        self::assertSame(self::VIDEO, $refusal->uuid);
+        self::assertSame(self::EXPORTED_VIDEO, $refusal->uuid);
         self::assertInstanceOf(TranslatableMessage::class, $refusal->reason);
         self::assertSame('setono_sylius_cms.import.media_refused', $refusal->reason->getMessage());
         $reason = $refusal->reason->getParameters()['%reason%'] ?? null;
@@ -72,7 +66,7 @@ final class ImportLimitsTest extends WebTestCase
      */
     public function it_refuses_a_zip_that_unpacks_to_more_than_the_limit_and_stores_why(): void
     {
-        [$refusal, $page] = $this->refusalOf($this->zipOf(self::exportFixture(), ['padding.txt' => str_repeat('a', 20 * 1024 - self::EXPORT_SIZE)]));
+        [$refusal, $page] = $this->refusalOf($this->zipOf(self::exportFixture(), ['padding.txt' => self::exportPadding(20 * 1024)]));
 
         self::assertNull($refusal->uuid);
         self::assertInstanceOf(TranslatableMessage::class, $refusal->reason);

@@ -162,7 +162,7 @@ final class ImportMediaTest extends KernelTestCase
     public function it_imports_a_media_file_bigger_than_the_upload_limit_of_the_php_running_it(): void
     {
         $export = $this->copyOfFixture();
-        self::growVideo($export, self::VIDEO, 3 * 1024 * 1024);
+        self::growVideoTo($export, 3 * 1024 * 1024 + 1);
 
         $tester = self::import(['path' => $export]);
 

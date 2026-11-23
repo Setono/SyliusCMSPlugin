@@ -23,9 +23,6 @@ final class ImportUploadLimitTest extends KernelTestCase
     use MediaItems;
     use TemporaryDirectory;
 
-    /** A video in Unsorted, of 28 bytes */
-    private const VIDEO = '0193a5be-70ab-7c12-8e2d-1b2c3d4e5f61';
-
     protected static function getKernelClass(): string
     {
         return SmallUploadLimitKernel::class;
@@ -37,7 +34,7 @@ final class ImportUploadLimitTest extends KernelTestCase
     public function it_imports_a_media_file_of_exactly_the_configured_limit(): void
     {
         $export = $this->copyOfFixture();
-        self::growVideo($export, self::VIDEO, 1024 - 28 - 8);
+        self::growVideoTo($export, 1024);
 
         $tester = self::import(['path' => $export]);
 
@@ -50,7 +47,7 @@ final class ImportUploadLimitTest extends KernelTestCase
     public function it_refuses_a_media_file_over_the_configured_limit(): void
     {
         $export = $this->copyOfFixture();
-        self::growVideo($export, self::VIDEO, 1024 - 28 - 8 + 1);
+        self::growVideoTo($export, 1025);
 
         $tester = self::import(['path' => $export]);
 

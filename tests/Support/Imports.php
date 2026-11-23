@@ -19,6 +19,9 @@ trait Imports
 {
     use CommandOutput;
 
+    /** The committed export's video, lookbook.mp4 in Unsorted */
+    private const EXPORTED_VIDEO = '0193a5be-70ab-7c12-8e2d-1b2c3d4e5f61';
+
     abstract private function temporaryDirectory(): string;
 
     /**
@@ -94,16 +97,30 @@ trait Imports
     }
 
     /**
-     * Grows an export's MP4 by a media data box of the given size, and writes its new checksum in its JSON
+     * Grows the video of a copy of the committed export to the size, in bytes, by a media data box, and writes its new
+     * checksum in its JSON
      */
-    private static function growVideo(string $export, string $uuid, int $bytes): void
+    private static function growVideoTo(string $export, int $size): void
     {
-        $json = sprintf('%s/media/%s.json', $export, $uuid);
+        $json = sprintf('%s/media/%s.json', $export, self::EXPORTED_VIDEO);
         /** @var array{filename: string, checksum: string} $mediaItem */
         $mediaItem = json_decode((string) file_get_contents($json), true, flags: \JSON_THROW_ON_ERROR);
-        $file = sprintf('%s/media/%s/%s', $export, $uuid, $mediaItem['filename']);
-        file_put_contents($file, pack('N', $bytes + 8) . 'mdat' . str_repeat("\0", $bytes), \FILE_APPEND);
+        $file = sprintf('%s/media/%s/%s', $export, self::EXPORTED_VIDEO, $mediaItem['filename']);
+        $box = $size - (int) filesize($file);
+        self::assertGreaterThanOrEqual(8, $box, 'A media data box needs 8 bytes of its own');
+        file_put_contents($file, pack('N', $box) . 'mdat' . str_repeat("\0", $box - 8), \FILE_APPEND);
+        clearstatcache(true, $file);
         file_put_contents($json, str_replace($mediaItem['checksum'], 'sha256:' . hash_file('sha256', $file), (string) file_get_contents($json)));
+    }
+
+    /**
+     * A file that brings what the committed export's files add up to to the size, in bytes
+     */
+    private static function exportPadding(int $size): string
+    {
+        $exportSize = array_sum(array_map(static fn (string $path): int => (int) filesize(self::exportFixture() . '/' . $path), self::filesIn(self::exportFixture())));
+
+        return str_repeat('a', $size - $exportSize);
     }
 
     /**

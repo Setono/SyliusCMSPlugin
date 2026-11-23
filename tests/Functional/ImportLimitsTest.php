@@ -28,12 +28,6 @@ final class ImportLimitsTest extends KernelTestCase
     /** The committed export's picked page */
     private const PAGE = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e';
 
-    /** A video in Unsorted, of 28 bytes */
-    private const VIDEO = '0193a5be-70ab-7c12-8e2d-1b2c3d4e5f61';
-
-    /** What the committed export's files add up to, in bytes */
-    private const EXPORT_SIZE = 9583;
-
     protected static function getKernelClass(): string
     {
         return SmallImportLimitsKernel::class;
@@ -45,7 +39,7 @@ final class ImportLimitsTest extends KernelTestCase
     public function it_imports_a_zip_with_a_media_file_of_exactly_the_limit(): void
     {
         $export = $this->copyOfFixture();
-        self::growVideo($export, self::VIDEO, 1024 - 28 - 8);
+        self::growVideoTo($export, 1024);
 
         $tester = self::import(['path' => $this->zipOf($export)]);
 
@@ -58,7 +52,7 @@ final class ImportLimitsTest extends KernelTestCase
     public function it_refuses_a_media_file_over_the_limit_naming_it(): void
     {
         $export = $this->copyOfFixture();
-        self::growVideo($export, self::VIDEO, 1024 - 28 - 8 + 1);
+        self::growVideoTo($export, 1025);
 
         foreach ([$export, $this->zipOf($export)] as $path) {
             $tester = self::import(['path' => $path]);
@@ -74,7 +68,7 @@ final class ImportLimitsTest extends KernelTestCase
      */
     public function it_refuses_a_zip_that_unpacks_to_more_than_the_limit_naming_its_total(): void
     {
-        $zip = $this->zipOf(self::exportFixture(), ['padding.txt' => str_repeat('a', 20 * 1024 - self::EXPORT_SIZE)]);
+        $zip = $this->zipOf(self::exportFixture(), ['padding.txt' => self::exportPadding(20 * 1024)]);
 
         $tester = self::import(['path' => $zip]);
 
@@ -92,7 +86,7 @@ final class ImportLimitsTest extends KernelTestCase
     public function it_imports_a_folder_of_more_than_a_zip_may_unpack_to(): void
     {
         $export = $this->copyOfFixture();
-        file_put_contents($export . '/padding.txt', str_repeat('a', 20 * 1024 - self::EXPORT_SIZE));
+        file_put_contents($export . '/padding.txt', self::exportPadding(20 * 1024));
 
         $tester = self::import(['path' => $export]);
 
