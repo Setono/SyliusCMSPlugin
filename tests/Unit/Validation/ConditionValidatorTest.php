@@ -7,12 +7,12 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Validation;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Container\ContainerInterface;
 use Setono\SyliusCMSPlugin\Condition\Kind\ChannelKind;
 use Setono\SyliusCMSPlugin\Condition\Kind\CustomerGroupKind;
 use Setono\SyliusCMSPlugin\Condition\Kind\LocaleKind;
 use Setono\SyliusCMSPlugin\Condition\Kind\ProductInTaxonKind;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
-use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\ListFieldHandler;
@@ -181,11 +181,9 @@ final class ConditionValidatorTest extends TestCase
     }
 
     /**
-     * The store's channel WEB, locale en_US and customer group retail
-     *
-     * @return ServiceLocator<ChoicesProviderInterface>
+     * The store's channel WEB, locale en_US and customer group retail, by provider class
      */
-    private function storeChoices(): ServiceLocator
+    private function storeChoices(): ContainerInterface
     {
         $web = $this->prophesize(ChannelInterface::class);
         $web->getCode()->willReturn('WEB');
