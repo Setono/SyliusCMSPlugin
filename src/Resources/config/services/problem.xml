@@ -223,6 +223,7 @@
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup" class="Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup">
             <argument type="service" id="sylius.repository.customer_group"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
