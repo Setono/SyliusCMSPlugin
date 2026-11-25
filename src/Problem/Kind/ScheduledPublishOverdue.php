@@ -7,13 +7,13 @@ namespace Setono\SyliusCMSPlugin\Problem\Kind;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Problem\TimeDependentProblemKindInterface;
-use Setono\SyliusCMSPlugin\Publishing\SchedulingTimeZone;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Symfony\Component\Translation\TranslatableMessage;
 
@@ -31,7 +31,7 @@ final readonly class ScheduledPublishOverdue implements TimeDependentProblemKind
     public function __construct(
         private ScheduledPublishRepositoryInterface $scheduledPublishes,
         private ClockInterface $clock,
-        private SchedulingTimeZone $timeZone,
+        private AdminTimeZone $timeZone,
     ) {
     }
 

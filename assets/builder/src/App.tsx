@@ -27,6 +27,7 @@ import { createSlugFollower, type SlugFollower } from './slugs';
 import { createSnippetPreviewApi, startingPlacement, type SnippetPreviewApi } from './snippetPreview';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
+import { TimeZoneProvider } from './timeZone';
 import { findBlock } from './tree';
 import { createUrlsStore, createUrlsSync, type UrlsSync } from './urls';
 import { createValidation, createValidationStore, type Validation } from './validation';
@@ -230,7 +231,6 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                         channels: config.channels,
                         locales: config.locales ?? [],
                         customerGroups: config.customerGroups,
-                        timeZone: config.timeZone,
                         urlPrefix,
                         homepage: contentType?.homepage ?? false,
                         hasBlockTree: contentType?.blocks !== null,
@@ -290,15 +290,17 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
 
     return (
         <TranslatorProvider value={phase.translate}>
-            <BuilderProvider value={phase.session}>
-                {media === undefined || mediaEndpoints === null || phase.media === null ? (
-                    searched
-                ) : (
-                    <MediaPickerProvider api={mediaEndpoints} config={{ locales: media.locales, media: phase.media }}>
-                        {searched}
-                    </MediaPickerProvider>
-                )}
-            </BuilderProvider>
+            <TimeZoneProvider value={config.timeZone}>
+                <BuilderProvider value={phase.session}>
+                    {media === undefined || mediaEndpoints === null || phase.media === null ? (
+                        searched
+                    ) : (
+                        <MediaPickerProvider api={mediaEndpoints} config={{ locales: media.locales, media: phase.media }}>
+                            {searched}
+                        </MediaPickerProvider>
+                    )}
+                </BuilderProvider>
+            </TimeZoneProvider>
         </TranslatorProvider>
     );
 }

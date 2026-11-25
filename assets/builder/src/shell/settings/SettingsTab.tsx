@@ -377,7 +377,7 @@ function DateWindow() {
     );
 }
 
-/** A date and time in the editor's time zone, saved in UTC when the editor leaves the input. */
+/** A date and time in the time zone the server gives, saved in UTC when the editor leaves the input. */
 function DateTimeInput({ label, value, onCommit }: { label: string; value: string | null; onCommit: (value: string | null) => void }) {
     const id = useId();
 

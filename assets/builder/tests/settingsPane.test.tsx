@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, type BuilderApi } from '../src/api';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
@@ -32,7 +32,8 @@ const config: BuilderConfig = {
         { code: 'retail', name: 'Retail' },
         { code: 'wholesale', name: 'Wholesale' },
     ],
-    timeZone: 'UTC',
+    // PHP's default time zone, which every date and time in the builder is entered and shown in
+    timeZone: 'Europe/Copenhagen',
 };
 
 /** The server saves what it's sent onto what it has, and answers with all of it. */
@@ -74,6 +75,10 @@ async function saved() {
 }
 
 describe('the entry settings', () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
     it('should show the settings in a Settings tab while no block is selected', async () => {
         await openBuilder();
 
@@ -207,17 +212,21 @@ describe('the entry settings', () => {
         expect(screen.getByText('Published', { exact: true })).toBeInTheDocument();
     });
 
-    it('should save the date window in UTC when a date is entered', async () => {
+    it('should save the date window in UTC when a date is entered, in the time zone the server gives, which it names', async () => {
+        // The editor's browser is in another time zone than the server's
+        vi.stubEnv('TZ', 'Asia/Tokyo');
         const api = fakeApi();
         await openBuilder(api);
         const showFrom = pane().getByLabelText('Show from');
         const local = '2026-11-27T09:30';
+        expect(showFrom).toHaveAccessibleDescription('Europe/Copenhagen');
 
         fireEvent.change(showFrom, { target: { value: local } });
         expect(api.saveSettings).not.toHaveBeenCalled();
         fireEvent.blur(showFrom);
 
-        expect(api.saveSettings).toHaveBeenCalledExactlyOnceWith({ showFrom: new Date(local).toISOString().replace('.000Z', 'Z') });
+        // 09:30 in Copenhagen is 08:30 in UTC
+        expect(api.saveSettings).toHaveBeenCalledExactlyOnceWith({ showFrom: '2026-11-27T08:30:00Z' });
         await saved();
         expect(showFrom).toHaveValue(local);
 
@@ -227,14 +236,12 @@ describe('the entry settings', () => {
         expect(api.saveSettings).toHaveBeenLastCalledWith({ showFrom: null });
     });
 
-    it('should show the saved date window in local time', async () => {
+    it('should show the saved date window in the time zone the server gives, not the browser’s', async () => {
+        vi.stubEnv('TZ', 'America/New_York');
         await openBuilder(fakeApi(settings({ showUntil: '2026-12-01T00:00:00Z' })));
 
-        const until = new Date('2026-12-01T00:00:00Z');
-        const pad = (value: number) => String(value).padStart(2, '0');
-        expect(pane().getByLabelText('Show until')).toHaveValue(
-            `${until.getFullYear()}-${pad(until.getMonth() + 1)}-${pad(until.getDate())}T${pad(until.getHours())}:${pad(until.getMinutes())}`,
-        );
+        expect(pane().getByLabelText('Show until')).toHaveValue('2026-12-01T01:00');
+        expect(pane().getByLabelText('Show until')).toHaveAccessibleDescription('Europe/Copenhagen');
     });
 
     it("should not save a date that didn't change", async () => {

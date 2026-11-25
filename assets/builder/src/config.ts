@@ -103,7 +103,7 @@ export interface BuilderConfig {
     /** The store's customer groups, for the audience and Shown to. */
     customerGroups: CustomerGroup[];
     /**
-     * The time zone scheduled publishes are entered and shown in, PHP's default time zone on the server, which the admin
+     * The time zone every date and time is entered and shown in, PHP's default time zone on the server, which the admin
      * shows times in, such as Europe/Copenhagen, whatever the editor's own is.
      */
     timeZone: string;

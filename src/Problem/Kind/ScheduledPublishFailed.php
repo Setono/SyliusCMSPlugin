@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
-use Setono\SyliusCMSPlugin\Publishing\SchedulingTimeZone;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Symfony\Component\Translation\TranslatableMessage;
 
@@ -24,7 +24,7 @@ final readonly class ScheduledPublishFailed implements ProblemKindInterface
 
     public function __construct(
         private ScheduledPublishRepositoryInterface $scheduledPublishes,
-        private SchedulingTimeZone $timeZone,
+        private AdminTimeZone $timeZone,
     ) {
     }
 

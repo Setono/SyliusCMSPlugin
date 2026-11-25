@@ -131,6 +131,14 @@ A list field ([Content model](content-model.md#fields)) has a **Filled by** sele
 
 See [Localization](localization.md) for the rules behind these.
 
+## Dates and times
+
+Every date and time the builder reads or shows is in PHP's default time zone, the one the admin shows times in, whatever the editor's browser uses: a Date and time field, the entry's date window, a date window condition, the preview's Date and a scheduled publish. The server gives the builder that zone.
+
+- **Each input names the zone**, such as Europe/Copenhagen, beside or under it. So do the detailed messages about a scheduled publish. Compact labels, such as "Publishes 2026-11-20 11:30" in the top bar, don't ([Publishing](publishing.md#scheduled-publishes)).
+- **Values are stored in UTC**, as the [Date and time field](content-model.md#values-per-field-type) and the date window columns hold them. A project that changes PHP's default time zone changes how times are entered and shown, not when they are.
+- **The page scope editor** on a snippet's overview page enters a date and time the same way, for a project's own condition kind that takes one ([Slots](slots.md#page-scopes)).
+
 ## Saving
 
 The builder holds the entry's working copy as JSON in the browser and saves it a moment after each change. There's no Save button. Undo works in the browser and is saved like any other change.

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PageScopesConfig, PlacementScopeConfig } from '../src/pageScope/config';
 import { PageScopeEditor } from '../src/pageScope/PageScopeEditor';
 import type { FieldSchema, VisibilityCondition } from '../src/types';
@@ -52,6 +52,8 @@ const config: PageScopesConfig = {
     ],
     endpoints: { search: '/admin/cms/api/search/__kind__' },
     locale: 'en_US',
+    // PHP's default time zone, which the admin enters and shows times in
+    timeZone: 'Europe/Copenhagen',
     strings: {
         'setono_sylius_cms.builder.add_condition': 'Add condition',
         'setono_sylius_cms.builder.condition': 'Condition %number%',
@@ -104,6 +106,29 @@ function posted(dialog: HTMLElement): unknown {
 }
 
 describe("a placement's page scope editor", () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it("should take a project's own kind's dates and times in the admin's time zone, not the browser's, which it names", () => {
+        // The editor's browser is in another time zone than the server's
+        vi.stubEnv('TZ', 'America/New_York');
+        const dateTime: FieldSchema = { type: 'string', format: 'date-time', 'x-cms-type': 'date_time', 'x-cms-label': 'Since', 'x-cms-help': null, 'x-cms-required': false, 'x-cms-translatable': false };
+        const since = { code: 'product_since', label: 'Product added since', ...oneOf, needs: ['product'], fields: [{ name: 'since', schema: dateTime }] };
+        const search = fakeSearch(catalog);
+        render(<PageScopeEditor config={{ ...config, conditionKinds: [...config.conditionKinds, since] }} placement={placement([{ kind: 'product_since', negate: false, params: { since: '2026-11-27T08:00:00Z' } }], ['product_since'])} search={search} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Edit page scope' }));
+        const dialog = screen.getByRole('dialog', { name: 'Page scope' });
+
+        const input = within(dialog).getByLabelText('Since');
+        expect(input).toHaveValue('2026-11-27T09:00');
+        expect(input).toHaveAccessibleDescription('Europe/Copenhagen');
+
+        fireEvent.change(input, { target: { value: '2026-11-27T10:00' } });
+
+        expect(posted(dialog)).toEqual([{ kind: 'product_since', negate: false, params: { since: '2026-11-27T09:00:00Z' } }]);
+    });
+
     it("should post an empty scope to the placement's form action with the page's CSRF token, which shows on every page", () => {
         const { dialog } = renderEditor();
 

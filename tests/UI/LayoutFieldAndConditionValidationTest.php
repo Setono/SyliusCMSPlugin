@@ -77,8 +77,9 @@ final class LayoutFieldAndConditionValidationTest extends UITestCase
         $condition = $browser->getByRole('complementary')->getByRole('group', ['name' => 'Condition 1']);
         $until = $condition->locator(sprintf('#cms-condition-%s-0-until', self::HEADING));
         $errorsId = sprintf('cms-condition-%s-0-until-errors', self::HEADING);
-        Expect::locator($until)->toHaveAttribute('aria-describedby', $errorsId);
         Expect::locator($condition->locator('#' . $errorsId))->toHaveText('Until must come after From.');
+        // Its error describes it, then the time zone it's entered in
+        Expect::locator($until)->toHaveAccessibleDescription(sprintf('Until must come after From. %s', date_default_timezone_get()));
 
         // Ending it after it starts clears the error, and publish goes through
         $until->fill('2027-01-01T00:00');

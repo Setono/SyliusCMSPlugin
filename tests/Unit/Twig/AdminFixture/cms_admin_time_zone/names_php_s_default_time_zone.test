@@ -1,5 +1,5 @@
 --TEST--
-cms_admin_time_zone() names PHP's default time zone, which the admin shows and reads scheduled publishes in
+cms_admin_time_zone() names PHP's default time zone, which the admin and the builder show and read times in
 --TEMPLATE--
 {{ cms_admin_time_zone() }}
 --DATA--

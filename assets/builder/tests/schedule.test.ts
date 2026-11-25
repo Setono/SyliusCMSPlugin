@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../src/api';
 import { createAutosave } from '../src/autosave';
-import { formatDateTime, fromLocalInput, toLocalInput } from '../src/dates';
 import { createCancelSchedule, createPublish, createReload, createSchedule } from '../src/publishing';
 import { locks } from '../src/store';
 import type { EntryResponse, Schedule } from '../src/types';
@@ -201,47 +200,5 @@ describe('scheduling a publish', () => {
         await createPublish(store, { flush: vi.fn(async () => true), pull: vi.fn(), dispose: vi.fn() }, async () => 'published')();
 
         expect(store.getState().schedule).toBeNull();
-    });
-});
-
-describe('the time of a scheduled publish', () => {
-    // The editor's browser is in another time zone than the server's
-    beforeEach(() => {
-        vi.stubEnv('TZ', 'Asia/Tokyo');
-    });
-
-    afterEach(() => {
-        vi.unstubAllEnvs();
-    });
-
-    it('should read a time entered in the time zone the server gives, not the browser’s', () => {
-        expect(fromLocalInput('2026-11-27T09:00', 'Europe/Copenhagen')).toBe('2026-11-27T08:00:00Z');
-        expect(fromLocalInput('2026-07-01T09:00', 'Europe/Copenhagen')).toBe('2026-07-01T07:00:00Z');
-        expect(fromLocalInput('2026-11-27T09:00', 'America/New_York')).toBe('2026-11-27T14:00:00Z');
-        expect(fromLocalInput('2026-11-27T09:00', 'UTC')).toBe('2026-11-27T09:00:00Z');
-        expect(fromLocalInput('', 'Europe/Copenhagen')).toBeNull();
-        expect(fromLocalInput('2026-11-27T', 'Europe/Copenhagen')).toBeNull();
-        expect(fromLocalInput('2026-02-30T09:00', 'Europe/Copenhagen')).toBeNull();
-        expect(fromLocalInput('2026-11-27T09:00:30', 'Europe/Copenhagen')).toBe('2026-11-27T08:00:30Z');
-    });
-
-    it('should read a time the clocks skip or repeat as PHP reads it', () => {
-        // 02:30 doesn't exist on the day summer time starts, and is read as 03:30 summer time
-        expect(fromLocalInput('2026-03-29T02:30', 'Europe/Copenhagen')).toBe('2026-03-29T01:30:00Z');
-        // 02:30 happens twice on the day summer time ends, and is read as the second, in winter time
-        expect(fromLocalInput('2026-10-25T02:30', 'Europe/Copenhagen')).toBe('2026-10-25T01:30:00Z');
-    });
-
-    it('should show a time in the time zone the server gives, not the browser’s', () => {
-        expect(formatDateTime('2026-11-27T08:00:00Z', 'Europe/Copenhagen')).toBe('2026-11-27 09:00');
-        expect(formatDateTime('2026-07-01T07:00:00Z', 'Europe/Copenhagen')).toBe('2026-07-01 09:00');
-        expect(formatDateTime('2026-11-27T04:30:00Z', 'America/New_York')).toBe('2026-11-26 23:30');
-        expect(toLocalInput('2026-11-27T08:00:00Z', 'Europe/Copenhagen')).toBe('2026-11-27T09:00');
-        expect(toLocalInput(null, 'Europe/Copenhagen')).toBe('');
-    });
-
-    it('should use the browser’s own time zone without one', () => {
-        expect(fromLocalInput('2026-11-27T09:00')).toBe('2026-11-27T00:00:00Z');
-        expect(formatDateTime('2026-11-27T00:00:00Z')).toBe('2026-11-27 09:00');
     });
 });
