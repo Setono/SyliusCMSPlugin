@@ -742,6 +742,10 @@ setono_sylius_cms:
                 failed: Failed
                 finished: Finished
                 importing: Importing
+            # The Messenger worker stopped while it checked or imported it, as on a fatal error, which skips Messenger's
+            # retries, so it isn't run again. See "Who runs it" in docs/spec/transfer.md
+            stopped: 'The Messenger worker stopped while it was working on this import, as when PHP runs out of memory or the worker is killed, so it isn''t run again.'
+            stopped_help: Its zip has been deleted. Upload the export again to try once more, and look in the worker's logs for why it stopped.
             title: Import
             unresolved_references: References that don't resolve here
             unresolved_references_help: They import unchanged, and are flagged as broken references.

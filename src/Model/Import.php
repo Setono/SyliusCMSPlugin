@@ -113,6 +113,16 @@ class Import implements ImportInterface
         $this->startedAt = self::utc($startedAt);
     }
 
+    public function isRunning(): bool
+    {
+        return $this->isWaiting() && null !== $this->startedAt;
+    }
+
+    public function retry(): void
+    {
+        $this->startedAt = null;
+    }
+
     public function check(array $dryRun): void
     {
         $this->assertState(ImportState::Checking);
@@ -185,6 +195,23 @@ class Import implements ImportInterface
         $this->failure = $reason;
         $this->path = null;
         $this->finishedAt = self::utc($failedAt);
+    }
+
+    public function stop(\DateTimeImmutable $stoppedAt): void
+    {
+        if (!$this->isRunning()) {
+            throw new \LogicException(sprintf('The import %s isn\'t running', $this->uuid));
+        }
+
+        $this->state = ImportState::Failed;
+        $this->failure = null;
+        $this->path = null;
+        $this->finishedAt = self::utc($stoppedAt);
+    }
+
+    public function isStopped(): bool
+    {
+        return ImportState::Failed === $this->state && null === $this->failure;
     }
 
     public function getFailure(): ?string

@@ -9,6 +9,8 @@ use Playwright\Assertions\Expect;
 use Playwright\Exception\PlaywrightException;
 use Playwright\Network\ResponseInterface;
 use Playwright\Page\PageInterface;
+use Setono\SyliusCMSPlugin\Model\ImportInterface;
+use Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Imports;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tests\Support\SentMessages;
@@ -184,6 +186,45 @@ final class TransferTest extends UITestCase
         Expect::locator($browser->locator('[data-cms-import-result]'))->toContainText('The import refused. Nothing changed.', new AssertionOptions(timeoutMs: 15_000));
         Expect::locator($browser->locator('[data-cms-import-reasons]'))->toContainText('The export\'s file entries/' . self::PAGE . '.json is over the import limit of 16 MB per JSON file.');
         Expect::locator($browser->locator('form[data-cms-import-confirm]'))->toHaveCount(0);
+    }
+
+    /**
+     * The Messenger worker stopped while checking the export, as when PHP runs out of memory, which skips Messenger's
+     * retries, and gets its message again. See "Who runs it" in docs/spec/transfer.md
+     *
+     * @test
+     */
+    public function it_shows_an_admin_user_that_the_worker_stopped_while_working_on_an_import_which_is_not_run_again(): void
+    {
+        self::forgetSentMessages();
+        $this->signInAsAdmin();
+
+        $browser = $this->visit('/admin/cms/transfer');
+        $import = $browser->getByRole('region', ['name' => 'Import']);
+        $import->getByLabel('Export zip')->setInputFiles($this->zipOf(self::exportFixture()));
+        $import->getByRole('button', ['name' => 'Upload'])->click();
+        Expect::locator($browser->locator('[data-cms-import-progress]'))->toContainText('Waiting for the Messenger worker to check the export.');
+
+        // The worker started checking it, and stopped before it recorded how that ended
+        self::latestImport()->start(new \DateTimeImmutable());
+        self::entityManager()->flush();
+        self::assertSame(1, self::consumeMessages());
+
+        Expect::locator($browser->locator('[data-cms-import-failure]'))->toHaveText('The Messenger worker stopped while it was working on this import, as when PHP runs out of memory or the worker is killed, so it isn\'t run again.', new AssertionOptions(timeoutMs: 15_000));
+        Expect::locator($browser->getByText('Its zip has been deleted. Upload the export again to try once more, and look in the worker\'s logs for why it stopped.'))->toBeVisible();
+        Expect::locator($browser->locator('[data-cms-import-entries], form[data-cms-import-confirm]'))->toHaveCount(0);
+    }
+
+    private static function latestImport(): ImportInterface
+    {
+        self::entityManager()->clear();
+
+        /** @var ImportRepositoryInterface $imports */
+        $imports = self::getContainer()->get(ImportRepositoryInterface::class);
+        $latest = $imports->findLatest(1);
+        self::assertCount(1, $latest);
+
+        return $latest[0];
     }
 
     /**

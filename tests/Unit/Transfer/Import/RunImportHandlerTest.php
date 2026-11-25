@@ -190,13 +190,17 @@ final class RunImportHandlerTest extends TestCase
     }
 
     /**
+     * The import waits for the worker again, so Messenger's retry runs it rather than taking it for a run the worker
+     * stopped while running
+     *
      * @test
      */
     public function it_leaves_an_unexpected_error_to_messenger_to_retry(): void
     {
         $import = $this->confirmed(overwrite: false, publish: false);
+        $applied = ImportResult::applied(new ImportPlan([]), false);
         $this->importer->import(Argument::cetera())->willThrow(new \RuntimeException('The database went away'));
-        $this->storage->delete(Argument::any())->shouldNotBeCalled();
+        $this->manager->flush()->shouldBeCalled();
 
         try {
             $this->handler()(new RunImport($import->getUuid()));
@@ -207,7 +211,45 @@ final class RunImportHandlerTest extends TestCase
 
         self::assertSame(ImportState::Importing, $import->getState());
         self::assertSame(self::PATH, $import->getPath());
-        self::assertSame('2026-11-20T08:00:00+00:00', $import->getStartedAt()?->format(\DATE_ATOM));
+        self::assertFalse($import->isRunning());
+
+        $this->importer->import(Argument::cetera())->willReturn($applied);
+        $this->storage->delete(self::PATH)->shouldBeCalledOnce();
+
+        $this->handler()(new RunImport($import->getUuid()));
+
+        self::assertSame(ImportState::Finished, $import->getState());
+    }
+
+    /**
+     * A fatal error, such as PHP running out of memory, kills the worker without the retry an exception gets, and the
+     * transport hands the message out again with the run still recorded as started. Running it again would kill the
+     * worker again, over and over, so the import fails, and the message is handled
+     *
+     * @test
+     */
+    public function it_fails_an_import_the_worker_stopped_while_running_without_running_it_again_and_deletes_its_zip(): void
+    {
+        $checking = $this->uploaded();
+        $importing = $this->confirmed(overwrite: false, publish: false);
+        foreach ([$checking, $importing] as $import) {
+            $import->start(new \DateTimeImmutable('2026-11-20 07:59:30', new \DateTimeZone('UTC')));
+        }
+
+        $this->importer->import(Argument::cetera())->shouldNotBeCalled();
+        $this->storage->delete(self::PATH)->shouldBeCalledTimes(2);
+        $this->manager->flush()->shouldBeCalled();
+
+        $this->handler()(new RunImport($checking->getUuid()));
+        $this->handler()(new RunImport($importing->getUuid()));
+
+        foreach ([$checking, $importing] as $import) {
+            self::assertSame(ImportState::Failed, $import->getState());
+            self::assertTrue($import->isStopped());
+            self::assertNull($import->getFailure());
+            self::assertNull($import->getPath());
+            self::assertSame('2026-11-20T08:00:00+00:00', $import->getFinishedAt()?->format(\DATE_ATOM));
+        }
     }
 
     /**

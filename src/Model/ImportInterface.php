@@ -55,7 +55,23 @@ interface ImportInterface extends ResourceInterface
      */
     public function getStartedAt(): ?\DateTimeImmutable;
 
+    /**
+     * Records that the worker started its dry run or, once it's confirmed, the import. The worker saves it before it
+     * runs it, in a write of its own, so a run that stops the worker leaves it running
+     */
     public function start(\DateTimeImmutable $startedAt): void;
+
+    /**
+     * Whether the worker started its dry run or the import and hasn't recorded how that ended. A worker that gets its
+     * message again while it's running stopped while running it, as on a fatal error, which skips Messenger's retries
+     */
+    public function isRunning(): bool;
+
+    /**
+     * Has it wait for the worker again after an unexpected error, which Messenger retries, so the retry runs it rather
+     * than taking it for a run the worker stopped while running
+     */
+    public function retry(): void;
 
     /**
      * Records the dry run's result, which would apply, and waits for an admin user to confirm it
@@ -120,7 +136,20 @@ interface ImportInterface extends ResourceInterface
     public function fail(string $reason, \DateTimeImmutable $failedAt): void;
 
     /**
-     * The error it failed with, once it's failed
+     * Fails it because the worker stopped while running it, as on a fatal error such as PHP running out of memory,
+     * which leaves no error to record, so it isn't run again, and lets go of the zip, which the caller deletes
+     *
+     * @throws \LogicException unless it's running
+     */
+    public function stop(\DateTimeImmutable $stoppedAt): void;
+
+    /**
+     * Whether it failed because the worker stopped while running it
+     */
+    public function isStopped(): bool;
+
+    /**
+     * The error it failed with, once it's failed, or null when the worker stopped while running it
      */
     public function getFailure(): ?string;
 }

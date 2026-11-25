@@ -235,6 +235,10 @@ These are the plugin's messages, all dispatched on `sylius.event_bus`:
   Imports started in the admin wait, and replaced files are never deleted.
 - **A message that keeps failing** ends in Sylius's `main_failed` transport, where `bin/console messenger:failed:show`
   lists it. An import whose run kept failing shows the error on its page, and its zip is deleted.
+- **An import that stops the worker isn't run again.** When the worker dies while checking or importing an export, such
+  as when PHP runs out of memory or the process is killed, the import fails, and its page says the worker stopped,
+  rather than the redelivered message killing the worker again. Stop workers with `messenger:stop-workers`, which lets
+  a running import finish: one killed mid-run has to be uploaded again.
 
 Every upload in the admin, a media file or an export to import, is capped by PHP's `upload_max_filesize` and
 `post_max_size`, and a media file also by `setono_sylius_cms.media.max_upload_size` when you set it. Import a bigger
