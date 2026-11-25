@@ -44,9 +44,13 @@
             <argument type="service" id="setono_sylius_cms.transfer.import_limit"/>
         </service>
 
-        <!-- Opens an export folder or zip; a zip unpacks to no more than transfer.max_unpacked_size -->
+        <!--
+        Opens an export folder or zip; a zip unpacks to no more than transfer.max_unpacked_size, and either reads each
+        JSON file up to a fixed cap, which has no config key
+        -->
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ExportSources" class="Setono\SyliusCMSPlugin\Transfer\Import\ExportSources">
             <argument>%setono_sylius_cms.transfer.max_unpacked_size%</argument>
+            <argument type="constant">Setono\SyliusCMSPlugin\Transfer\Import\ExportSources::MAX_JSON_FILE_SIZE</argument>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader" class="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader">

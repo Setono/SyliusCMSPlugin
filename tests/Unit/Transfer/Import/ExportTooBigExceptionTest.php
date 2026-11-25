@@ -37,4 +37,17 @@ final class ExportTooBigExceptionTest extends TestCase
         self::assertSame('The export zip unpacks to more than the import limit of 16 KB, more than its directory says.', $exception->getMessage());
         self::assertEquals(new TranslatableMessage('setono_sylius_cms.import.zip.over_limit', ['%limit%' => '16 KB']), $exception->reason);
     }
+
+    /**
+     * Reading it stops one byte past the cap, so only the cap is known
+     *
+     * @test
+     */
+    public function it_names_a_json_file_over_the_cap_on_each_json_file_an_import_reads(): void
+    {
+        $exception = ExportTooBigException::jsonFile('entries/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e.json', 16 * 1024 * 1024);
+
+        self::assertSame('The export\'s file entries/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e.json is over the import limit of 16 MB per JSON file.', $exception->getMessage());
+        self::assertEquals(new TranslatableMessage('setono_sylius_cms.import.json_file.over_limit', ['%path%' => 'entries/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e.json', '%limit%' => '16 MB']), $exception->reason);
+    }
 }

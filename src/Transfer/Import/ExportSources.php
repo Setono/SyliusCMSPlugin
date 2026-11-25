@@ -10,15 +10,26 @@ use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 /**
  * Opens an export folder or zip, as setono:cms:import and the Sylius fixture take either, and the zips uploaded on the
  * Transfer screen. A zip unpacks to no more than transfer.max_unpacked_size (ZipSource), while a folder, which isn't
- * unpacked, has no such limit. See "Media files" in docs/spec/transfer.md
+ * unpacked, has no such limit. Either reads each JSON file no further than one byte past MAX_JSON_FILE_SIZE, which
+ * refuses the import, as a JSON file is read whole into memory. See "Media files" in docs/spec/transfer.md
  */
 final readonly class ExportSources
 {
     /**
-     * @param int $maxUnpackedSize transfer.max_unpacked_size in bytes
+     * The cap on each JSON file an import reads, in bytes. It's fixed: the JSON file that grows with the size of the
+     * site, the manifest, lists a picked record in 52 bytes, so 16 MB holds about 320,000 of them, far more than an
+     * import holds in memory, which reads every entry it imports
      */
-    public function __construct(private int $maxUnpackedSize)
-    {
+    public const MAX_JSON_FILE_SIZE = 16 * 1024 * 1024;
+
+    /**
+     * @param int $maxUnpackedSize transfer.max_unpacked_size in bytes
+     * @param positive-int $maxJsonFileSize MAX_JSON_FILE_SIZE, which a test can lower
+     */
+    public function __construct(
+        private int $maxUnpackedSize,
+        private int $maxJsonFileSize = self::MAX_JSON_FILE_SIZE,
+    ) {
     }
 
     /**
@@ -27,7 +38,7 @@ final readonly class ExportSources
     public function open(string $path): ExportSourceInterface
     {
         if (is_dir($path)) {
-            $source = new DirectorySource($path);
+            $source = new DirectorySource($path, $this->maxJsonFileSize);
         } elseif (is_file($path) && is_readable($path)) {
             $source = $this->zip($path);
         } else {
@@ -46,6 +57,6 @@ final readonly class ExportSources
      */
     public function zip(string $file): ZipSource
     {
-        return new ZipSource($file, $this->maxUnpackedSize);
+        return new ZipSource($file, $this->maxUnpackedSize, $this->maxJsonFileSize);
     }
 }

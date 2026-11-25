@@ -23,9 +23,10 @@ use Symfony\Component\DomCrawler\Field\FileFormField;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
- * An import started in the admin takes media files of up to transfer.max_file_size, 1 KB here, and zips unpacking to up
- * to transfer.max_unpacked_size, 16 KB here. Its dry run on the Messenger worker refuses one over either, and the
- * import's page shows why. See "Media files" and "Who runs it" in docs/spec/transfer.md
+ * An import started in the admin takes media files of up to transfer.max_file_size, 1 KB here, zips unpacking to up to
+ * transfer.max_unpacked_size, 16 KB here, and JSON files of up to the cap on each, 4 KB here. Its dry run on the
+ * Messenger worker refuses one over any, and the import's page shows why. See "Media files" and "Who runs it" in
+ * docs/spec/transfer.md
  */
 final class ImportLimitsTest extends WebTestCase
 {
@@ -73,6 +74,23 @@ final class ImportLimitsTest extends WebTestCase
         self::assertSame('setono_sylius_cms.import.zip.too_big', $refusal->reason->getMessage());
         self::assertEquals(['%size%' => '20 KB', '%limit%' => '16 KB'], $refusal->reason->getParameters());
         self::assertStringContainsString('The export zip unpacks to 20 KB, over the import limit of 16 KB.', $page);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_export_with_a_json_file_over_the_cap_and_stores_why(): void
+    {
+        $export = $this->copyOfFixture();
+        self::growJsonTo($export, 'entries/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e.json', 4 * 1024 + 1);
+
+        [$refusal, $page] = $this->refusalOf($this->zipOf($export));
+
+        self::assertNull($refusal->uuid);
+        self::assertInstanceOf(TranslatableMessage::class, $refusal->reason);
+        self::assertSame('setono_sylius_cms.import.json_file.over_limit', $refusal->reason->getMessage());
+        self::assertEquals(['%path%' => 'entries/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e.json', '%limit%' => '4 KB'], $refusal->reason->getParameters());
+        self::assertStringContainsString('The export\'s file entries/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e.json is over the import limit of 4 KB per JSON file.', $page);
     }
 
     /**

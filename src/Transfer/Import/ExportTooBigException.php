@@ -8,10 +8,11 @@ use Setono\SyliusCMSPlugin\Media\FileSize;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
- * An export zip that unpacks to more than transfer.max_unpacked_size, by its directory before anything is extracted, or
- * by what's extracted, since a zip's headers can lie. It refuses the import, which names the total, or only the limit
- * for a zip whose directory understates what it unpacks to, as extracting stops one byte past it. Its message says the
- * same as its reason, in English, for a log. See "Media files" in docs/spec/transfer.md
+ * An export that holds more than an import takes: a zip that unpacks to more than transfer.max_unpacked_size, by its
+ * directory before anything is extracted, or by what's extracted, since a zip's headers can lie, or a JSON file over
+ * ExportSources::MAX_JSON_FILE_SIZE. It refuses the import, which names the zip's total, or only the limit for a zip
+ * whose directory understates what it unpacks to, as extracting stops one byte past it, or the JSON file. Its message
+ * says the same as its reason, in English, for a log. See "Media files" in docs/spec/transfer.md
  */
 final class ExportTooBigException extends \RuntimeException
 {
@@ -43,6 +44,20 @@ final class ExportTooBigException extends \RuntimeException
         return new self(
             new TranslatableMessage('setono_sylius_cms.import.zip.over_limit', ['%limit%' => FileSize::format($limit)]),
             'The export zip unpacks to more than the import limit of %limit%, more than its directory says.',
+        );
+    }
+
+    /**
+     * A JSON file of the export over the cap on each JSON file an import reads, by a zip's directory or by what's read,
+     * which stops one byte past the cap
+     *
+     * @param string $path the file's, such as entries/<uuid>.json
+     */
+    public static function jsonFile(string $path, int $limit): self
+    {
+        return new self(
+            new TranslatableMessage('setono_sylius_cms.import.json_file.over_limit', ['%path%' => $path, '%limit%' => FileSize::format($limit)]),
+            'The export\'s file %path% is over the import limit of %limit% per JSON file.',
         );
     }
 }

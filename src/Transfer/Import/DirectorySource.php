@@ -8,12 +8,18 @@ use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 
 /**
  * Reads an export from a folder on disk. A path that would leave the folder, through "..", isn't one of its files, and
- * a link in it refuses an import
+ * a link in it refuses an import. It reads a JSON file no further than one byte past the cap on each JSON file, as a
+ * zip does. See "Media files" in docs/spec/transfer.md
  */
 final readonly class DirectorySource implements ExportSourceInterface
 {
-    public function __construct(private string $directory)
-    {
+    /**
+     * @param positive-int $maxJsonFileSize the cap on each JSON file it reads, in bytes
+     */
+    public function __construct(
+        private string $directory,
+        private int $maxJsonFileSize = ExportSources::MAX_JSON_FILE_SIZE,
+    ) {
     }
 
     public function has(string $path): bool
@@ -26,9 +32,14 @@ final readonly class DirectorySource implements ExportSourceInterface
     public function read(string $path): string
     {
         $file = $this->file($path);
-        $contents = null === $file || !is_file($file) ? false : @file_get_contents($file);
+        // One byte past the cap tells a file over it
+        $contents = null === $file || !is_file($file) ? false : @file_get_contents($file, length: $this->maxJsonFileSize < \PHP_INT_MAX ? $this->maxJsonFileSize + 1 : $this->maxJsonFileSize);
         if (false === $contents) {
             throw new InvalidExportException(sprintf('The export has no readable file %s', $path));
+        }
+
+        if (strlen($contents) > $this->maxJsonFileSize) {
+            throw ExportTooBigException::jsonFile($path, $this->maxJsonFileSize);
         }
 
         return $contents;

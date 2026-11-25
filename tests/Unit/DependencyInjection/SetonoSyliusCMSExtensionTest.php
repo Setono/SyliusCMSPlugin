@@ -629,6 +629,8 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('setono_sylius_cms.transfer.import_limit', 0, '%setono_sylius_cms.transfer.max_file_size%');
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(ImportedFileChecker::class, 1, new Reference('setono_sylius_cms.transfer.import_limit'));
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(ExportSources::class, 0, '%setono_sylius_cms.transfer.max_unpacked_size%');
+        // The cap on each JSON file an import reads is fixed, with no config key
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ExportSources::class, 1, 16 * 1024 * 1024);
     }
 
     /**

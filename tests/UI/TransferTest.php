@@ -160,6 +160,33 @@ final class TransferTest extends UITestCase
     }
 
     /**
+     * The zip's directory says the page's JSON file is 20 MB, over the 16 MB an import reads of each JSON file, though
+     * the zip is under transfer.max_unpacked_size, and the Messenger worker's dry run refuses it, naming the file, before
+     * reading it. See "Media files" in docs/spec/transfer.md
+     *
+     * @test
+     */
+    public function it_shows_an_admin_user_why_an_import_of_an_export_with_a_json_file_over_the_cap_refused(): void
+    {
+        self::forgetSentMessages();
+        $this->signInAsAdmin();
+        $zip = $this->zipOf(self::exportFixture());
+        self::declareSize($zip, 'entries/' . self::PAGE . '.json', 20 * 1024 * 1024);
+
+        $browser = $this->visit('/admin/cms/transfer');
+        $import = $browser->getByRole('region', ['name' => 'Import']);
+        $import->getByLabel('Export zip')->setInputFiles($zip);
+        $import->getByRole('button', ['name' => 'Upload'])->click();
+
+        Expect::locator($browser->locator('[data-cms-import-progress]'))->toContainText('Waiting for the Messenger worker to check the export.');
+        self::assertSame(1, self::consumeMessages());
+
+        Expect::locator($browser->locator('[data-cms-import-result]'))->toContainText('The import refused. Nothing changed.', new AssertionOptions(timeoutMs: 15_000));
+        Expect::locator($browser->locator('[data-cms-import-reasons]'))->toContainText('The export\'s file entries/' . self::PAGE . '.json is over the import limit of 16 MB per JSON file.');
+        Expect::locator($browser->locator('form[data-cms-import-confirm]'))->toHaveCount(0);
+    }
+
+    /**
      * Lets the page's events in until the response of this path has come in, or 10 seconds have passed. playwright-php
      * hands the test a page's events only while it waits for the answer to a command, and a click that leads to a
      * download leaves no page to wait for

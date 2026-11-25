@@ -114,6 +114,21 @@ trait Imports
     }
 
     /**
+     * Grows a JSON file of a copy of the committed export to the size, in bytes, with whitespace after its JSON, which
+     * keeps it valid
+     *
+     * @param string $path the file's in the export, such as entries/<uuid>.json
+     */
+    private static function growJsonTo(string $export, string $path, int $size): void
+    {
+        $file = $export . '/' . $path;
+        $padding = $size - (int) filesize($file);
+        self::assertGreaterThanOrEqual(0, $padding, sprintf('%s is already bigger', $path));
+        file_put_contents($file, str_repeat(' ', $padding), \FILE_APPEND);
+        clearstatcache(true, $file);
+    }
+
+    /**
      * A file that brings what the committed export's files add up to to the size, in bytes
      */
     private static function exportPadding(int $size): string

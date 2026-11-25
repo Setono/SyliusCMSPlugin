@@ -245,6 +245,9 @@ setono_sylius_cms:
             stale: '%title% changed here at %changed_at%, after the export''s copy from %exported_at%.'
             url_clash: '%title% would have the URL %url%, which %other% has in %channels%.'
         embed_code: 'Embed code is switched off in this shop, so %title% can''t bring in an Embed code block that isn''t published here with the same key and code.'
+        # A JSON file of an export over ExportSources::MAX_JSON_FILE_SIZE, by a zip's directory or by what's read
+        json_file:
+            over_limit: 'The export''s file %path% is over the import limit of %limit% per JSON file.'
         # Why a media item's file in an export is refused, before the checks an upload goes through. See "Media files"
         # in docs/spec/transfer.md
         media_file:

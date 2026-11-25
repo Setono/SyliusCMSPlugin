@@ -29,14 +29,14 @@ use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
- * Step 1 of an import: it reads every file of the export through Format\ExportFormat, runs the upgraders on the
- * entries and editor presets, and checks that the code knows everything they use. A content type, layout or block type
- * the code doesn't have, or one saved with a newer version than the code's, is a reason to refuse, which the plan
- * lists. A disabled one imports like any other. What isn't in the export format makes the export one it can't read.
- * It checks the export as untrusted input too: a path that doesn't resolve inside its root refuses it, and so does a
- * media item's file that fails the checks an upload goes through (ImportedFileChecker), naming the media item. A zip
- * that unpacks to more than it may stops the read (ExportTooBigException). See
- * "What an import does", "Code the target must have" and "Media files" in docs/spec/transfer.md
+ * Step 1 of an import: it reads every file of the export through Format\ExportFormat, runs the upgraders on the entries
+ * and editor presets, and checks that the code knows everything they use. A content type, layout or block type the code
+ * doesn't have, or one saved with a newer version than the code's, is a reason to refuse, which the plan lists. A
+ * disabled one imports like any other. What isn't in the export format makes the export one it can't read. It checks
+ * the export as untrusted input too: a path that doesn't resolve inside its root refuses it, and so does a media item's
+ * file that fails the checks an upload goes through (ImportedFileChecker), naming the media item. A zip that unpacks to
+ * more than it may, or a JSON file over the cap on each, stops the read (ExportTooBigException). See "What an import
+ * does", "Code the target must have" and "Media files" in docs/spec/transfer.md
  */
 final readonly class ExportReader
 {
@@ -54,7 +54,8 @@ final readonly class ExportReader
     /**
      * @throws InvalidExportException when the export has no manifest of a format this code reads, or a file isn't in
      *                                the export format
-     * @throws ExportTooBigException when a zip unpacks to more than transfer.max_unpacked_size
+     * @throws ExportTooBigException when a zip unpacks to more than transfer.max_unpacked_size, or a JSON file is over
+     *                               the cap on each
      */
     public function read(ExportSourceInterface $source): ReadExport
     {

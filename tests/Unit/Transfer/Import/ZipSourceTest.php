@@ -99,6 +99,72 @@ final class ZipSourceTest extends TestCase
     }
 
     /**
+     * The file holds 2 bytes, but its directory says 2000, so only its directory can refuse it
+     *
+     * @test
+     */
+    public function it_refuses_a_json_file_whose_directory_says_it_is_over_the_cap_before_reading_it(): void
+    {
+        $zip = $this->zip(['entries/a.json' => '{}']);
+        self::declareSize($zip, 'entries/a.json', 2000);
+        $source = new ZipSource($zip, maxJsonFileSize: 1024);
+
+        self::assertSame(self::MANIFEST, $source->read('manifest.json'));
+        $reason = self::refusal(static fn () => $source->read('entries/a.json'));
+
+        self::assertSame('setono_sylius_cms.import.json_file.over_limit', $reason->getMessage());
+        self::assertSame(['%path%' => 'entries/a.json', '%limit%' => '1 KB'], $reason->getParameters());
+    }
+
+    /**
+     * Its directory and the file's local header say it's 100 bytes, which a zip takes no one's word for. It holds 1 MB,
+     * which is read no further than one byte past the cap, and counts toward what the zip unpacks to
+     *
+     * @test
+     */
+    public function it_stops_reading_a_json_file_whose_headers_understate_its_size_once_it_is_over_the_cap(): void
+    {
+        $zip = $this->zip(['entries/a.json' => str_repeat(' ', 1024 * 1024), 'media/a/banner.png' => str_repeat('a', 100)]);
+        self::declareSize($zip, 'entries/a.json', 100);
+        $source = new ZipSource($zip, 1024 + 1 + 99, maxJsonFileSize: 1024);
+
+        $reason = self::refusal(static fn () => $source->read('entries/a.json'));
+        self::assertSame('setono_sylius_cms.import.json_file.over_limit', $reason->getMessage());
+        self::assertSame(['%path%' => 'entries/a.json', '%limit%' => '1 KB'], $reason->getParameters());
+
+        // It read 1025 bytes of it, so the zip may unpack 99 more, and extracting the banner stops one byte past them
+        $target = self::target();
+        self::assertSame('setono_sylius_cms.import.zip.over_limit', self::refusal(static fn () => $source->extract('media/a/banner.png', $target, 10_000))->getMessage());
+        self::assertSame(100, ftell($target));
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_a_json_file_of_exactly_the_cap(): void
+    {
+        $source = new ZipSource($this->zip(['entries/a.json' => str_repeat(' ', 1024)]), maxJsonFileSize: 1024);
+
+        self::assertSame(str_repeat(' ', 1024), $source->read('entries/a.json'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_to_read_a_file_that_does_not_match_its_checksum_as_one_it_cannot_read(): void
+    {
+        $zip = $this->zip(['entries/a.json' => str_repeat('abcdefgh', 1024)], \ZipArchive::CM_STORE);
+        $data = (string) file_get_contents($zip);
+        $offset = (int) strpos($data, str_repeat('abcdefgh', 1024));
+        $data[$offset + 10] = 'X';
+        file_put_contents($zip, $data);
+
+        $this->expectException(InvalidExportException::class);
+
+        (new ZipSource($zip))->read('entries/a.json');
+    }
+
+    /**
      * @test
      */
     public function it_refuses_to_extract_a_file_that_does_not_match_its_checksum_as_one_it_cannot_read(): void

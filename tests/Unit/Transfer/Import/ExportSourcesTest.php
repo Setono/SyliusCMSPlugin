@@ -92,6 +92,28 @@ final class ExportSourcesTest extends TestCase
     }
 
     /**
+     * The committed export's manifest is 294 bytes
+     *
+     * @test
+     */
+    public function it_opens_a_folder_and_a_zip_that_read_no_json_file_over_the_cap(): void
+    {
+        $sources = new ExportSources(\PHP_INT_MAX, 293);
+
+        $zip = $this->zipOfFixture();
+        foreach ([$sources->open(self::FIXTURE), $sources->open($zip), $sources->zip($zip)] as $source) {
+            try {
+                $source->read('manifest.json');
+                self::fail('It read a JSON file over the cap');
+            } catch (ExportTooBigException $e) {
+                self::assertSame('setono_sylius_cms.import.json_file.over_limit', $e->reason->getMessage());
+            }
+        }
+
+        self::assertSame(file_get_contents(self::FIXTURE . '/manifest.json'), (new ExportSources(\PHP_INT_MAX, 294))->open($zip)->read('manifest.json'));
+    }
+
+    /**
      * @test
      */
     public function it_never_reads_a_file_outside_an_export_folder(): void

@@ -14,9 +14,9 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
 
 /**
- * An import takes media files of up to transfer.max_file_size, 1 KB here, and zips unpacking to up to
- * transfer.max_unpacked_size, 16 KB here. Going over either refuses it with exit 1, naming the file or the zip's total.
- * See "Media files" in docs/spec/transfer.md
+ * An import takes media files of up to transfer.max_file_size, 1 KB here, zips unpacking to up to
+ * transfer.max_unpacked_size, 16 KB here, and JSON files of up to the cap on each, 4 KB here. Going over any refuses it
+ * with exit 1, naming the file or the zip's total. See "Media files" in docs/spec/transfer.md
  */
 final class ImportLimitsTest extends KernelTestCase
 {
@@ -27,6 +27,9 @@ final class ImportLimitsTest extends KernelTestCase
 
     /** The committed export's picked page */
     private const PAGE = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e';
+
+    /** Its JSON file, 2126 bytes */
+    private const PAGE_FILE = 'entries/' . self::PAGE . '.json';
 
     protected static function getKernelClass(): string
     {
@@ -91,6 +94,39 @@ final class ImportLimitsTest extends KernelTestCase
         $tester = self::import(['path' => $export]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+    }
+
+    /**
+     * @test
+     */
+    public function it_imports_an_export_with_a_json_file_of_exactly_the_cap(): void
+    {
+        $export = $this->copyOfFixture();
+        self::growJsonTo($export, self::PAGE_FILE, 4 * 1024);
+
+        foreach ([$export, $this->zipOf($export)] as $path) {
+            $tester = self::import(['path' => $path, '--dry-run' => true]);
+
+            self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_export_with_a_json_file_over_the_cap_naming_it(): void
+    {
+        $export = $this->copyOfFixture();
+        self::growJsonTo($export, self::PAGE_FILE, 4 * 1024 + 1);
+
+        foreach ([$export, $this->zipOf($export)] as $path) {
+            $tester = self::import(['path' => $path]);
+
+            self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+            self::assertStringContainsString('The import refused. Nothing changed.', self::display($tester));
+            self::assertStringContainsString('The export\'s file entries/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e.json is over the import limit of 4 KB per JSON file.', self::display($tester));
+            self::assertNull(self::entries()->findOneByUuid(self::PAGE), 'Nothing is imported');
+        }
     }
 
     private static function entries(): EntryRepositoryInterface

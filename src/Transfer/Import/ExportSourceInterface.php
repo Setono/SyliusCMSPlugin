@@ -16,8 +16,12 @@ interface ExportSourceInterface
     public function has(string $path): bool;
 
     /**
+     * Reads a JSON file of the export whole, no further than one byte past the cap on each JSON file an import reads,
+     * ExportSources::MAX_JSON_FILE_SIZE
+     *
      * @throws InvalidExportException when there's no such file, or it can't be read
-     * @throws ExportTooBigException when a zip unpacks to more than transfer.max_unpacked_size
+     * @throws ExportTooBigException when the file is over the cap, or a zip unpacks to more than
+     *                               transfer.max_unpacked_size
      */
     public function read(string $path): string;
 

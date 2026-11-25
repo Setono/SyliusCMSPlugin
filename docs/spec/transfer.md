@@ -186,7 +186,7 @@ The original file sits beside it at `media/<uuid>/<filename>`.
 
 ## What an import does
 
-1. **It reads, checks and upgrades.** It checks the zip and every media file ([Media files](#media-files)). Content type, layout and block type upgraders run on the export's entries and presets as they're read ([Content model](content-model.md#schema-changes)).
+1. **It reads, checks and upgrades.** It checks the zip, the size of each JSON file and every media file ([Media files](#media-files)). Content type, layout and block type upgraders run on the export's entries and presets as they're read ([Content model](content-model.md#schema-changes)).
 2. **It plans.** It works out what's created, updated, unchanged or left alone, the conflicts, the homepage changes and the unresolved references. A record identical to the target's is marked unchanged first, before the [stale check](#stale-records), so it's never a conflict. With `--publish`, the plan also runs publish validation on every entry it would publish, and lists each that fails. A dry run shows the plan, and applies it in a transaction it rolls back, so it checks everything the real run would and changes nothing.
 3. **It applies the plan all or nothing**, in one database transaction. Any conflict or error means nothing changes. The events of what it writes, such as `EntrySettingsChanged` and `EntryPublished`, are dispatched once that transaction commits, and never for an import that rolls back. Files are written to storage only after the plan is complete, and the delayed delete of a replaced file is dispatched after the transaction commits ([Media](media.md#replacing-a-file)).
 
@@ -208,6 +208,7 @@ An export is untrusted input: any admin user can import one. So every file in it
 
 - **The zip.** Every entry must resolve inside the export's root. An absolute path, a `..` segment or a link refuses the import, and so does a link in an export folder.
 - **What a zip unpacks to.** A zip unpacks to no more than `transfer.max_unpacked_size`, 1 GB by default ([Extending](extending.md#configuration)). That's checked from the zip's directory before anything is extracted, and again while extracting, since a zip's headers can lie: extracting stops one byte past the limit. A zip whose directory says it's over the limit refuses the import, naming its total. One whose directory understates its size refuses it once extracting passes the limit, naming the limit and saying the zip unpacks to more than its directory says, as its total isn't known. A folder isn't unpacked, so it has no such limit.
+- **Each JSON file.** An import reads a JSON file whole into memory, so it reads none over 16 MB, from a zip or a folder. That's checked from the zip's directory before the file is read, and again while reading it, since a zip's headers can lie: reading stops one byte past the cap. A JSON file over it refuses the import, naming the file. The cap is fixed, with no config key: the one JSON file that grows with the size of the site, the manifest, lists about 320,000 picked records in 16 MB, more than an import can hold in memory, as it reads every entry it imports.
 - **The filename.** `filename` must be a plain basename: no `/`, `\`, `..` or control characters. Anything else refuses the import.
 - **The checksum.** The file's SHA-256 must match `checksum`. A mismatch refuses the import.
 - **The file itself.** Its type is checked against `media.types` and its size against `transfer.max_file_size`, 100 MB by default, or `media.max_upload_size` when that's smaller. It's extracted no further than one byte past that limit, so a file over it can't fill the disk. PHP's own `upload_max_filesize` and `post_max_size` don't lower the limit, as they do an upload's: the import doesn't upload the file through PHP, and the CLI or worker that runs it often has much lower limits than the web server. Its kind, MIME type, size and dimensions are read from the file, and the values in the JSON are ignored, so metadata of another kind, such as alt text in the JSON of what's a document, is left out. SVG is sanitised.
@@ -275,7 +276,7 @@ setono:cms:import <path> [--dry-run] [--publish] [--overwrite]
   | Code | Meaning |
   | --- | --- |
   | `0` | It applied, or the dry run would. |
-  | `1` | It refused for a reason `--overwrite` doesn't fix: unknown code, a URL clash, a failed publish, a file that fails its checks, a zip that unpacks to more than `transfer.max_unpacked_size`, an `embed_code` block while it's off, or an entry whose UUID is an entry of another content type in the target. |
+  | `1` | It refused for a reason `--overwrite` doesn't fix: unknown code, a URL clash, a failed publish, a file that fails its checks, a zip that unpacks to more than `transfer.max_unpacked_size`, a JSON file over 16 MB, an `embed_code` block while it's off, or an entry whose UUID is an entry of another content type in the target. |
   | `2` (`Command::INVALID`) | `<path>` isn't a readable export folder or zip, its `format` is unknown, a file in it isn't in the export format, or a media item's file is missing. |
   | `3` | It refused only because of conflicts that `--overwrite` would resolve. |
 
