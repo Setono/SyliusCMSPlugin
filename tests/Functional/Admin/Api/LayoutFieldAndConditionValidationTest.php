@@ -83,8 +83,8 @@ final class LayoutFieldAndConditionValidationTest extends BuilderApiTestCase
     }
 
     /**
-     * A deleted record in a condition is a broken reference, which the admin flags, not a value publish refuses (ADR
-     * 0002). See "Validation" in docs/spec/publishing.md
+     * A deleted record in a block's visibility condition is a broken reference, which the admin flags, not a value
+     * publish refuses (ADR 0002). See "Validation" in docs/spec/publishing.md
      *
      * @test
      */
@@ -110,6 +110,35 @@ final class LayoutFieldAndConditionValidationTest extends BuilderApiTestCase
         self::assertResponseIsSuccessful();
         self::assertTrue(self::reloadPage($page)->isPublished());
         self::assertEquals(new ProblemCount(2, 0), self::storedCount($page));
+    }
+
+    /**
+     * Only a block's visibility condition keeps a channel the store no longer has: a field that picks from the store's
+     * channels refuses one, as it refuses any choice it no longer offers. See "Validation" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_refuses_to_publish_a_layout_field_naming_a_deleted_channel(): void
+    {
+        $client = self::createClient();
+        self::createChannel('OUTLET');
+        $page = self::createPage('Outlet', 'outlet', 'Hello');
+        $layout = new StoredLayout('campaign', 1);
+        $layout->setValue('headline', 'en_US', 'Outlet days');
+        $layout->setValue('channel', null, 'OUTLET');
+        $page->setBlockTree(new StoredTree($layout, $page->getBlockTree()->blocks));
+        self::flush();
+        self::delete('sylius.repository.channel', 'sylius.manager.channel', 'OUTLET');
+        $csrfToken = self::openBuilder($client, $page);
+        $errors = [['block' => null, 'field' => 'channel', 'locale' => null, 'message' => 'The value you selected is not a valid choice.', 'layout' => true]];
+
+        self::assertSame(['errors' => $errors], self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/validate', $page->getUuid())));
+
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/publish', $page->getUuid()), null, $csrfToken);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['error' => 'One error needs fixing', 'errors' => $errors], $response);
+        self::assertFalse(self::reloadPage($page)->isPublished());
     }
 
     private static function delete(string $repositoryId, string $managerId, string $code): void

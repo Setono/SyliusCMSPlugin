@@ -100,11 +100,12 @@ The admin flags each one as a broken reference ([Admin](admin.md#problems)), and
 
 A visibility condition that names a record the store no longer has keeps its dangling code or UUID ([ADR 0002](../adr/0002-references-by-code-and-uuid.md)) and no longer counts it: "is one of" no longer matches through it, and "is not one of" no longer excludes anything through it. Publish doesn't refuse it ([Publishing](publishing.md#validation)). The admin flags it as a broken reference, and counts the entries that may name it again when it's deleted or its code or UUID changes ([Admin](admin.md#problems)). That covers:
 
-- a channel or a locale in a parameter that picks from the store's channels or locales, such as the channel and locale kinds' own
-- a customer group in a customer group condition ([Deleted customer groups](#deleted-customer-groups))
+- a channel, a locale or a customer group in a parameter that picks from the store's channels, locales or customer groups, such as the channel, locale and customer group kinds' own, in a shipped kind or a project's own ([Deleted customer groups](#deleted-customer-groups))
 - a product, taxon, entry or media item that a parameter's field type refers to, such as the product kind's products, in a shipped kind or a project's own
 
 A project's kind whose Choice parameter picks from records of its own, through its own choices provider ([Extending](extending.md#field-types)), isn't covered: a value its provider no longer gives doesn't fit the kind, so publish refuses it, and the admin doesn't flag it.
+
+Only a block's visibility condition keeps a channel, locale or customer group the store no longer has. A field that picks from the store's channels, locales or customer groups, in a block, a layout or an entry, refuses one on publish, as it refuses any choice it no longer offers ([Content model](content-model.md#fields)). So does a placement's page scope when it's saved, as the admin doesn't flag one there ([Slots](slots.md#page-scopes)).
 
 ## Caching contract
 

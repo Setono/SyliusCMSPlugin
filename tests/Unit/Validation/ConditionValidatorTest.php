@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Field\ListFieldHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry;
 use Setono\SyliusCMSPlugin\Targeting\ChannelChoicesProvider;
 use Setono\SyliusCMSPlugin\Targeting\CustomerGroupChoicesProvider;
 use Setono\SyliusCMSPlugin\Targeting\LocaleChoicesProvider;
@@ -79,9 +80,9 @@ final class ConditionValidatorTest extends TestCase
     }
 
     /**
-     * A code the store no longer has is a broken reference, which the admin flags, not a value that doesn't fit, so a
-     * deleted channel, locale or customer group doesn't block publish (ADR 0002). See "Validation" in
-     * docs/spec/publishing.md
+     * In a block's visibility condition, a code the store no longer has is a broken reference, which the admin flags,
+     * not a value that doesn't fit, so a deleted channel, locale or customer group doesn't block publish (ADR 0002).
+     * See "Validation" in docs/spec/publishing.md
      *
      * @test
      */
@@ -90,6 +91,24 @@ final class ConditionValidatorTest extends TestCase
         self::assertSame([], $this->validator()->validate(['kind' => 'channel', 'negate' => false, 'params' => ['channels' => ['WEB', 'OUTLET']]]));
         self::assertSame([], $this->validator()->validate(['kind' => 'locale', 'negate' => true, 'params' => ['locales' => ['sv_SE']]]));
         self::assertSame([], $this->validator()->validate(['kind' => 'customer_group', 'negate' => false, 'params' => ['groups' => ['@guest', 'wholesale']]]));
+    }
+
+    /**
+     * A page scope's parameters are checked on their own, where nothing flags a deleted record yet, so they refuse a
+     * channel, locale or customer group the store no longer has, as a block's field does
+     *
+     * @test
+     */
+    public function it_refuses_a_channel_locale_or_customer_group_the_store_no_longer_has_in_parameters_checked_on_their_own(): void
+    {
+        foreach ([['channel', 'channels', ['WEB', 'OUTLET']], ['locale', 'locales', ['sv_SE']], ['customer_group', 'groups', ['@guest', 'wholesale']]] as [$kind, $param, $value]) {
+            self::assertEquals(
+                [new ValidationError(null, $param, null, 'The value you selected is not a valid choice.')],
+                $this->validator()->validateParams(self::kinds()->get($kind), [$param => $value]),
+            );
+        }
+
+        self::assertSame([], $this->validator()->validateParams(self::kinds()->get('channel'), ['channels' => ['WEB']]));
     }
 
     /**
@@ -152,23 +171,17 @@ final class ConditionValidatorTest extends TestCase
     private function validator(): ConditionValidator
     {
         $translator = BlockTreeValidatorTest::translator();
-        $providers = $this->storeChoices();
+        $choiceHandler = new ChoiceHandler($translator, $this->storeChoices());
         $handlers = new FieldHandlerLocator(new ServiceLocator([
-            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator, $providers),
+            ChoiceHandler::class => static fn (): ChoiceHandler => $choiceHandler,
             DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
             ListFieldHandler::class => static fn (): ListFieldHandler => Sources::listFieldHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
         ]));
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
-        $registry = Conditions::registry([
-            'product_in_taxon' => new ProductInTaxonKind(),
-            'channel' => new ChannelKind(),
-            'locale' => new LocaleKind(),
-            'customer_group' => new CustomerGroupKind(),
-        ]);
 
         return new ConditionValidator(
-            $registry,
+            self::kinds(),
             new FieldValidator(
                 new FieldConstraints($handlers, $validator),
                 new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'))),
@@ -176,8 +189,19 @@ final class ConditionValidatorTest extends TestCase
                 $translator,
                 Bindings::validator(),
             ),
+            $choiceHandler,
             $translator,
         );
+    }
+
+    private static function kinds(): ConditionKindRegistry
+    {
+        return Conditions::registry([
+            'product_in_taxon' => new ProductInTaxonKind(),
+            'channel' => new ChannelKind(),
+            'locale' => new LocaleKind(),
+            'customer_group' => new CustomerGroupKind(),
+        ]);
     }
 
     /**

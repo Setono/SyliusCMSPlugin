@@ -17,7 +17,8 @@ use Symfony\Component\Translation\TranslatableMessage;
  * Holds a page scope to the slot it's for. Its conditions name what's wrong by their number, from 1, and their kind's
  * label. Parameter values are checked as publish checks a block's visibility conditions (ConditionValidator): by their
  * fields, so a required parameter, such as a product condition's products, must have a value, and together, against
- * the constraints on the kind's parameters class
+ * the constraints on the kind's parameters class. Unlike a block's condition, a page scope refuses a channel, locale or
+ * customer group the store no longer has, as nothing flags it there yet
  *
  * @internal
  */

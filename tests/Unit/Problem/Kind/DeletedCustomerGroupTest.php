@@ -8,16 +8,21 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Group;
 use Setono\SyliusCMSPlugin\Block\Heading;
+use Setono\SyliusCMSPlugin\Condition\Kind\ChannelKind;
+use Setono\SyliusCMSPlugin\Condition\Kind\CustomerGroupKind;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\PricedFor;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Component\Customer\Model\CustomerGroup;
@@ -55,15 +60,21 @@ final class DeletedCustomerGroupTest extends TestCase
     }
 
     /**
-     * A stored condition without its negate switch is read as "is one of", which the tree's serializer fills in
+     * A block's visibility condition keeps a deleted group in any parameter that picks from the store's customer
+     * groups, such as a project's kind's, so it's flagged there too. See "Deleted records in conditions" in
+     * docs/spec/targeting.md
      *
      * @test
      */
-    public function it_words_a_condition_without_its_negate_switch_as_one_that_matches(): void
+    public function it_finds_a_deleted_group_in_any_kinds_parameter_that_picks_from_the_stores_customer_groups(): void
     {
-        $page = self::page(self::block(self::A, 'heading', [['kind' => 'customer_group', 'params' => ['groups' => ['gone']]]]));
+        $page = self::page(self::block(self::A, 'heading', [
+            ['kind' => 'priced_for', 'negate' => true, 'params' => ['group' => 'gone']],
+            ['kind' => 'priced_for', 'negate' => false, 'params' => ['group' => 'wholesale']],
+            ['kind' => 'priced_for', 'negate' => false, 'params' => ['group' => ['old']]],
+        ]));
 
-        self::assertEquals([self::inBlock($page, self::A, 'gone', new TranslatableMessage('setono_sylius_cms.block_type.heading'))], [...$this->kind()->findIn($page)]);
+        self::assertEquals([self::inBlock($page, self::A, 'gone', new TranslatableMessage('setono_sylius_cms.block_type.heading'), negated: true)], [...$this->kind()->findIn($page)]);
     }
 
     /**
@@ -84,13 +95,16 @@ final class DeletedCustomerGroupTest extends TestCase
     }
 
     /**
+     * A condition that isn't in the stored condition format, such as one whose kind isn't a code, or of a kind the code
+     * no longer has, isn't read
+     *
      * @test
      */
     public function it_finds_nothing_when_every_group_exists_or_is_guests_or_customers_without_a_group(): void
     {
         $page = self::page(
             self::block(self::A, 'heading', [self::groups(['wholesale', '@guest', '@no_group']), self::groups(['wholesale'], kind: 'channel')]),
-            self::block(self::B, 'heading', [['kind' => 'customer_group', 'negate' => false, 'params' => ['groups' => 'gone']], ['kind' => 'customer_group', 'negate' => false, 'params' => 'gone'], ['kind' => 'customer_group', 'negate' => false]]),
+            self::block(self::B, 'heading', [['kind' => 'customer_group', 'negate' => false, 'params' => ['groups' => 'gone']], ['kind' => 'customer_group', 'negate' => false, 'params' => 'gone'], ['kind' => 'customer_group', 'negate' => false], ['kind' => 'Customer group', 'negate' => false, 'params' => ['groups' => ['gone']]], ['kind' => 'pricing_tier', 'negate' => false, 'params' => ['groups' => ['gone']]]]),
         );
         ChannelsAndAudience::modifier()->setAudience($page, Audience::only('@guest', 'retail'));
 
@@ -106,7 +120,7 @@ final class DeletedCustomerGroupTest extends TestCase
     {
         $repository = $this->repository();
         $repository->findAll()->shouldBeCalledTimes(2);
-        $kind = new DeletedCustomerGroup($repository->reveal(), self::blockTypes(), $this->prophesize(EntryRepositoryInterface::class)->reveal());
+        $kind = new DeletedCustomerGroup($repository->reveal(), self::blockTypes(), self::conditionKinds(), $this->prophesize(EntryRepositoryInterface::class)->reveal());
 
         [...$kind->findIn(self::page())];
         [...$kind->findIn(self::page(self::block(self::A, 'heading', [self::groups(['gone'])])))];
@@ -125,7 +139,7 @@ final class DeletedCustomerGroupTest extends TestCase
         $page = new Page();
         $entries = $this->prophesize(EntryRepositoryInterface::class);
         $entries->findByCustomerGroupCodes(['wholesale', 'retail'])->willReturn([$page]);
-        $kind = new DeletedCustomerGroup($this->repository()->reveal(), self::blockTypes(), $entries->reveal());
+        $kind = new DeletedCustomerGroup($this->repository()->reveal(), self::blockTypes(), self::conditionKinds(), $entries->reveal());
 
         self::assertSame([CustomerGroupInterface::class], DeletedCustomerGroup::getReferencedClasses());
         self::assertSame([$page], [...$kind->findEntriesReferencing([self::customerGroup('wholesale'), self::customerGroup(null), self::customerGroup('retail')])]);
@@ -138,7 +152,7 @@ final class DeletedCustomerGroupTest extends TestCase
     {
         $entries = $this->prophesize(EntryRepositoryInterface::class);
         $entries->findByCustomerGroupCodes([])->shouldNotBeCalled();
-        $kind = new DeletedCustomerGroup($this->repository()->reveal(), self::blockTypes(), $entries->reveal());
+        $kind = new DeletedCustomerGroup($this->repository()->reveal(), self::blockTypes(), self::conditionKinds(), $entries->reveal());
 
         self::assertSame([], [...$kind->findEntriesReferencing([self::customerGroup(null), new \stdClass()])]);
     }
@@ -154,7 +168,7 @@ final class DeletedCustomerGroupTest extends TestCase
         $repository->findAll()->shouldBeCalledTimes(2);
         $entries = $this->prophesize(EntryRepositoryInterface::class);
         $entries->findByCustomerGroupCodes(['gone'])->willReturn([]);
-        $kind = new DeletedCustomerGroup($repository->reveal(), self::blockTypes(), $entries->reveal());
+        $kind = new DeletedCustomerGroup($repository->reveal(), self::blockTypes(), self::conditionKinds(), $entries->reveal());
         $page = self::page(self::block(self::A, 'heading', [self::groups(['gone'])]));
 
         [...$kind->findIn($page)];
@@ -214,7 +228,7 @@ final class DeletedCustomerGroupTest extends TestCase
 
     private function kind(): DeletedCustomerGroup
     {
-        return new DeletedCustomerGroup($this->repository()->reveal(), self::blockTypes(), $this->prophesize(EntryRepositoryInterface::class)->reveal());
+        return new DeletedCustomerGroup($this->repository()->reveal(), self::blockTypes(), self::conditionKinds(), $this->prophesize(EntryRepositoryInterface::class)->reveal());
     }
 
     /**
@@ -239,5 +253,10 @@ final class DeletedCustomerGroupTest extends TestCase
     private static function blockTypes(): BlockTypeRegistry
     {
         return new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class], new FieldReader());
+    }
+
+    private static function conditionKinds(): ConditionKindRegistry
+    {
+        return Conditions::registry(['customer_group' => new CustomerGroupKind(), 'channel' => new ChannelKind(), 'priced_for' => new PricedFor()]);
     }
 }
