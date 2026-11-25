@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Block\Button;
 use Setono\SyliusCMSPlugin\Block\Column;
 use Setono\SyliusCMSPlugin\Block\Columns;
 use Setono\SyliusCMSPlugin\Block\Heading;
+use Setono\SyliusCMSPlugin\Condition\Kind\ChannelKind;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
@@ -26,13 +27,16 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
+use Setono\SyliusCMSPlugin\Targeting\ChannelChoicesProvider;
 use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
 use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductPage;
+use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\StoreChannels;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Campaign;
+use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\ChannelNotice;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Offer;
@@ -417,6 +421,24 @@ final class BlockTreeValidatorTest extends TestCase
     }
 
     /**
+     * A block's field refuses a channel the store no longer has, as it refuses any choice it no longer offers, and the
+     * block's visibility condition keeps it, as the admin flags it there (ADR 0002). See "Validation" in
+     * docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_refuses_a_channel_the_store_no_longer_has_in_a_block_field_but_not_in_the_blocks_visibility_condition(): void
+    {
+        $notice = new StoredBlock(self::A, 'channel_notice', 1, conditions: [['kind' => 'channel', 'negate' => false, 'params' => ['channels' => ['WEB', 'OUTLET']]]]);
+        $notice->setValue('channel', null, 'OUTLET');
+
+        self::assertEquals(
+            [new ValidationError(self::A, 'channel', null, 'The value you selected is not a valid choice.')],
+            $this->validator()->validate(new StoredTree(null, [$notice]), 'page', ['en_US']),
+        );
+    }
+
+    /**
      * A block of a type the code no longer has isn't shown, so its conditions don't matter until the type is back
      *
      * @test
@@ -556,12 +578,15 @@ final class BlockTreeValidatorTest extends TestCase
             'testimonial' => Testimonial::class,
             'button' => Button::class,
             'offer' => Offer::class,
+            'channel_notice' => ChannelNotice::class,
         ], new FieldReader());
+        // The store's channels, WEB and B2B
+        $choiceHandler = new ChoiceHandler($translator, new ServiceLocator([ChannelChoicesProvider::class => static fn (): StoreChannels => new StoreChannels()]));
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             RichTextHandler::class => Links::richTextHandler(...),
             LinkHandler::class => static fn (): LinkHandler => Links::handler(properties: [new ProductPage()]),
-            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
+            ChoiceHandler::class => static fn (): ChoiceHandler => $choiceHandler,
             DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
         ]));
 
@@ -584,7 +609,7 @@ final class BlockTreeValidatorTest extends TestCase
             $fieldValidator,
             $translator,
             $layouts ?? new LayoutRegistry(['page' => ['standard' => Standard::class, 'campaign' => Campaign::class]], new FieldReader()),
-            new ConditionValidator(Conditions::registry(), $fieldValidator, $translator),
+            new ConditionValidator(Conditions::registry(['channel' => new ChannelKind()]), $fieldValidator, $choiceHandler, $translator),
         );
     }
 }

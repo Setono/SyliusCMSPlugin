@@ -31,13 +31,13 @@ use Symfony\Contracts\Service\ResetInterface;
  * A block's visibility condition that names a channel or a locale the store no longer has, or whose parameter refers to
  * a record that was deleted, such as the products of a product condition: a broken reference, an error. The code is
  * left dangling (ADR 0002), and the condition no longer counts it, so "is one of" no longer matches through it and "is
- * not one of" no longer excludes anything through it. It's fixed in the builder, at the block. A parameter names a
- * channel or a locale when it's a Choice of the store's channels or locales; each reference type with a loader is
- * checked with one query per entry, as BrokenReference checks fields. A deleted customer group is DeletedCustomerGroup's
- * problem. A condition of a kind the code no longer has, and a block of a type it no longer has with what's inside it,
- * aren't read. A channel, locale or any record BrokenReference reads deleted, or given another code or UUID, has the
- * entries that may name it counted again. See "Deleted records in conditions" in docs/spec/targeting.md and "Problems"
- * in docs/spec/admin.md
+ * not one of" no longer excludes anything through it. Publish keeps it (Validation\ConditionValidator), and it's fixed
+ * in the builder, at the block. A parameter names a channel or a locale when it's a Choice of the store's channels or
+ * locales; each reference type with a loader is checked with one query per entry, as BrokenReference checks fields. A
+ * deleted customer group is DeletedCustomerGroup's problem. A condition of a kind the code no longer has, and a block
+ * of a type it no longer has with what's inside it, aren't read. A channel, locale or any record BrokenReference reads
+ * deleted, or given another code or UUID, has the entries that may name it counted again. See "Deleted records in
+ * conditions" in docs/spec/targeting.md and "Problems" in docs/spec/admin.md
  */
 final class BrokenConditionReference implements ReferenceProblemKindInterface, ResetInterface
 {

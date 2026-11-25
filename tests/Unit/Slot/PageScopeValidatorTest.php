@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Condition\Kind\ProductInTaxonKind;
 use Setono\SyliusCMSPlugin\Condition\Kind\TaxonKind;
+use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\DateHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\ListFieldHandler;
@@ -19,11 +20,14 @@ use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Slot\PageScopeValidator;
+use Setono\SyliusCMSPlugin\Targeting\ChannelChoicesProvider;
 use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\StoreChannels;
 use Setono\SyliusCMSPlugin\Tests\Unit\Slot\Fixture\DiscountedBy;
 use Setono\SyliusCMSPlugin\Tests\Unit\Slot\Fixture\ReleasedBetween;
+use Setono\SyliusCMSPlugin\Tests\Unit\Slot\Fixture\SoldIn;
 use Setono\SyliusCMSPlugin\Validation\ConditionValidator;
 use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 use Setono\SyliusCMSPlugin\Validation\FieldValidator;
@@ -169,6 +173,28 @@ final class PageScopeValidatorTest extends TestCase
     }
 
     /**
+     * Nothing flags a deleted record in a page scope yet, so a parameter refuses a channel the store no longer has, as
+     * a block's field does, though a block's visibility condition keeps it. See "Validation" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_refuses_a_channel_the_store_no_longer_has(): void
+    {
+        $kind = self::conditionKinds()->get('sold_in');
+
+        self::assertEquals(
+            [new TranslatableMessage('setono_sylius_cms.page_scope.field', [
+                '%number%' => 1,
+                '%kind%' => new TranslatableMessage($kind->label),
+                '%field%' => new TranslatableMessage($kind->fields['channels']->field->label),
+                '%message%' => 'setono_sylius_cms.field.invalid_choice',
+            ], 'validators')],
+            $this->validator()->validate('product.after_price', [['kind' => 'sold_in', 'negate' => false, 'params' => ['channels' => ['WEB', 'OUTLET']]]]),
+        );
+        self::assertSame([], $this->validator()->validate('product.after_price', [['kind' => 'sold_in', 'negate' => false, 'params' => ['channels' => ['WEB', 'B2B']]]]));
+    }
+
+    /**
      * A placement in a slot a deploy removed shows nothing, and can only lose its scope
      *
      * @test
@@ -194,17 +220,20 @@ final class PageScopeValidatorTest extends TestCase
 
     private static function conditionKinds(): ConditionKindRegistry
     {
-        return Conditions::registry(['product_in_taxon' => new ProductInTaxonKind(), 'taxon' => new TaxonKind(), 'released_between' => new ReleasedBetween(), 'discounted_by' => new DiscountedBy()]);
+        return Conditions::registry(['product_in_taxon' => new ProductInTaxonKind(), 'taxon' => new TaxonKind(), 'released_between' => new ReleasedBetween(), 'discounted_by' => new DiscountedBy(), 'sold_in' => new SoldIn()]);
     }
 
     private function validator(): PageScopeValidator
     {
         $translator = new IdentityTranslator();
+        // The store's channels, WEB and B2B
+        $choiceHandler = new ChoiceHandler($translator, new ServiceLocator([ChannelChoicesProvider::class => static fn (): StoreChannels => new StoreChannels()]));
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             ListFieldHandler::class => static fn (): ListFieldHandler => Sources::listFieldHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             DateHandler::class => static fn (): DateHandler => new DateHandler(),
             NumberHandler::class => static fn (): NumberHandler => new NumberHandler(),
+            ChoiceHandler::class => static fn (): ChoiceHandler => $choiceHandler,
         ]));
 
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
@@ -227,7 +256,7 @@ final class PageScopeValidatorTest extends TestCase
                 $validator,
                 $translator,
                 Bindings::validator(),
-            ), $translator),
+            ), $choiceHandler, $translator),
         );
     }
 }

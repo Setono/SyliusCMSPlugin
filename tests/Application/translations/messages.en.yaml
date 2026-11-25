@@ -23,6 +23,7 @@ app:
             recipe: Recipe
             store_location: Store location
         field:
+            channel: Channel
             intro: Introduction
             open: Open now
             picks: Picks
