@@ -180,11 +180,13 @@ final class PageScopeValidatorTest extends TestCase
      */
     public function it_refuses_a_channel_the_store_no_longer_has(): void
     {
+        $kind = self::conditionKinds()->get('sold_in');
+
         self::assertEquals(
             [new TranslatableMessage('setono_sylius_cms.page_scope.field', [
                 '%number%' => 1,
-                '%kind%' => new TranslatableMessage('Sold in'),
-                '%field%' => new TranslatableMessage('app.sold_in.channels'),
+                '%kind%' => new TranslatableMessage($kind->label),
+                '%field%' => new TranslatableMessage($kind->fields['channels']->field->label),
                 '%message%' => 'setono_sylius_cms.field.invalid_choice',
             ], 'validators')],
             $this->validator()->validate('product.after_price', [['kind' => 'sold_in', 'negate' => false, 'params' => ['channels' => ['WEB', 'OUTLET']]]]),
