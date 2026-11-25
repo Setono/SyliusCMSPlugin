@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BuilderApi, PreviewRequest } from '../src/api';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
@@ -29,7 +29,8 @@ const config: BuilderConfig = {
         { code: 'retail', name: 'Retail' },
         { code: 'wholesale', name: 'Wholesale' },
     ],
-    timeZone: 'UTC',
+    // PHP's default time zone, which the preview's Date is picked in
+    timeZone: 'Europe/Copenhagen',
 };
 
 /** Answers each preview request with a new URL that says what it shows. */
@@ -74,12 +75,19 @@ function date(): HTMLInputElement {
     return screen.getByLabelText('Date') as HTMLInputElement;
 }
 
-/** The UTC date and time of a datetime-local input's value, which is in the editor's time zone. */
-function utc(local: string): string {
-    return new Date(local).toISOString();
-}
+/** 2026-12-24T18:30 in Copenhagen, where the preview's Date is picked, in UTC. */
+const PICKED = '2026-12-24T17:30:00Z';
 
 describe('Shown to and Date', () => {
+    // The editor's browser is in another time zone than the server's
+    beforeEach(() => {
+        vi.stubEnv('TZ', 'America/New_York');
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
     it('should show the preview to guests now when the builder gets no starting values', async () => {
         const api = fakeApi();
         await openBuilder(api);
@@ -97,7 +105,8 @@ describe('Shown to and Date', () => {
 
         await waitFor(() => expect(api.createPreviewUrl).toHaveBeenCalledExactlyOnceWith({ channel: 'WEB', locale: 'en_US', shownTo: 'wholesale', date: '2026-12-01T09:00:00Z' }));
         expect(shownTo()).toHaveValue('wholesale');
-        expect(utc(date().value)).toBe('2026-12-01T09:00:00.000Z');
+        expect(date()).toHaveValue('2026-12-01T10:00');
+        expect(date()).toHaveAccessibleDescription('Europe/Copenhagen');
         expect(screen.getByRole('button', { name: 'Now' })).toHaveAttribute('aria-pressed', 'false');
     });
 
@@ -133,9 +142,8 @@ describe('Shown to and Date', () => {
         expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
         fireEvent.blur(date());
 
-        const picked = utc('2026-12-24T18:30').replace('.000Z', 'Z');
-        await waitFor(() => expect(preview()).toHaveAttribute('src', expect.stringContaining(`date=${picked}&_cms_preview=2`)));
-        expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'WEB', locale: 'en_US', shownTo: '@guest', date: picked });
+        await waitFor(() => expect(preview()).toHaveAttribute('src', expect.stringContaining(`date=${PICKED}&_cms_preview=2`)));
+        expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'WEB', locale: 'en_US', shownTo: '@guest', date: PICKED });
         expect(screen.getByRole('button', { name: 'Now' })).toHaveAttribute('aria-pressed', 'false');
     });
 
@@ -147,7 +155,7 @@ describe('Shown to and Date', () => {
         fireEvent.change(date(), { target: { value: '2026-12-24T18:30' } });
         fireEvent.keyDown(date(), { key: 'Enter' });
 
-        await waitFor(() => expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'WEB', locale: 'en_US', shownTo: '@guest', date: utc('2026-12-24T18:30').replace('.000Z', 'Z') }));
+        await waitFor(() => expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'WEB', locale: 'en_US', shownTo: '@guest', date: PICKED }));
     });
 
     it('should not reload when the editor leaves the date as it was', async () => {

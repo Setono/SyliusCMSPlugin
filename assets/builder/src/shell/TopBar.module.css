@@ -85,6 +85,7 @@
 .date {
     display: flex;
     flex: none;
+    gap: var(--builder-space-2);
     align-items: center;
     border: 1px solid var(--builder-color-border-strong);
     border-radius: var(--builder-radius-sm);
@@ -349,22 +350,7 @@
     font-weight: var(--builder-font-weight-medium);
 }
 
-/* The input, then the name of the time zone it's in, as a unit after a number */
-.scheduleTime {
-    display: flex;
-    align-items: center;
-    gap: var(--builder-space-2);
-}
-
-.timeZone {
-    flex: none;
-    color: var(--builder-color-text-muted);
-    font-size: var(--builder-font-size-sm);
-}
-
 .scheduleInput {
-    flex: 1 1 auto;
-    min-width: 0;
     min-height: var(--builder-control-height);
     padding: 0 var(--builder-space-2);
     border: 1px solid var(--builder-color-border-strong);

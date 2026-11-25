@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Publishing\InvalidEntryException;
 use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
 use Setono\SyliusCMSPlugin\Publishing\PublishVetoedException;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishInThePastException;
-use Setono\SyliusCMSPlugin\Publishing\SchedulingTimeZone;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
  * The overview page's Schedule, and Schedule again for a failed scheduled publish, which schedules a publish as the
- * builder's does. The form's "at" is a datetime-local input's value, such as 2026-11-27T09:00, in the scheduling time
- * zone (SchedulingTimeZone), the one the builder converts its times from. See "Entry overview page" in
+ * builder's does. The form's "at" is a datetime-local input's value, such as 2026-11-27T09:00, in the admin's time
+ * zone (AdminTimeZone), the one the builder converts its times from. See "Entry overview page" in
  * docs/spec/admin.md and "Scheduled publishes" in docs/spec/publishing.md
  */
 final readonly class ScheduleEntryAction
@@ -24,7 +24,7 @@ final readonly class ScheduleEntryAction
     public function __construct(
         private EntryOverviewRequest $overviewRequest,
         private PublishSchedulerInterface $scheduler,
-        private SchedulingTimeZone $timeZone,
+        private AdminTimeZone $timeZone,
     ) {
     }
 

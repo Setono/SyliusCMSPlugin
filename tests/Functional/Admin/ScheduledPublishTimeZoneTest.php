@@ -19,7 +19,7 @@ use Symfony\Component\Clock\Test\ClockSensitiveTrait;
  * page and in the builder alike, labelled with its name, and stored in UTC. See "Scheduled publishes" in
  * docs/spec/publishing.md
  */
-final class SchedulingTimeZoneTest extends BuilderApiTestCase
+final class ScheduledPublishTimeZoneTest extends BuilderApiTestCase
 {
     use ClockSensitiveTrait;
     use ScheduledPublishes;

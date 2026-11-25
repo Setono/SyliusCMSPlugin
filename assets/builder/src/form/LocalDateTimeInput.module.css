@@ -1,0 +1,19 @@
+/* The input, then the name of the time zone it's in, which goes under it when there's no room beside it */
+.dateTime {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--builder-space-1) var(--builder-space-2);
+    min-width: 0;
+}
+
+.dateTime > input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.timeZone {
+    flex: none;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}

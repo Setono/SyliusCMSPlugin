@@ -240,7 +240,7 @@ Either can instead hold one of these special values. Keys that start with `$` ar
 | Toggle | `Toggle` | `true` or `false` |
 | Choice | `Choice` | the chosen value as a string, or an array of strings when `multiple` |
 | Date | `Date` | `"2026-11-13"` |
-| Date and time | `DateTime` | `"2026-11-13T09:30:00Z"`, always in UTC |
+| Date and time | `DateTime` | `"2026-11-13T09:30:00Z"`, always in UTC. The builder enters and shows it in PHP's default time zone ([Builder](builder.md#dates-and-times)). |
 | Link | `Link` | a link. See [Links](#links). |
 | Media | `Media` | a media item's UUID |
 | Media list | `MediaList` | an array of media item UUIDs |

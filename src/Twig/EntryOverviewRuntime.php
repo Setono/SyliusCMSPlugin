@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepage;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
@@ -21,7 +22,6 @@ use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface;
-use Setono\SyliusCMSPlugin\Publishing\SchedulingTimeZone;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tree\SnippetUse;
 use Setono\SyliusCMSPlugin\Tree\SnippetUses;
@@ -44,16 +44,16 @@ final readonly class EntryOverviewRuntime implements RuntimeExtensionInterface
         private WhereItShows $whereItShows,
         private EntryPlacements $entryPlacements,
         private SnippetUses $snippetUses,
-        private SchedulingTimeZone $schedulingTimeZone,
+        private AdminTimeZone $timeZone,
     ) {
     }
 
     /**
-     * The name of the time zone a scheduled publish is entered and shown in, such as Europe/Copenhagen, which labels it
+     * The name of the time zone the admin enters and shows times in, such as Europe/Copenhagen, which labels them
      */
-    public function schedulingTimeZone(): string
+    public function timeZone(): string
     {
-        return $this->schedulingTimeZone->name();
+        return $this->timeZone->name();
     }
 
     /**

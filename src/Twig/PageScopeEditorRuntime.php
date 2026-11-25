@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Builder\RegistryExporter;
 use Setono\SyliusCMSPlugin\Builder\UiStrings;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -24,12 +25,14 @@ final readonly class PageScopeEditorRuntime implements RuntimeExtensionInterface
         private RegistryExporter $registry,
         private UiStrings $uiStrings,
         private UrlGeneratorInterface $urlGenerator,
+        private AdminTimeZone $timeZone,
     ) {
     }
 
     /**
      * The condition kinds a page scope can hold, with their parameters' field schemas, the context keys they need, the
-     * search pickers search with, the admin user's locale and the UI strings
+     * search pickers search with, the admin user's locale, the time zone their dates and times are entered in and the
+     * UI strings
      *
      * @return array<string, mixed>
      */
@@ -42,6 +45,8 @@ final readonly class PageScopeEditorRuntime implements RuntimeExtensionInterface
                 'search' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_search', ['kind' => '__kind__']),
             ],
             'locale' => $localeCode,
+            // A date and time a project's own kind takes is entered and shown in the admin's time zone, as in the builder
+            'timeZone' => $this->timeZone->name(),
             'strings' => $this->uiStrings->withPrefix(self::STRINGS_PREFIX),
         ];
     }

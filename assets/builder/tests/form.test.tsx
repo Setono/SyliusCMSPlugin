@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { fromLocalInput, toLocalInput } from '../src/dates';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FieldRow } from '../src/form/FieldRow';
 import { createTranslator, TranslatorProvider } from '../src/i18n';
+import { TimeZoneProvider } from '../src/timeZone';
 import type { FieldSchema, JsonValue } from '../src/types';
 import { group, heading, strings } from './fixtures';
 
@@ -12,7 +12,9 @@ const [toggleSchema] = group.fields.map((field) => field.schema) as [FieldSchema
 function renderField(schema: FieldSchema, value?: JsonValue, onChange = vi.fn()) {
     render(
         <TranslatorProvider value={createTranslator(strings)}>
-            <FieldRow id="field" schema={schema} value={value} onChange={onChange} locale="en_US" />
+            <TimeZoneProvider value="Europe/Copenhagen">
+                <FieldRow id="field" schema={schema} value={value} onChange={onChange} locale="en_US" />
+            </TimeZoneProvider>
         </TranslatorProvider>,
     );
 
@@ -166,15 +168,22 @@ describe('date fields', () => {
         expect(onChange).toHaveBeenLastCalledWith('');
     });
 
-    it("should render a date and time field in the editor's time zone and report it in UTC once it's whole", () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it("should render a date and time field in the time zone the server gives, not the browser's, named, and report it in UTC once it's whole", () => {
+        vi.stubEnv('TZ', 'Asia/Tokyo');
         const onChange = renderField(dateTimeSchema, '2026-11-13T09:30:00Z');
 
         const input = screen.getByLabelText('At');
         expect(input).toHaveAttribute('type', 'datetime-local');
-        expect(input).toHaveValue(toLocalInput('2026-11-13T09:30:00Z'));
+        expect(input).toHaveValue('2026-11-13T10:30');
+        expect(input).toHaveAccessibleDescription('Europe/Copenhagen');
 
+        // Midnight in Copenhagen is 23:00 the day before in UTC
         fireEvent.change(input, { target: { value: '2026-11-27T00:00' } });
-        expect(onChange).toHaveBeenLastCalledWith(fromLocalInput('2026-11-27T00:00'));
+        expect(onChange).toHaveBeenLastCalledWith('2026-11-26T23:00:00Z');
 
         fireEvent.change(input, { target: { value: '' } });
         expect(onChange).toHaveBeenLastCalledWith(null);

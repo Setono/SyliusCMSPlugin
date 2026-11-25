@@ -69,7 +69,7 @@ final class ShownToAndDateTest extends UITestCase
         Expect::locator($headings)->toHaveCount(1);
         Expect::locator($browser->getByRole('button', ['name' => 'Now']))->toHaveAttribute('aria-pressed', 'true');
 
-        // Noon in the editor's time zone, a week from now, is inside the window whatever that time zone is
+        // Noon in PHP's default time zone, which the Date is picked in, a week from now, is inside the window whatever that time zone is
         $date->fill($now->modify('+8 days')->format('Y-m-d') . 'T12:00');
         $date->press('Enter');
 

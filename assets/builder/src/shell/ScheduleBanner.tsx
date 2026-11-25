@@ -1,6 +1,7 @@
-import { useBuilder, useBuilderState } from '../context';
+import { useBuilderState } from '../context';
 import { formatDateTime } from '../dates';
 import { useTranslator } from '../i18n';
+import { useTimeZone } from '../timeZone';
 import styles from './ScheduleBanner.module.css';
 
 /**
@@ -11,7 +12,7 @@ import styles from './ScheduleBanner.module.css';
  */
 export function ScheduleBanner() {
     const t = useTranslator();
-    const { timeZone } = useBuilder();
+    const timeZone = useTimeZone();
     const schedule = useBuilderState((state) => state.schedule);
 
     if (schedule === null) {

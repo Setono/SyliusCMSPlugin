@@ -3,8 +3,8 @@ import { LocalDateTimeInput } from './LocalDateTimeInput';
 import type { FieldControlProps } from './types';
 
 /**
- * A date and time, stored in UTC, which editors enter in their own time zone. It changes the value once the input holds
- * a whole date and time, or nothing.
+ * A date and time, stored in UTC, which editors enter in the time zone the server gives. It changes the value once the
+ * input holds a whole date and time, or nothing.
  */
 export function DateTimeControl({ id, value, onChange, schema, describedBy }: FieldControlProps) {
     return (

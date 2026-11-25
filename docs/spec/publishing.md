@@ -117,6 +117,7 @@ Each translation has a switch, such as "Show in Danish", stored as `shown` in th
 Every entry has an optional "Show from" and "Show until", stored as columns so listings and sources filter on them in SQL ([Sources](sources.md#visible-queries)). "Show from" is inclusive and "Show until" exclusive, as in the [date window condition](targeting.md#condition-kinds).
 
 - The [date window](../../GLOSSARY.md#publishing) takes effect on save, outside the draft.
+- It's entered and shown in PHP's default time zone, as every date and time in the builder is ([Builder](builder.md#dates-and-times)), and stored in UTC.
 - It's checked when content renders, so it needs no worker.
 - It decides only when published content shows, never what's published.
 - Blocks get a date window through the `date_window` visibility condition instead ([Targeting](targeting.md#condition-kinds)).
@@ -127,7 +128,7 @@ An editor can [schedule a publish](../../GLOSSARY.md#publishing) of the draft fo
 
 - **One per entry.** An entry has at most one scheduled publish.
 - **The draft is locked** until the publish runs or is cancelled. Editors cancel it to keep editing. The time must be in the future.
-- **One time zone.** The time is entered and shown in PHP's default time zone, which the admin shows times in, in the builder as on the overview page, whatever the editor's browser uses. The server gives the builder that zone. Both label the time with the zone's name, such as Europe/Copenhagen. The time is stored in UTC.
+- **One time zone.** The time is entered and shown in PHP's default time zone, which the admin shows times in, on the overview page as in the builder, whatever the editor's browser uses, as every date and time in the builder is ([Builder](builder.md#dates-and-times)). Both label the time with the zone's name, such as Europe/Copenhagen. The time is stored in UTC.
 - **Checked when scheduling.** Validation and `BeforeEntryPublish` run when the editor schedules, so problems show at once. They run again when the publish runs. Scheduling fires `EntryPublishScheduled`, and cancelling fires `EntryPublishCancelled`.
 - **The worker.** A scheduled publish is a delayed Symfony Messenger message on Sylius's `main` transport, the way Sylius 1.14 schedules catalog promotions. The shop needs a running worker. When it runs, the publish does everything [Publishing now](#publishing-now) does, and its revision records it as scheduled.
 - **Overdue.** When a scheduled publish hasn't run five minutes after its time, the admin warns that the Messenger worker may not be running, and offers Publish now and Cancel the schedule ([Admin](admin.md#entry-overview-page)). A missing worker never fails silently.

@@ -34,7 +34,7 @@ These kinds ship. Each declares the context keys it needs and what it reads ([Ex
 | --- | --- | --- | --- | --- |
 | `channel` | Channel | | `Channel` | `channels`: channel codes |
 | `locale` | Locale | | `Locale` | `locales`: locale codes |
-| `date_window` | Date window | | `Time` | `from` and `until`: Date and time values, each optional. `from` is inclusive and `until` exclusive, so a window that ends at `2026-12-01T00:00:00Z` shows until the last second of 30 November. |
+| `date_window` | Date window | | `Time` | `from` and `until`: Date and time values, each optional, entered in PHP's default time zone ([Builder](builder.md#dates-and-times)). `from` is inclusive and `until` exclusive, so a window that ends at `2026-12-01T00:00:00Z` shows until the last second of 30 November. |
 | `customer_group` | Customer group | | `Customer` | `groups`: customer group codes, `@guest` and `@no_group` |
 | `product` | Product | `product` | `HostPage` | `products`: product codes |
 | `product_in_taxon` | Product in taxon | `product` | `HostPage` | `taxons`: taxon codes, and `includeChildren`: a Toggle |
@@ -123,7 +123,7 @@ Listings and sources report no next date boundary in v2.0.
 The builder's preview toolbar has two pickers, carried by the signed preview token ([Builder](builder.md)):
 
 - **Shown to:** Guest, Signed in without a group, or any customer group.
-- **Date:** now, or a chosen date and time.
+- **Date:** now, or a chosen date and time, in PHP's default time zone ([Builder](builder.md#dates-and-times)).
 
 They set the customer group value and the current time in the render context, the one place the renderer reads them ([Extending](extending.md#rendering-services)). So:
 

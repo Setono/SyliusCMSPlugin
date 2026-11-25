@@ -1,7 +1,7 @@
 /**
  * Date and time values travel in UTC, such as 2026-11-27T00:00:00Z, while editors enter them in a datetime-local input,
- * such as 2026-11-27T01:00, in a time zone: the editor's own, or the one the server gives, such as Europe/Copenhagen,
- * which scheduled publishes use. See "Scheduled publishes" in docs/spec/publishing.md
+ * such as 2026-11-27T01:00, and see them, in the time zone the server gives, such as Europe/Copenhagen, whatever their
+ * own. See "Dates and times" in docs/spec/builder.md
  */
 
 /** A datetime-local input's value, whose seconds are left out unless they're set */
@@ -9,8 +9,8 @@ const LOCAL = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/
 
 const HOUR = 60 * 60 * 1000;
 
-/** The value a datetime-local input shows for a UTC date and time, in the time zone or else the editor's own, or '' for none. */
-export function toLocalInput(utc: string | null, timeZone?: string): string {
+/** The value a datetime-local input shows for a UTC date and time, in the time zone, or '' for none. */
+export function toLocalInput(utc: string | null, timeZone: string): string {
     if (utc === null) {
         return '';
     }
@@ -22,11 +22,11 @@ export function toLocalInput(utc: string | null, timeZone?: string): string {
 }
 
 /**
- * The UTC date and time of a datetime-local input's value, in the time zone or else the editor's own, or null when it's
- * empty or incomplete. A time the clocks skip is read as that long after the time before the skip, and a time they
- * repeat as the second, as PHP reads them.
+ * The UTC date and time of a datetime-local input's value, in the time zone, or null when it's empty or incomplete. A
+ * time the clocks skip is read as that long after the time before the skip, and a time they repeat as the second, as
+ * PHP reads them.
  */
-export function fromLocalInput(local: string, timeZone?: string): string | null {
+export function fromLocalInput(local: string, timeZone: string): string | null {
     const match = LOCAL.exec(local);
     if (match === null) {
         return null;
@@ -49,8 +49,8 @@ export function fromLocalInput(local: string, timeZone?: string): string | null 
     return new Date(time).toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-/** A UTC date and time as the builder shows it, in the time zone or else the editor's own, such as 2026-11-27 01:00, as the admin shows times. */
-export function formatDateTime(utc: string, timeZone?: string): string {
+/** A UTC date and time as the builder shows it, in the time zone, such as 2026-11-27 01:00, as the admin shows times. */
+export function formatDateTime(utc: string, timeZone: string): string {
     return toLocalInput(utc, timeZone).replace('T', ' ');
 }
 
@@ -63,8 +63,8 @@ interface WallTime {
     second: number;
 }
 
-/** What clocks in the time zone, or else the editor's own, show at a time. */
-function wallTime(time: number, timeZone: string | undefined): WallTime {
+/** What clocks in the time zone show at a time. */
+function wallTime(time: number, timeZone: string): WallTime {
     const parts = new Intl.DateTimeFormat('en-US', {
         timeZone,
         hourCycle: 'h23',
@@ -80,8 +80,8 @@ function wallTime(time: number, timeZone: string | undefined): WallTime {
     return { year: part('year'), month: part('month'), day: part('day'), hour: part('hour'), minute: part('minute'), second: part('second') };
 }
 
-/** How far the clocks in the time zone, or else the editor's own, are ahead of UTC at a time, in milliseconds. */
-function offset(time: number, timeZone: string | undefined): number {
+/** How far the clocks in the time zone are ahead of UTC at a time, in milliseconds. */
+function offset(time: number, timeZone: string): number {
     const { year, month, day, hour, minute, second } = wallTime(time, timeZone);
 
     return Date.UTC(year, month - 1, day, hour, minute, second) - Math.floor(time / 1000) * 1000;

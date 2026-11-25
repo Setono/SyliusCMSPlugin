@@ -1,5 +1,7 @@
-import { type InputHTMLAttributes, useEffect, useState } from 'react';
+import { type InputHTMLAttributes, useEffect, useId, useState } from 'react';
 import { fromLocalInput, toLocalInput } from '../dates';
+import { useTimeZone } from '../timeZone';
+import styles from './LocalDateTimeInput.module.css';
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onChange' | 'onBlur' | 'onKeyDown'> & {
     /** The date and time in UTC, or null for none. */
@@ -14,46 +16,56 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onC
 };
 
 /**
- * A date and time stored in UTC, which editors enter in their own time zone, as a datetime-local input. It shows the
- * value again whenever that changes, such as after an undo or a save the server refused. The one date and time input
- * of the builder: a Date and time field, the entry's date window and the preview's date.
+ * A date and time stored in UTC, which editors enter in the time zone the server gives, whatever their own, as a
+ * datetime-local input labelled with the zone's name. It shows the value again whenever that changes, such as after an
+ * undo or a save the server refused. The one date and time input of the builder: a Date and time field, the entry's
+ * date window and the preview's date. See "Dates and times" in docs/spec/builder.md
  */
-export function LocalDateTimeInput({ value, onCommit, commitOn, ...props }: Props) {
-    const [local, setLocal] = useState(toLocalInput(value));
+export function LocalDateTimeInput({ value, onCommit, commitOn, 'aria-describedby': describedBy, ...props }: Props) {
+    const timeZone = useTimeZone();
+    const timeZoneId = useId();
+    const [local, setLocal] = useState(toLocalInput(value, timeZone));
 
-    useEffect(() => setLocal(toLocalInput(value)), [value]);
+    useEffect(() => setLocal(toLocalInput(value, timeZone)), [value, timeZone]);
 
     const commit = (): void => {
-        const utc = fromLocalInput(local);
+        const utc = fromLocalInput(local, timeZone);
         if (utc !== value) {
             onCommit(utc);
         }
     };
 
     return (
-        <input
-            {...props}
-            type="datetime-local"
-            value={local}
-            onChange={(event) => {
-                const next = event.currentTarget.value;
-                setLocal(next);
+        <span className={styles.dateTime}>
+            <input
+                {...props}
+                type="datetime-local"
+                value={local}
+                // What describes it, such as its help and its errors, then its time zone
+                aria-describedby={describedBy === undefined ? timeZoneId : `${describedBy} ${timeZoneId}`}
+                onChange={(event) => {
+                    const next = event.currentTarget.value;
+                    setLocal(next);
 
-                const utc = fromLocalInput(next);
-                if (commitOn === 'change' && (next === '' || utc !== null)) {
-                    onCommit(utc);
-                }
-            }}
-            onBlur={commitOn === 'blur' ? commit : undefined}
-            onKeyDown={
-                commitOn === 'blur'
-                    ? (event) => {
-                          if (event.key === 'Enter') {
-                              commit();
+                    const utc = fromLocalInput(next, timeZone);
+                    if (commitOn === 'change' && (next === '' || utc !== null)) {
+                        onCommit(utc);
+                    }
+                }}
+                onBlur={commitOn === 'blur' ? commit : undefined}
+                onKeyDown={
+                    commitOn === 'blur'
+                        ? (event) => {
+                              if (event.key === 'Enter') {
+                                  commit();
+                              }
                           }
-                      }
-                    : undefined
-            }
-        />
+                        : undefined
+                }
+            />
+            <span id={timeZoneId} className={styles.timeZone}>
+                {timeZone}
+            </span>
+        </span>
     );
 }
