@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
+use Setono\SyliusCMSPlugin\Tests\Support\HomepageClash;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -217,7 +218,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
     public function it_makes_a_page_the_homepage_of_channels(): void
     {
         $client = self::createClient();
-        $page = self::createPage('Home', 'home', 'Welcome', channels: ['WEB']);
+        $page = self::createPage('Home', 'home', 'Welcome', channels: ['B2B', 'WEB']);
         $csrfToken = self::openBuilder($client, $page);
 
         $response = self::saveSettings($client, $page, ['homepageOf' => ['WEB', 'B2B']], $csrfToken);
@@ -243,7 +244,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
     {
         $client = self::createClient();
         $client->disableReboot();
-        $first = self::createPage('Home', 'home', 'Welcome', published: true);
+        $first = self::createPage('Home', 'home', 'Welcome', published: true, channels: ['B2B', 'WEB']);
         $second = self::createPage('Sale', 'sale', 'Everything must go', published: true);
         $csrfToken = self::openBuilder($client, $first);
         self::saveSettings($client, $first, ['homepageOf' => ['WEB', 'B2B']], $csrfToken);
@@ -275,6 +276,59 @@ final class EntrySettingsTest extends BuilderApiTestCase
         self::assertSame(['homepage'], $firstEvent->changed);
         self::assertSame($outside, $secondLevel);
         self::assertSame($outside, $firstLevel);
+    }
+
+    /**
+     * "Homepage of" offers only the channels the page is in, and the server refuses any other, while a page that has
+     * left a channel stays its homepage until that's taken out
+     *
+     * @test
+     */
+    public function it_refuses_to_make_a_page_the_homepage_of_a_channel_it_is_not_in(): void
+    {
+        $client = self::createClient();
+        $client->disableReboot();
+        $page = self::createPage('Home', 'home', 'Welcome', channels: ['WEB']);
+        $csrfToken = self::openBuilder($client, $page);
+
+        $response = self::saveSettings($client, $page, ['homepageOf' => ['B2B', 'WEB']], $csrfToken);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertSame(['error' => 'A page can only be the homepage of a channel it\'s in, and this page isn\'t in B2B.'], $response);
+        self::assertSame([], self::reloadPage($page)->getHomepageChannelCodes());
+
+        // Put in the channel by the same save, it can be its homepage
+        self::saveSettings($client, $page, ['channels' => ['B2B', 'WEB'], 'homepageOf' => ['B2B', 'WEB']], $csrfToken);
+        self::assertResponseIsSuccessful();
+
+        // Leaving it keeps it the channel's homepage, which the admin flags
+        $response = self::saveSettings($client, $page, ['channels' => ['WEB']], $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($response);
+        self::assertSame(['channels' => ['WEB'], 'homepageOf' => ['B2B', 'WEB']], array_intersect_key((array) ($response['settings'] ?? null), ['channels' => true, 'homepageOf' => true]));
+    }
+
+    /**
+     * Two saves that make different pages a channel's homepage at the same moment both find no page to take it off, so
+     * the second one's row clashes with the first one's on the rows' unique channel code. Here the first save's row is
+     * written as the second one flushes, after it looked for the channel's homepage
+     *
+     * @test
+     */
+    public function it_answers_with_a_message_when_another_page_just_became_the_channels_homepage(): void
+    {
+        $client = self::createClient();
+        $client->disableReboot();
+        $page = self::createPage('Home', 'home', 'Welcome', channels: ['WEB']);
+        $other = self::createPage('Sale', 'sale', 'Everything must go', channels: ['WEB']);
+        $csrfToken = self::openBuilder($client, $page);
+        HomepageClash::withAnotherPage(self::entityManager(), $other->getId());
+
+        $response = self::saveSettings($client, $page, ['homepageOf' => ['WEB']], $csrfToken);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertSame(['error' => 'Another page just became this channel\'s homepage. Choose the channel again to make this page its homepage instead.'], $response);
     }
 
     /**

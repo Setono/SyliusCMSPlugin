@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepage;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
@@ -43,7 +44,16 @@ final readonly class EntryOverviewRuntime implements RuntimeExtensionInterface
         private WhereItShows $whereItShows,
         private EntryPlacements $entryPlacements,
         private SnippetUses $snippetUses,
+        private AdminTimeZone $timeZone,
     ) {
+    }
+
+    /**
+     * The name of the time zone the admin enters and shows times in, such as Europe/Copenhagen, which labels them
+     */
+    public function timeZone(): string
+    {
+        return $this->timeZone->name();
     }
 
     /**

@@ -85,6 +85,7 @@
 .date {
     display: flex;
     flex: none;
+    gap: var(--builder-space-2);
     align-items: center;
     border: 1px solid var(--builder-color-border-strong);
     border-radius: var(--builder-radius-sm);

@@ -27,6 +27,39 @@ final class ValidationErrorTest extends TestCase
     /**
      * @test
      */
+    public function it_is_json_saying_which_of_the_blocks_visibility_conditions_it_is_in_from_0(): void
+    {
+        self::assertSame(
+            '{"block":"0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f","field":"until","locale":null,"message":"Until must come after From.","condition":1}',
+            json_encode(new ValidationError('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'until', null, 'Until must come after From.', condition: 1), \JSON_THROW_ON_ERROR),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_is_json_saying_it_is_in_one_of_the_layouts_fields(): void
+    {
+        self::assertSame(
+            '{"block":null,"field":"headline","locale":"en_US","message":"This field is required.","layout":true}',
+            json_encode(new ValidationError(null, 'headline', 'en_US', 'This field is required.', inLayout: true), \JSON_THROW_ON_ERROR),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_moves_an_error_into_a_blocks_visibility_condition_or_into_the_layout_keeping_its_field_locale_and_message(): void
+    {
+        $error = new ValidationError(null, 'until', 'en_US', 'Until must come after From.');
+
+        self::assertEquals(new ValidationError('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'until', 'en_US', 'Until must come after From.', condition: 2), $error->inCondition('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 2));
+        self::assertEquals(new ValidationError(null, 'until', 'en_US', 'Until must come after From.', inLayout: true), $error->inLayout());
+    }
+
+    /**
+     * @test
+     */
     public function it_takes_a_message_that_is_stringable_as_a_constraint_violations_can_be(): void
     {
         $message = new class() implements \Stringable {

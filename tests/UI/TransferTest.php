@@ -9,10 +9,13 @@ use Playwright\Assertions\Expect;
 use Playwright\Exception\PlaywrightException;
 use Playwright\Network\ResponseInterface;
 use Playwright\Page\PageInterface;
+use Setono\SyliusCMSPlugin\Model\ImportInterface;
+use Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Imports;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tests\Support\SentMessages;
 use Setono\SyliusCMSPlugin\Tests\Support\TemporaryDirectory;
+use Setono\SyliusCMSPlugin\Tests\Support\ZipHeaders;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
@@ -27,6 +30,7 @@ final class TransferTest extends UITestCase
     use MediaItems;
     use SentMessages;
     use TemporaryDirectory;
+    use ZipHeaders;
 
     /** The committed export's picked page */
     private const PAGE = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e';
@@ -128,6 +132,99 @@ final class TransferTest extends UITestCase
         Expect::locator($browser->locator('[data-overview-header]')->getByRole('heading', ['level' => 1]))->toContainText('Autumn sale');
         Expect::locator($browser->getByRole('region', ['name' => 'Publishing']))->toContainText('Unpublished changes.');
         self::assertStringContainsString('"title":"Autumn sale"', (string) self::draftOf(self::reloadPage($page))?->getContent());
+    }
+
+    /**
+     * The zip's directory says its video is 2 GB, so it unpacks to more than transfer.max_unpacked_size's 1 GB, and the
+     * Messenger worker's dry run refuses it before extracting anything. See "Media files" in docs/spec/transfer.md
+     *
+     * @test
+     */
+    public function it_shows_an_admin_user_why_an_import_of_a_zip_that_unpacks_to_more_than_an_import_takes_refused(): void
+    {
+        self::forgetSentMessages();
+        $this->signInAsAdmin();
+        $zip = $this->zipOf(self::exportFixture());
+        self::declareSize($zip, 'media/0193a5be-70ab-7c12-8e2d-1b2c3d4e5f61/lookbook.mp4', 2 * 1024 * 1024 * 1024);
+
+        $browser = $this->visit('/admin/cms/transfer');
+        $import = $browser->getByRole('region', ['name' => 'Import']);
+        $import->getByLabel('Export zip')->setInputFiles($zip);
+        $import->getByRole('button', ['name' => 'Upload'])->click();
+
+        Expect::locator($browser->locator('[data-cms-import-progress]'))->toContainText('Waiting for the Messenger worker to check the export.');
+        self::assertSame(1, self::consumeMessages());
+
+        Expect::locator($browser->locator('[data-cms-import-result]'))->toContainText('The import refused. Nothing changed.', new AssertionOptions(timeoutMs: 15_000));
+        Expect::locator($browser->locator('[data-cms-import-reasons]'))->toContainText('The export zip unpacks to 2 GB, over the import limit of 1 GB.');
+        // There's nothing to confirm
+        Expect::locator($browser->locator('form[data-cms-import-confirm]'))->toHaveCount(0);
+    }
+
+    /**
+     * The zip's directory says the page's JSON file is 20 MB, over the 16 MB an import reads of each JSON file, though
+     * the zip is under transfer.max_unpacked_size, and the Messenger worker's dry run refuses it, naming the file, before
+     * reading it. See "Media files" in docs/spec/transfer.md
+     *
+     * @test
+     */
+    public function it_shows_an_admin_user_why_an_import_of_an_export_with_a_json_file_over_the_cap_refused(): void
+    {
+        self::forgetSentMessages();
+        $this->signInAsAdmin();
+        $zip = $this->zipOf(self::exportFixture());
+        self::declareSize($zip, 'entries/' . self::PAGE . '.json', 20 * 1024 * 1024);
+
+        $browser = $this->visit('/admin/cms/transfer');
+        $import = $browser->getByRole('region', ['name' => 'Import']);
+        $import->getByLabel('Export zip')->setInputFiles($zip);
+        $import->getByRole('button', ['name' => 'Upload'])->click();
+
+        Expect::locator($browser->locator('[data-cms-import-progress]'))->toContainText('Waiting for the Messenger worker to check the export.');
+        self::assertSame(1, self::consumeMessages());
+
+        Expect::locator($browser->locator('[data-cms-import-result]'))->toContainText('The import refused. Nothing changed.', new AssertionOptions(timeoutMs: 15_000));
+        Expect::locator($browser->locator('[data-cms-import-reasons]'))->toContainText('The export\'s file entries/' . self::PAGE . '.json is over the import limit of 16 MB per JSON file.');
+        Expect::locator($browser->locator('form[data-cms-import-confirm]'))->toHaveCount(0);
+    }
+
+    /**
+     * The Messenger worker stopped while checking the export, as when PHP runs out of memory, which skips Messenger's
+     * retries, and gets its message again. See "Who runs it" in docs/spec/transfer.md
+     *
+     * @test
+     */
+    public function it_shows_an_admin_user_that_the_worker_stopped_while_working_on_an_import_which_is_not_run_again(): void
+    {
+        self::forgetSentMessages();
+        $this->signInAsAdmin();
+
+        $browser = $this->visit('/admin/cms/transfer');
+        $import = $browser->getByRole('region', ['name' => 'Import']);
+        $import->getByLabel('Export zip')->setInputFiles($this->zipOf(self::exportFixture()));
+        $import->getByRole('button', ['name' => 'Upload'])->click();
+        Expect::locator($browser->locator('[data-cms-import-progress]'))->toContainText('Waiting for the Messenger worker to check the export.');
+
+        // The worker started checking it, and stopped before it recorded how that ended
+        self::latestImport()->start(new \DateTimeImmutable());
+        self::entityManager()->flush();
+        self::assertSame(1, self::consumeMessages());
+
+        Expect::locator($browser->locator('[data-cms-import-failure]'))->toHaveText('The Messenger worker stopped while it was working on this import, as when PHP runs out of memory or the worker is killed, so it isn\'t run again.', new AssertionOptions(timeoutMs: 15_000));
+        Expect::locator($browser->getByText('Its zip has been deleted. Upload the export again to try once more, and look in the worker\'s logs for why it stopped.'))->toBeVisible();
+        Expect::locator($browser->locator('[data-cms-import-entries], form[data-cms-import-confirm]'))->toHaveCount(0);
+    }
+
+    private static function latestImport(): ImportInterface
+    {
+        self::entityManager()->clear();
+
+        /** @var ImportRepositoryInterface $imports */
+        $imports = self::getContainer()->get(ImportRepositoryInterface::class);
+        $latest = $imports->findLatest(1);
+        self::assertCount(1, $latest);
+
+        return $latest[0];
     }
 
     /**

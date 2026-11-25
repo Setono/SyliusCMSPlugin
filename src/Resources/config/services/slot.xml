@@ -22,7 +22,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldValidator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\ConditionValidator"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Slot\PageScopeValidatorInterface" alias="Setono\SyliusCMSPlugin\Slot\PageScopeValidator"/>
     </services>

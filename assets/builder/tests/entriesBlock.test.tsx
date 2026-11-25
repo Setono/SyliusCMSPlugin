@@ -166,6 +166,7 @@ describe("the Entries block's display", () => {
         },
         channels: [{ code: 'WEB', name: 'Web store' }],
         customerGroups: [],
+        timeZone: 'UTC',
     };
 
     function fakeApi(listed: Entry): BuilderApi {

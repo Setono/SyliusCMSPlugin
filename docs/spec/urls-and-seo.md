@@ -101,7 +101,8 @@ There's no `410` and no redirect to the homepage.
 
 A page can be a channel's [homepage](../../GLOSSARY.md#entries).
 
-- **"Homepage of"** is a list of channels in the page's settings. Each channel has at most one homepage, so choosing a page for a channel takes the channel off any other page.
+- **"Homepage of"** is a list of channels in the page's settings. It offers only the channels the page is in, and the server refuses any other. Each channel has at most one homepage, so choosing a page for a channel takes the channel off any other page. When two saves make different pages one channel's homepage at the same moment, the second gets a message ("Another page just became this channel's homepage"), not a database error.
+- **A page that leaves a channel stays its homepage**, and the admin warns about it ([Admin](admin.md#problems)) until the page is back in the channel or no longer its homepage. Shoppers there can't see the page meanwhile, so Sylius's own homepage shows.
 - **Stored on the CMS side, by channel code**, so projects don't extend Sylius's Channel entity.
 - **It takes effect on save**, like placements, and fires `EntrySettingsChanged` with `homepage` ([Extending](extending.md#events)). It travels in a transfer as an on-save setting ([Transfer](transfer.md)).
 
@@ -120,7 +121,7 @@ Every content type with its own URL gets three SEO fields:
 
 | Field | Translatable | Falls back to |
 | --- | --- | --- |
-| Meta title (`metaTitle`) | yes | the entry's title |
+| Meta title (`metaTitle`) | yes | the entry's title, followed by the channel's name ([Head tags](#head-tags)) |
 | Meta description (`metaDescription`) | yes | the field the content type names in `descriptionField`, such as a blog post's excerpt, and otherwise nothing |
 | Hide from search engines (`noindex`) | no | off |
 
@@ -130,7 +131,7 @@ These fallbacks are separate from the fallback chain: each SEO field first falls
 
 An entry shown at its own URL, or as a homepage, prints these into the shop layout. `@SetonoSyliusCMSPlugin/layout/base.html.twig` fills the shop layout's `title` and `metatags` blocks with them, through `cms_meta_title(entry)` and `cms_head_tags(entry)`, so every layout that extends it gets them ([Extending](extending.md#layout-templates)).
 
-- **Title:** the meta title, or the title.
+- **Title:** the meta title exactly, so editors keep full control. Without one, the title followed by the channel's name, as in "About us | Fashion Web Store", the way Sylius titles a product page.
 - **Meta description:** `<meta name="description">`, left out when empty.
 - **Robots:** `<meta name="robots" content="noindex">` when "Hide from search engines" is on.
 - **Canonical:** `<link rel="canonical">` with the entry's own absolute URL in the current channel and locale, without the query string. For a homepage it's `/{locale}/`. On page 2 onwards of a paginated Entries block, it's the entry's own URL with `?page=N`, the one exception to dropping the query string ([ADR 0019](../adr/0019-categories-are-entries-and-collections-are-listed-by-pages.md)).

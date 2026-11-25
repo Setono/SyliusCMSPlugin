@@ -89,6 +89,11 @@ class Page extends Entry implements PageInterface
         return in_array($channelCode, $this->getHomepageChannelCodes(), true);
     }
 
+    public function getHomepageChannelCodesOutsideChannels(): array
+    {
+        return array_values(array_diff($this->getHomepageChannelCodes(), $this->getChannelCodes()));
+    }
+
     protected function createTranslation(): PageTranslationInterface
     {
         return new PageTranslation();

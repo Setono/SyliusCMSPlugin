@@ -11,7 +11,8 @@ namespace Setono\SyliusCMSPlugin\Seo;
 final readonly class HeadTags
 {
     /**
-     * @param string|null $title the meta title, or the title. Null when neither has a value
+     * @param string|null $title the meta title, or else the title followed by the channel's name. Null when none has a
+     *                          value
      * @param string|null $description the meta description, left out when null
      * @param bool $noindex whether crawlers are asked not to index the page: "Hide from search engines"
      * @param string|null $canonicalUrl the entry's absolute URL in the channel and locale, without a query string, but

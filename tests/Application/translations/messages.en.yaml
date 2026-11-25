@@ -8,6 +8,7 @@ app:
             store_hours: Store hours
         condition_kind:
             product_available: Product is available
+            signed_in: Signed in
         greeting: Hello
         # The test application's code preset sale_hero.json, as a plugin ships its presets' texts
         preset:
@@ -22,11 +23,13 @@ app:
             recipe: Recipe
             store_location: Store location
         field:
+            channel: Channel
             intro: Introduction
             open: Open now
             picks: Picks
             city: City
             directions: Directions
+            headline: Headline
             image: Image
             opening_hours: Opening hours
             opening_hours_help: Days without hours are closed.
@@ -38,6 +41,7 @@ app:
             tagline: Tagline
             transparent_header: Transparent header
         layout:
+            campaign: Campaign
             landing: Landing
             promo: Promo
             store: Store

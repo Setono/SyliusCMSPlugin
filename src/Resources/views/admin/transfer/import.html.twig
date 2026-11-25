@@ -3,7 +3,8 @@
  # progress, and import-progress.js looks again until that changes. Once the dry run would apply, it shows the plan with
  # the overwrite checkbox when there are conflicts, the option to publish everything imported, Import and Cancel. Once
  # it's finished, it shows the result: what it imported, linked to review and publish it, or why it refused. Once it's
- # failed, it shows the error the Messenger worker gave up on. See "Transfer" in docs/spec/admin.md
+ # failed, it shows the error the Messenger worker gave up on, or that the worker stopped while running it. See
+ # "Transfer" in docs/spec/admin.md
  #}
 {% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
 
@@ -113,6 +114,11 @@
             {% if result.plan is not null %}
                 {{ include('@SetonoSyliusCMSPlugin/admin/transfer/_import_plan.html.twig', {plan: result.plan, content_types: content_types}) }}
             {% endif %}
+        {% elseif state == 'failed' and import.stopped %}
+            <div class="ui negative message">
+                <div class="header" data-cms-import-failure>{{ 'setono_sylius_cms.ui.import.stopped'|trans }}</div>
+                <p>{{ 'setono_sylius_cms.ui.import.stopped_help'|trans }}</p>
+            </div>
         {% elseif state == 'failed' %}
             <div class="ui negative message">
                 <div class="header" data-cms-import-failure>{{ 'setono_sylius_cms.ui.import.failed'|trans({'%reason%': import.failure}) }}</div>

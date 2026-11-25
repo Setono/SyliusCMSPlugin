@@ -22,8 +22,9 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  * publishes someone's unfinished changes. See "What takes effect on save" in docs/spec/publishing.md. A change of the
  * channels that would give a published URL of the entry to two entries in a channel is refused, since it would take
  * effect at once (docs/spec/urls-and-seo.md#unique-per-channel-and-locale). Choosing a page as a channel's homepage takes
- * the channel off the page that was its homepage, whose "Homepage of" changes too (docs/spec/urls-and-seo.md#homepage).
- * Only an entry of a content type ordered by position has a position
+ * the channel off the page that was its homepage, whose "Homepage of" changes too, with the rules of
+ * HomepageModifierInterface (docs/spec/urls-and-seo.md#homepage). Only an entry of a content type ordered by position
+ * has a position
  */
 final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
 {
@@ -63,13 +64,14 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         $homepage = null;
         if (in_array(EntrySettingsChanged::HOMEPAGE, $changed, true)) {
             $homepage = $entry instanceof PageInterface ? $entry : throw new InvalidEntrySettingsException('Only a page can be a channel\'s homepage');
+            $this->homepageModifier->checkHomepageOf($homepage, $settings->homepageOf, $settings->channels);
         }
 
         $now = $this->clock->now()->setTimezone(new \DateTimeZone('UTC'));
 
         /** @var list<PageInterface> $takenFrom */
         $takenFrom = [];
-        $manager->wrapInTransaction(function () use ($manager, $entry, $settings, $homepage, $now, &$takenFrom): void {
+        $this->homepageModifier->inTransaction($manager, function () use ($manager, $entry, $settings, $homepage, $now, &$takenFrom): void {
             // A channel has one homepage, which the rows' unique channel code holds to, and Doctrine inserts rows before
             // it deletes others: the pages that were the chosen channels' homepages lose them in a flush of their own
             if (null !== $homepage) {

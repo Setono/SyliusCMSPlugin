@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Problem\Kind;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Problem\Fix;
@@ -30,6 +31,7 @@ final readonly class ScheduledPublishOverdue implements TimeDependentProblemKind
     public function __construct(
         private ScheduledPublishRepositoryInterface $scheduledPublishes,
         private ClockInterface $clock,
+        private AdminTimeZone $timeZone,
     ) {
     }
 
@@ -44,7 +46,7 @@ final readonly class ScheduledPublishOverdue implements TimeDependentProblemKind
             self::CODE,
             Severity::Error,
             $entry,
-            new TranslatableMessage('setono_sylius_cms.problem.scheduled_publish_overdue', ['%at%' => self::time($scheduledPublish->getPublishAt())]),
+            new TranslatableMessage('setono_sylius_cms.problem.scheduled_publish_overdue', ['%at%' => $this->timeZone->format($scheduledPublish->getPublishAt())]),
             Fix::inPublishing($entry),
         )];
     }
@@ -65,13 +67,5 @@ final readonly class ScheduledPublishOverdue implements TimeDependentProblemKind
             ScheduledPublishInterface::class,
             $entry,
         );
-    }
-
-    /**
-     * In PHP's default time zone, as Twig's date filter shows the admin's other times
-     */
-    private static function time(\DateTimeImmutable $at): string
-    {
-        return $at->setTimezone(new \DateTimeZone(date_default_timezone_get()))->format('Y-m-d H:i');
     }
 }

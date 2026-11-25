@@ -125,6 +125,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 function fakeApi(presets: PresetListing[], insertPreset: (id: string) => Promise<InsertedPreset>, blocks: StoredBlock[] = []) {

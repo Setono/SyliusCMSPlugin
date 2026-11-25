@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Transfer\Import;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use League\Flysystem\FilesystemOperator;
 use Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher;
 use Setono\SyliusCMSPlugin\Event\AfterCommitMessageBus;
@@ -14,13 +15,15 @@ use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 /**
  * Reads the export, plans, and applies the plan in one database transaction: any conflict, refusal or error means
  * nothing changes. A dry run applies it too, in a transaction it rolls back, so it checks everything the real run
- * would, publish validation included, and exits as the real run would. Media come first, then the entries and presets
- * that use them. The media files are written to storage only once the plan is complete, right before the commit, and
- * removed again when it can't commit, so an import that refuses or rolls back writes none. The events and messages of
- * what the import writes, such as a replaced file's delayed delete, wait until the transaction commits, and are
- * forgotten when it rolls back. Once an import commits, it dispatches ImportFinished with the result. After a rollback
- * it clears the entity manager, whose entities no longer match the database. See "What an import does" in
- * docs/spec/transfer.md
+ * would, publish validation included, and exits as the real run would. A zip that unpacks to more than it may, or a
+ * JSON file over the cap on each, refuses the import before anything is planned. Media come first, then the entries and
+ * presets that use them. The media files are written to storage only once the plan is complete, right before the
+ * commit, and removed again when it can't commit, so an import that refuses or rolls back writes none. The events and
+ * messages of what the import writes, such as a replaced file's delayed delete, wait until the transaction commits, and
+ * are forgotten when it rolls back. Once an import commits, it dispatches ImportFinished with the result. After a
+ * rollback it clears the entity manager, whose entities no longer match the database, and opens it again when a write
+ * that failed closed it, such as a homepage row that clashed with another save's, which the import refuses, so what
+ * runs it can go on, such as recording an admin import's result. See "What an import does" in docs/spec/transfer.md
  */
 final readonly class Importer implements ImporterInterface
 {
@@ -36,6 +39,7 @@ final readonly class Importer implements ImporterInterface
         private AfterCommitDispatcher $events,
         private AfterCommitMessageBus $messages,
         private FilesystemOperator $storage,
+        private ManagerRegistry $managerRegistry,
     ) {
     }
 
@@ -45,6 +49,8 @@ final readonly class Importer implements ImporterInterface
             $export = $this->reader->read($source);
         } catch (InvalidExportException $e) {
             return ImportResult::invalid($e->getMessage());
+        } catch (ExportTooBigException $e) {
+            return ImportResult::refused(new ImportPlan([], refusals: [new ImportRefusal(null, $e->reason)]));
         }
 
         try {
@@ -69,7 +75,10 @@ final readonly class Importer implements ImporterInterface
         try {
             $files = $this->mediaApplier->apply($export, $plan);
             $refusals = $this->applier->apply($export, $plan, $options);
-            $this->manager->flush();
+            // A refusal rolls back what was written, and may come from a write that failed and closed the manager
+            if ([] === $refusals) {
+                $this->manager->flush();
+            }
         } catch (\Throwable $e) {
             $this->rollBack();
 
@@ -112,5 +121,10 @@ final readonly class Importer implements ImporterInterface
         $this->events->forget();
         $this->messages->forget();
         $this->manager->clear();
+
+        if (!$this->manager->isOpen()) {
+            $name = array_search($this->manager, $this->managerRegistry->getManagers(), true);
+            $this->managerRegistry->resetManager(is_string($name) ? $name : null);
+        }
     }
 }

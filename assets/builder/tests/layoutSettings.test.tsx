@@ -26,6 +26,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 function inLayout(layout: StoredLayout): Entry {
@@ -174,6 +175,20 @@ describe('the layout in the entry settings', () => {
         await waitFor(() =>
             expect(api.saveChanges).toHaveBeenLastCalledWith([{ op: 'set_layout', layout: { code: 'standard', version: 1, fields: { showTitle: false }, translated: {} } }], 0),
         );
+    });
+
+    it("should show what publish would refuse in a layout field under it, and above the tabs only while another tab is open", async () => {
+        const api = fakeApi(inLayout({ code: 'landing', version: 2, fields: {}, translated: {} }));
+        api.validate.mockResolvedValue([{ block: null, field: 'tagline', locale: 'en_US', message: 'This field is required.', layout: true }]);
+        await openBuilder(api);
+
+        await waitFor(() => expect(settingsPanel().getByRole('textbox', { name: 'Tagline' })).toHaveAccessibleDescription('This field is required.'));
+        expect(screen.getAllByText('This field is required.')).toHaveLength(1);
+        expect(settingsPanel().getByRole('textbox', { name: 'Title' })).not.toHaveAccessibleDescription('This field is required.');
+
+        fireEvent.click(screen.getByRole('tab', { name: 'More' }));
+
+        expect(screen.getByText('tagline: This field is required.')).toBeInTheDocument();
     });
 
     it('should flag a disabled layout, and offer only the others', async () => {

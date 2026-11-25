@@ -21,6 +21,7 @@ A [layout](../../GLOSSARY.md#entries) is declared in code with `#[Layout]` ([Ext
 A layout can have fields of its own for presentation options, such as "Hide the title" or "Transparent header". They're the layout class's typed properties with field attributes.
 
 - **Their values are stored in the block tree**, in the tree's `layout.fields`, with their translation state in `layout.translated` ([Content model](content-model.md#the-tree)). So they're drafted, translated, upgraded and transferred like block fields.
+- **Publish validates them like block fields:** required fields, each field type's own validation and the Symfony Validator constraints, and the builder shows the errors under the fields ([Publishing](publishing.md#validation)).
 - **They're versioned like a block type's fields.** Renaming one, or changing its type or translatability, needs a version bump and an upgrader ([Upgraders](extending.md#upgraders)).
 - **Rule of thumb:** a field that every layout of a content type uses, or that gets queried, belongs to the content type as a column. A presentation option that one layout uses belongs to the layout ([ADR 0011](../adr/0011-layouts-are-interchangeable-frames-with-fields-in-the-block-tree.md)).
 - Layout field values can't be filtered or sorted on in SQL.

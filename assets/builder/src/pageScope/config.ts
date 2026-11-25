@@ -16,6 +16,8 @@ export interface PageScopesConfig {
     };
     /** The admin user's locale. */
     locale: string;
+    /** PHP's default time zone, such as Europe/Copenhagen, which a kind's dates and times are entered and shown in. */
+    timeZone: string;
     strings: Record<string, string>;
 }
 

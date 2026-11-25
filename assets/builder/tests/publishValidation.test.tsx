@@ -26,6 +26,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 const required: ValidationError = { block: 'empty', field: 'text', locale: 'en_US', message: 'This field is required.' };

@@ -117,6 +117,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\WhereItShows"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryPlacements"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Tree\SnippetUses"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\AdminTimeZone"/>
 
             <tag name="twig.runtime"/>
         </service>
@@ -125,6 +126,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\RegistryExporter"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\UiStrings"/>
             <argument type="service" id="router"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\AdminTimeZone"/>
 
             <tag name="twig.runtime"/>
         </service>

@@ -29,6 +29,7 @@ const config: BuilderConfig = {
         { code: 'B2B', name: 'Wholesale' },
     ],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 /** Answers each preview request with a new URL: …?_cms_preview=1, then 2 and so on. */

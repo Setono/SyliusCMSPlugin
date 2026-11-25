@@ -5,6 +5,7 @@ import { contextNames } from '../hostPageContext';
 import { createTranslator, TranslatorProvider, useTranslator } from '../i18n';
 import { createSearchApi, type SearchApi } from '../search/api';
 import { SearchProvider } from '../search/context';
+import { TimeZoneProvider } from '../timeZone';
 import { Condition } from '../shell/Condition';
 import { PlusIcon } from '../shell/icons';
 import conditionStyles from '../shell/SelectionPane.module.css';
@@ -31,9 +32,11 @@ export function PageScopeEditor({ config, placement, search }: PageScopeEditorPr
 
     return (
         <TranslatorProvider value={translate}>
-            <SearchProvider api={searchApi}>
-                <PageScopeDialog config={config} placement={placement} />
-            </SearchProvider>
+            <TimeZoneProvider value={config.timeZone}>
+                <SearchProvider api={searchApi}>
+                    <PageScopeDialog config={config} placement={placement} />
+                </SearchProvider>
+            </TimeZoneProvider>
         </TranslatorProvider>
     );
 }

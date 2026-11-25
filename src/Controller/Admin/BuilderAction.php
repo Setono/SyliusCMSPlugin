@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacement;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
 use Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig;
@@ -65,6 +66,7 @@ final readonly class BuilderAction
         private MediaLibraryConfig $mediaLibraryConfig,
         private EntryPlacements $entryPlacements,
         private ContentTypeRegistryInterface $contentTypes,
+        private AdminTimeZone $timeZone,
         private array $scripts = [],
     ) {
     }
@@ -138,6 +140,9 @@ final readonly class BuilderAction
                 ], $channels),
                 'locales' => $locales,
                 'customerGroups' => $this->customerGroups(),
+                // Every date and time is entered and shown in the admin's time zone, whatever the editor's browser uses.
+                // See "Dates and times" in docs/spec/builder.md
+                'timeZone' => $this->timeZone->name(),
                 // The media picker is the media library opened as a picker, with the library's endpoints, and the
                 // store's locales for the alt text. The registry gives it the upload limit and types
                 'media' => $this->mediaLibraryConfig->of($request->getLocale()),

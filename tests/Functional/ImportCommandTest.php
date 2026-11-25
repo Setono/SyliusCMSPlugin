@@ -22,6 +22,7 @@ use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
 use Setono\SyliusCMSPlugin\Repository\EditorPresetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\HomepageClash;
 use Setono\SyliusCMSPlugin\Tests\Support\Imports;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
@@ -538,6 +539,49 @@ final class ImportCommandTest extends KernelTestCase
         $home = self::entry($home->getUuid());
         self::assertInstanceOf(PageInterface::class, $home);
         self::assertSame([], $home->getHomepageChannelCodes());
+    }
+
+    /**
+     * "Homepage of" applies as a save in the admin does, which refuses a channel the page isn't in
+     *
+     * @test
+     */
+    public function it_refuses_to_make_a_page_the_homepage_of_a_channel_it_is_not_in(): void
+    {
+        $export = $this->copyOfFixture();
+        $file = sprintf('%s/entries/%s.json', $export, self::PAGE);
+        file_put_contents($file, str_replace('"homepageOf": []', '"homepageOf": ["B2B"]', (string) file_get_contents($file)));
+
+        $tester = self::import(['path' => $export]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('The settings of Autumn sale can\'t be saved: A page can only be the homepage of a channel it\'s in, and this page isn\'t in B2B.', self::display($tester));
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+    }
+
+    /**
+     * Another page becomes WEB's homepage while the import writes, after the import found WEB without one, so the page's
+     * homepage row clashes with it. The import refuses with the message a save in the admin gives, writes nothing, and
+     * leaves the entity manager, which the failed flush closed, open again
+     *
+     * @test
+     */
+    public function it_refuses_when_another_page_just_became_the_homepage_of_a_channel_it_makes_the_page_the_homepage_of(): void
+    {
+        $other = self::createPage('Sale', 'sale', channels: ['WEB']);
+        $export = $this->copyOfFixture();
+        $file = sprintf('%s/entries/%s.json', $export, self::PAGE);
+        file_put_contents($file, str_replace('"homepageOf": []', '"homepageOf": ["WEB"]', (string) file_get_contents($file)));
+        HomepageClash::withAnotherPage(self::entityManager(), $other->getId());
+
+        $tester = self::import(['path' => $export], false);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('The settings of Autumn sale can\'t be saved: Another page just became this channel\'s homepage. Choose the channel again to make this page its homepage instead.', self::display($tester));
+        self::assertTrue(self::entityManager()->isOpen());
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+        self::assertNull(self::entries()->findOneByUuid(self::SNIPPET));
+        self::assertNull(self::entries()->findOneByUuid(self::INNER_SNIPPET));
     }
 
     /**

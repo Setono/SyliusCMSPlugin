@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../src/api';
 import { createAutosave } from '../src/autosave';
-import { formatDateTime } from '../src/dates';
 import { createCancelSchedule, createPublish, createReload, createSchedule } from '../src/publishing';
 import { locks } from '../src/store';
 import type { EntryResponse, Schedule } from '../src/types';
@@ -201,15 +200,5 @@ describe('scheduling a publish', () => {
         await createPublish(store, { flush: vi.fn(async () => true), pull: vi.fn(), dispose: vi.fn() }, async () => 'published')();
 
         expect(store.getState().schedule).toBeNull();
-    });
-});
-
-describe('the time of a scheduled publish', () => {
-    it('should show it in the editor’s own time zone, as the admin shows times', () => {
-        const at = new Date('2026-11-27T08:00:00Z');
-        const pad = (value: number): string => String(value).padStart(2, '0');
-        const expected = `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
-
-        expect(formatDateTime('2026-11-27T08:00:00Z')).toBe(expected);
     });
 });

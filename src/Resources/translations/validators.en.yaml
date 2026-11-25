@@ -13,6 +13,10 @@ setono_sylius_cms:
         too_many: '[0,1] Can hold at most one %type% block.|]1,Inf[ Can hold at most %count% %type% blocks.'
         unknown_type: 'Its block type "%type%" no longer exists, so it isn''t shown.'
         video_or_embed_url: Choose a video, or enter a YouTube or Vimeo URL, but not both.
+    # What a block's visibility condition may hold. See "Visibility conditions" in docs/spec/targeting.md
+    condition:
+        malformed: 'This isn''t a condition. Remove it.'
+        unknown_kind: 'The condition kind "%kind%" no longer exists, so the block isn''t shown. Remove the condition.'
     # What depends on host-page context, and why it doesn't fit. See "Snippets and their context" in docs/spec/slots.md
     context:
         binding: 'The binding "%binding%" in the block "%block%"'
@@ -31,6 +35,7 @@ setono_sylius_cms:
     field:
         binding_not_accepted: '{{ binding }} can''t be shown in this field.'
         binding_parameter_required: '{{ parameter }} is required.'
+        ends_before_start: '%end% must come after %start%.'
         invalid_choice: The value you selected is not a valid choice.
         link_target_not_allowed: 'This field can''t link to %target%.'
         not_binding: This value should be a binding, with its parameters and fallback.
@@ -66,8 +71,13 @@ setono_sylius_cms:
         too_small: This value should be {{ limit }} or more.
         unknown_binding: 'The bindable property "{{ binding }}" no longer exists, so its fallback shows.'
         unknown_source: 'The source "{{ source }}" no longer exists, so this list shows nothing.'
+    # Why "Homepage of" is refused. See "Homepage" in docs/spec/urls-and-seo.md
+    homepage:
+        not_in_channels: 'A page can only be the homepage of a channel it''s in, and this page isn''t in %channels%.'
+        taken: 'Another page just became this channel''s homepage. Choose the channel again to make this page its homepage instead.'
     # What a placement's page scope may hold. See "Page scopes" in docs/spec/slots.md
     page_scope:
+        condition: 'Condition %number%, %kind%: %message%'
         field: 'Condition %number%, %kind%: %field%: %message%'
         malformed: 'Condition %number% isn''t a condition.'
         needs: 'Condition %number%, %kind%, needs the host-page context "%context%", which the slot doesn''t provide.'

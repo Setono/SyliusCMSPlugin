@@ -141,6 +141,7 @@ Rules:
 
 - Conditions combine with AND, and the values within one condition with OR. Every kind offers "is one of" and "is not one of".
 - An empty scope means every page the slot appears on.
+- A placement's scope is checked when it's saved, its conditions' parameter values as publish checks a block's visibility conditions, except that a channel, locale or customer group the store no longer has is refused, as the admin doesn't flag one in a scope ([Publishing](publishing.md#validation)).
 - A condition kind can sit in a placement's scope only when the slot provides the keys it needs. The scope reads the context the slot provides, not what the snippet declares, so a snippet for any page can be in `shop.footer` and scoped to the Shoes taxon in `product.sidebar`. A scope's needs don't limit the snippet's declared context.
 - Who sees it (channel, locale, customer group, dates) stays on the snippet: its channels, translations, audience and date window. Visibility conditions on the snippet's blocks handle the rest.
 

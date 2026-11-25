@@ -72,10 +72,12 @@ An entry shows when it has been published, is enabled, is inside its date window
 
 A draft saves even when it's invalid, so autosave never loses work. Invalid blocks are flagged in the builder's tree. The one exception is a slug that another route already matches, which is refused on save ([URLs and SEO](urls-and-seo.md#reserved-urls)).
 
-Publish validates, refuses on errors, and points at the blocks and fields that have them. It checks:
+Publish validates, refuses on errors, and points at the blocks, fields and conditions that have them. It checks:
 
 - the Symfony Validator constraints on fields, and required fields
 - each field type's own validation ([Extending](extending.md#field-types))
+- the layout's fields, as a block's: those of the tree's layout, or of the content type's default layout for a tree without one. A layout that was removed or disabled renders the default one and ignores its values, so its fields aren't checked ([Layouts and presets](layouts-and-presets.md#a-removed-layout))
+- every block's visibility conditions: a condition of a kind the code no longer has, and parameter values that don't fit the kind, each by its field and together against the constraints on the kind's parameters class, such as a date window whose `until` doesn't come after its `from` ([Targeting](targeting.md#condition-kinds)). A deleted record a block's condition names, such as a channel, a locale, a customer group or a product, isn't refused: it's a broken reference, which the admin flags ([Targeting](targeting.md#deleted-records-in-conditions)). Only a block's condition keeps a channel, locale or customer group the store no longer has: a field that picks from the store's channels, locales or customer groups, in a block, the layout or the entry, refuses one, as it refuses any choice it no longer offers. A placement's page scope gets the same parameter checks when it's saved, and refuses one too, as the admin doesn't flag it there ([Slots](slots.md#page-scopes))
 - the nesting rules: allowed block types, min and max, parents and needed context ([Content model](content-model.md#blocks-and-nesting))
 - blocks of a type the code no longer has
 - the Snippet block: a snippet whose Snippet blocks lead back to it, directly or through the published trees of the snippets they show, is refused at each such block, with a message naming the way, such as "Footer → Promo → Footer", and the builder flags it ([Blocks](blocks.md#snippet))
@@ -115,6 +117,7 @@ Each translation has a switch, such as "Show in Danish", stored as `shown` in th
 Every entry has an optional "Show from" and "Show until", stored as columns so listings and sources filter on them in SQL ([Sources](sources.md#visible-queries)). "Show from" is inclusive and "Show until" exclusive, as in the [date window condition](targeting.md#condition-kinds).
 
 - The [date window](../../GLOSSARY.md#publishing) takes effect on save, outside the draft.
+- It's entered and shown in PHP's default time zone, as every date and time in the builder is ([Builder](builder.md#dates-and-times)), and stored in UTC.
 - It's checked when content renders, so it needs no worker.
 - It decides only when published content shows, never what's published.
 - Blocks get a date window through the `date_window` visibility condition instead ([Targeting](targeting.md#condition-kinds)).
@@ -125,6 +128,7 @@ An editor can [schedule a publish](../../GLOSSARY.md#publishing) of the draft fo
 
 - **One per entry.** An entry has at most one scheduled publish.
 - **The draft is locked** until the publish runs or is cancelled. Editors cancel it to keep editing. The time must be in the future.
+- **One time zone.** The time is entered and shown in PHP's default time zone, which the admin shows times in, on the overview page as in the builder, whatever the editor's browser uses, as every date and time in the builder is ([Builder](builder.md#dates-and-times)). Both label the time with the zone's name, such as Europe/Copenhagen. The time is stored in UTC.
 - **Checked when scheduling.** Validation and `BeforeEntryPublish` run when the editor schedules, so problems show at once. They run again when the publish runs. Scheduling fires `EntryPublishScheduled`, and cancelling fires `EntryPublishCancelled`.
 - **The worker.** A scheduled publish is a delayed Symfony Messenger message on Sylius's `main` transport, the way Sylius 1.14 schedules catalog promotions. The shop needs a running worker. When it runs, the publish does everything [Publishing now](#publishing-now) does, and its revision records it as scheduled.
 - **Overdue.** When a scheduled publish hasn't run five minutes after its time, the admin warns that the Messenger worker may not be running, and offers Publish now and Cancel the schedule ([Admin](admin.md#entry-overview-page)). A missing worker never fails silently.

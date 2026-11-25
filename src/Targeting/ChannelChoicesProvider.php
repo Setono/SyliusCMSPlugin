@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Targeting;
 
-use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
+use Setono\SyliusCMSPlugin\Field\RecordChoicesProviderInterface;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Symfony\Contracts\Service\ResetInterface;
@@ -13,7 +13,7 @@ use Symfony\Contracts\Service\ResetInterface;
  * The store's channels, by code, with their names, for a Choice field such as the channel condition's channels.
  * They're read once per request
  */
-final class ChannelChoicesProvider implements ChoicesProviderInterface, ResetInterface
+final class ChannelChoicesProvider implements RecordChoicesProviderInterface, ResetInterface
 {
     /** @var array<array-key, string>|null */
     private ?array $choices = null;

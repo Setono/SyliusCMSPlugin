@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Problem;
@@ -21,8 +22,10 @@ final readonly class ScheduledPublishFailed implements ProblemKindInterface
 {
     public const CODE = 'scheduled_publish_failed';
 
-    public function __construct(private ScheduledPublishRepositoryInterface $scheduledPublishes)
-    {
+    public function __construct(
+        private ScheduledPublishRepositoryInterface $scheduledPublishes,
+        private AdminTimeZone $timeZone,
+    ) {
     }
 
     public function findIn(EntryInterface $entry): iterable
@@ -37,18 +40,10 @@ final readonly class ScheduledPublishFailed implements ProblemKindInterface
             Severity::Error,
             $entry,
             new TranslatableMessage('setono_sylius_cms.problem.scheduled_publish_failed', [
-                '%at%' => self::time($scheduledPublish->getPublishAt()),
+                '%at%' => $this->timeZone->format($scheduledPublish->getPublishAt()),
                 '%reason%' => $scheduledPublish->getFailureReason() ?? '',
             ]),
             Fix::inPublishing($entry),
         )];
-    }
-
-    /**
-     * In PHP's default time zone, as Twig's date filter shows the admin's other times
-     */
-    private static function time(\DateTimeImmutable $at): string
-    {
-        return $at->setTimezone(new \DateTimeZone(date_default_timezone_get()))->format('Y-m-d H:i');
     }
 }

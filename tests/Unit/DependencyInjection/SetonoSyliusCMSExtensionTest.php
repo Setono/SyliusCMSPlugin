@@ -71,6 +71,8 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
 use Setono\SyliusCMSPlugin\Transfer\Import\AbandonImport;
+use Setono\SyliusCMSPlugin\Transfer\Import\ExportSources;
+use Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker;
 use Setono\SyliusCMSPlugin\Transfer\Import\RunImport;
 use Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
@@ -614,6 +616,24 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     }
 
     /**
+     * See "Media files" in docs/spec/transfer.md
+     *
+     * @test
+     */
+    public function it_hands_the_limits_of_what_an_import_unpacks_to_the_services_that_check_them(): void
+    {
+        $this->load(['transfer' => ['max_file_size' => '20M', 'max_unpacked_size' => '2G']]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.transfer.max_file_size', 20 * 1024 * 1024);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.transfer.max_unpacked_size', 2 * 1024 * 1024 * 1024);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('setono_sylius_cms.transfer.import_limit', 0, '%setono_sylius_cms.transfer.max_file_size%');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ImportedFileChecker::class, 1, new Reference('setono_sylius_cms.transfer.import_limit'));
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ExportSources::class, 0, '%setono_sylius_cms.transfer.max_unpacked_size%');
+        // The cap on each JSON file an import reads is fixed, with no config key
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ExportSources::class, 1, 16 * 1024 * 1024);
+    }
+
+    /**
      * @return array{storages: array<string, array<string, mixed>>}
      */
     private static function transferStorage(): array
@@ -826,7 +846,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['builder' => ['scripts' => ['/build/app/cms/controls.js']]]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.builder.scripts', ['/build/app/cms/controls.js']);
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 14, '%setono_sylius_cms.builder.scripts%');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 15, '%setono_sylius_cms.builder.scripts%');
     }
 
     /**

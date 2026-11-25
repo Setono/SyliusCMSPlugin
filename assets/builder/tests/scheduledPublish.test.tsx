@@ -1,9 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, type BuilderApi } from '../src/api';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
-import { formatDateTime, fromLocalInput } from '../src/dates';
 import type { EntryResponse, EntryStatus, PresenceResponse, Schedule, SaveResponse, ValidationError } from '../src/types';
 import { block, entry, registry, settings } from './fixtures';
 
@@ -27,9 +26,14 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    // PHP's default time zone, which the admin shows times in
+    timeZone: 'Europe/Copenhagen',
 };
 
 const AT = '2026-11-27T08:00:00Z';
+
+/** AT in Europe/Copenhagen. */
+const SHOWN_AT = '2026-11-27 09:00';
 
 const waiting: Schedule = { at: AT, by: 'Jane Roe', status: 'publishes_at_a_time', reason: null };
 
@@ -83,14 +87,22 @@ function expectReadOnly(): void {
 }
 
 describe('scheduled publishes in the builder', () => {
-    it('should open read-only while a scheduled publish waits, saying when it publishes', async () => {
+    // The editor's browser is in another time zone than the server's
+    beforeEach(() => {
+        vi.stubEnv('TZ', 'Asia/Tokyo');
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('should open read-only while a scheduled publish waits, saying when it publishes in the server’s time zone', async () => {
         const api = fakeApi({ fetchEntry: vi.fn(async () => answer(waiting)) });
         await openBuilder(api);
 
         expectReadOnly();
-        const at = formatDateTime(AT);
-        expect(within(topBar()).getByText(`Publishes ${at}`)).toBeInTheDocument();
-        expect(screen.getByText(`The draft is locked: it publishes ${at}. Cancel the schedule to edit it.`)).toBeInTheDocument();
+        expect(within(topBar()).getByText(`Publishes ${SHOWN_AT}`)).toBeInTheDocument();
+        expect(screen.getByText(`The draft is locked: it publishes ${SHOWN_AT} (Europe/Copenhagen). Cancel the schedule to edit it.`)).toBeInTheDocument();
 
         // The block is only looked at
         fireEvent.click(within(tree()).getByRole('button', { name: 'Heading Welcome' }));
@@ -114,10 +126,10 @@ describe('scheduled publishes in the builder', () => {
 
         expectReadOnly();
         expect(within(topBar()).getByText('Scheduled publish overdue')).toBeInTheDocument();
-        expect(screen.getByText(`The draft is locked: its publish was scheduled for ${formatDateTime(AT)} and hasn't run. The Messenger worker may not be running.`)).toBeInTheDocument();
+        expect(screen.getByText(`The draft is locked: its publish was scheduled for ${SHOWN_AT} (Europe/Copenhagen) and hasn't run. The Messenger worker may not be running.`)).toBeInTheDocument();
     });
 
-    it('should schedule the publish from the Publish button’s menu, and then be read-only', async () => {
+    it('should schedule the publish from the Publish button’s menu, at a time in the server’s time zone, and then be read-only', async () => {
         const api = fakeApi();
         await openBuilder(api);
 
@@ -126,10 +138,12 @@ describe('scheduled publishes in the builder', () => {
         const submit = within(dialog).getByRole('button', { name: 'Schedule the publish' });
         expect(submit).toBeDisabled();
 
-        fireEvent.change(within(dialog).getByLabelText('Publish at'), { target: { value: '2026-11-27T09:00' } });
+        const at = within(dialog).getByLabelText('Publish at');
+        expect(at).toHaveAccessibleDescription('Europe/Copenhagen');
+        fireEvent.change(at, { target: { value: '2026-11-27T09:00' } });
         fireEvent.click(submit);
 
-        await waitFor(() => expect(api.schedule).toHaveBeenCalledWith(fromLocalInput('2026-11-27T09:00')));
+        await waitFor(() => expect(api.schedule).toHaveBeenCalledWith('2026-11-27T08:00:00Z'));
         await within(topBar()).findByRole('button', { name: 'Cancel the schedule' });
         expectReadOnly();
         expect(screen.queryByRole('dialog', { name: 'Schedule the publish' })).not.toBeInTheDocument();
@@ -186,7 +200,7 @@ describe('scheduled publishes in the builder', () => {
         await openBuilder(fakeApi({ fetchEntry: vi.fn(async () => answer({ ...waiting, status: 'scheduled_publish_failed', reason: 'The campaign was postponed' })) }));
 
         expect(within(topBar()).getByText('Scheduled publish failed')).toBeInTheDocument();
-        expect(screen.getByText(`The publish scheduled for ${formatDateTime(AT)} was stopped when it ran: The campaign was postponed`)).toBeInTheDocument();
+        expect(screen.getByText(`The publish scheduled for ${SHOWN_AT} (Europe/Copenhagen) was stopped when it ran: The campaign was postponed`)).toBeInTheDocument();
         expect(within(topBar()).getByRole('button', { name: 'Publish' })).toBeInTheDocument();
         expect(within(topBar()).getByRole('button', { name: 'Schedule…' })).toBeInTheDocument();
         expect(within(tree()).getByRole('button', { name: 'Add block' })).toBeInTheDocument();

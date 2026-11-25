@@ -21,9 +21,11 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\SnippetCyclesTest;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Article;
@@ -32,6 +34,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Validation\BlockTreeValidator;
+use Setono\SyliusCMSPlugin\Validation\ConditionValidator;
 use Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator;
 use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidator;
@@ -290,15 +293,16 @@ final class EntryValidatorTest extends TestCase
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             'article' => ['model' => Article::class, 'translation' => null, 'resource' => 'app.article'],
         ]);
+        $choiceHandler = new ChoiceHandler($translator);
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
-            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
+            ChoiceHandler::class => static fn (): ChoiceHandler => $choiceHandler,
         ]));
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
         $fieldValidator = new FieldValidator(new FieldConstraints($handlers, $validator), new FallbackValues($handlers, $fallbackChain->reveal()), $validator, $translator, Bindings::validator());
 
         return new EntryValidator(
-            new BlockTreeValidator($blockTypes, new NestingRules($blockTypes, $contentTypes), $fieldValidator, $translator),
+            new BlockTreeValidator($blockTypes, new NestingRules($blockTypes, $contentTypes), $fieldValidator, $translator, new LayoutRegistry([], new FieldReader()), new ConditionValidator(Conditions::registry(), $fieldValidator, $choiceHandler, $translator)),
             $fieldValidator,
             new ContentTypeFields(new FieldReader()),
             $contentTypes,

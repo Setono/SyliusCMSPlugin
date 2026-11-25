@@ -23,6 +23,7 @@ A [visibility condition](../../GLOSSARY.md#visibility) on a block hides it unles
 - **Combining.** A block's conditions combine with AND, and the values within one condition with OR.
 - **"Is one of" and "is not one of".** Every kind offers both, as the condition's `negate` flag. For a date window, that's inside or outside it, such as hiding a block during one weekend.
 - **Any block** can carry conditions, such as a single carousel slide.
+- **Validated on publish.** A condition of a kind the code no longer has, or whose parameter values don't fit its kind, is refused, and the builder shows the error at the condition ([Publishing](publishing.md#validation)). A deleted record it names isn't refused, but flagged ([Deleted records in conditions](#deleted-records-in-conditions)).
 - **The builder** strikes through blocks that the preview's channel and locale hide, with an eye-slash icon in the tree, and drops them from the preview ([Builder](builder.md)).
 
 ## Condition kinds
@@ -33,7 +34,7 @@ These kinds ship. Each declares the context keys it needs and what it reads ([Ex
 | --- | --- | --- | --- | --- |
 | `channel` | Channel | | `Channel` | `channels`: channel codes |
 | `locale` | Locale | | `Locale` | `locales`: locale codes |
-| `date_window` | Date window | | `Time` | `from` and `until`: Date and time values, each optional. `from` is inclusive and `until` exclusive, so a window that ends at `2026-12-01T00:00:00Z` shows until the last second of 30 November. |
+| `date_window` | Date window | | `Time` | `from` and `until`: Date and time values, each optional, entered in PHP's default time zone ([Builder](builder.md#dates-and-times)). `from` is inclusive and `until` exclusive, so a window that ends at `2026-12-01T00:00:00Z` shows until the last second of 30 November. |
 | `customer_group` | Customer group | | `Customer` | `groups`: customer group codes, `@guest` and `@no_group` |
 | `product` | Product | `product` | `HostPage` | `products`: product codes |
 | `product_in_taxon` | Product in taxon | `product` | `HostPage` | `taxons`: taxon codes, and `includeChildren`: a Toggle |
@@ -44,11 +45,11 @@ These kinds ship. Each declares the context keys it needs and what it reads ([Ex
 - **Customer group.** Sylius gives a customer at most one group, so the condition checks one value: the group's code, `@guest` for a shopper who isn't signed in, or `@no_group` for one signed in without a group ([Content model](content-model.md#reserved-customer-group-values)).
 - **Product in taxon** matches when the product is in any of the taxons, through any of its taxons, not only its main one. With `includeChildren`, the taxons' descendants count too.
 - **Entry in category** matches an entry whose content type has categories and which is in any of them.
-- **Date window** compares the time from the render context, so the preview's Date applies ([Shown to and Date](#shown-to-and-date)).
+- **Date window** compares the time from the render context, so the preview's Date applies ([Shown to and Date](#shown-to-and-date)). When it has both ends, `until` must come after `from`, or publish refuses it, as a window that ends where it starts never shows.
 
 Kinds that read `HostPage` work in visibility conditions and in page scopes. The others work only in visibility conditions.
 
-**A condition whose kind needs a context key the page doesn't provide never matches**, negated or not, as a condition of a kind the code no longer has doesn't, and a source that needs a missing key yields nothing ([Sources](sources.md)). Its block stays hidden, and a placement it scopes doesn't show. The builder and the placement editor offer a kind only where its needs are provided, so this happens only where the code changed, or on a snippet's preview page without a sample object.
+**A condition whose kind needs a context key the page doesn't provide never matches**, negated or not, as a condition of a kind the code no longer has doesn't, and a source that needs a missing key yields nothing ([Sources](sources.md)). Its block stays hidden, and a placement it scopes doesn't show. The builder and the placement editor offer a kind only where its needs are provided, so this happens only where the code changed, or on a snippet's preview page without a sample object. The admin flags a block's condition of a kind the code no longer has as a warning, and publish refuses it ([Admin](admin.md#problems)).
 
 **Not shipped:** cart contents or total (promotions cover that), device (CSS covers that), currency, URL or UTM parameters, recurring times such as a weekday or an hour, and order history. Developers can add any of these as their own condition kinds, which work on blocks and page scopes, never on entries.
 
@@ -93,7 +94,18 @@ A deleted customer group leaves a dangling code ([ADR 0002](../adr/0002-referenc
 - In a visibility condition, "is one of" no longer matches through it, and "is not one of" no longer excludes anyone through it.
 - In an audience, "Only these" no longer lets anyone in through it, and "Everyone except these" no longer keeps anyone out through it.
 
-The admin flags each one as a broken reference ([Admin](admin.md#problems)). The same applies to a deleted channel, locale, product or taxon in a condition.
+The admin flags each one as a broken reference ([Admin](admin.md#problems)), and counts the entries that name the group again when it's deleted.
+
+## Deleted records in conditions
+
+A visibility condition that names a record the store no longer has keeps its dangling code or UUID ([ADR 0002](../adr/0002-references-by-code-and-uuid.md)) and no longer counts it: "is one of" no longer matches through it, and "is not one of" no longer excludes anything through it. Publish doesn't refuse it ([Publishing](publishing.md#validation)). The admin flags it as a broken reference, and counts the entries that may name it again when it's deleted or its code or UUID changes ([Admin](admin.md#problems)). That covers:
+
+- a channel, a locale or a customer group in a parameter that picks from the store's channels, locales or customer groups, such as the channel, locale and customer group kinds' own, in a shipped kind or a project's own ([Deleted customer groups](#deleted-customer-groups))
+- a product, taxon, entry or media item that a parameter's field type refers to, such as the product kind's products, in a shipped kind or a project's own
+
+A project's kind whose Choice parameter picks from records of its own, through its own choices provider ([Extending](extending.md#field-types)), isn't covered: a value its provider no longer gives doesn't fit the kind, so publish refuses it, and the admin doesn't flag it.
+
+Only a block's visibility condition keeps a channel, locale or customer group the store no longer has. A field that picks from the store's channels, locales or customer groups, in a block, a layout or an entry, refuses one on publish, as it refuses any choice it no longer offers ([Content model](content-model.md#fields)). So does a placement's page scope when it's saved, as the admin doesn't flag one there ([Slots](slots.md#page-scopes)).
 
 ## Caching contract
 
@@ -112,7 +124,7 @@ Listings and sources report no next date boundary in v2.0.
 The builder's preview toolbar has two pickers, carried by the signed preview token ([Builder](builder.md)):
 
 - **Shown to:** Guest, Signed in without a group, or any customer group.
-- **Date:** now, or a chosen date and time.
+- **Date:** now, or a chosen date and time, in PHP's default time zone ([Builder](builder.md#dates-and-times)).
 
 They set the customer group value and the current time in the render context, the one place the renderer reads them ([Extending](extending.md#rendering-services)). So:
 

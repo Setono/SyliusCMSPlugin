@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
-use Psr\Container\ContainerInterface;
+use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\RichText;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
+use Setono\SyliusCMSPlugin\Problem\BrokenReferences;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ReferenceProblemKindInterface;
@@ -18,9 +19,6 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
-use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
-use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
-use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tree\FoundReference;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Sylius\Component\Core\Model\ProductInterface;
@@ -40,16 +38,12 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
 {
     public const CODE = 'broken_reference';
 
-    /**
-     * @param ContainerInterface $typeLoaders the ReferenceTypeLoaderInterface of each reference type, by type
-     */
     public function __construct(
         private ReferenceFinder $referenceFinder,
         private ContentTypeRegistryInterface $contentTypes,
         private BlockTypeRegistryInterface $blockTypes,
         private LayoutRegistryInterface $layouts,
-        private ContainerInterface $typeLoaders,
-        private EntryRepositoryInterface $entries,
+        private BrokenReferences $brokenReferences,
         private ContentTypeFields $contentTypeFields = new ContentTypeFields(new FieldReader()),
     ) {
     }
@@ -75,21 +69,7 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
 
     public function findEntriesReferencing(array $referenced, array $formerValues = []): iterable
     {
-        // The entries that referred to a former code may still, and now hold a broken reference
-        $ids = $formerValues;
-        foreach ($referenced as $record) {
-            $id = match (true) {
-                $record instanceof MediaItemInterface, $record instanceof EntryInterface => $record->getUuid(),
-                $record instanceof ProductInterface, $record instanceof TaxonInterface => $record->getCode(),
-                default => null,
-            };
-
-            if (null !== $id) {
-                $ids[] = $id;
-            }
-        }
-
-        return [] === $ids ? [] : $this->entries->findReferencing(array_values(array_unique($ids)));
+        return $this->brokenReferences->entriesReferencing($referenced, $formerValues);
     }
 
     public function findIn(EntryInterface $entry): iterable
@@ -97,25 +77,11 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
         $contentType = $this->contentTypes->getByEntry($entry);
 
         /** @var list<FoundReference> $found */
-        $found = array_values(array_filter(
-            iterator_to_array($this->referenceFinder->inEntry($entry, $contentType), false),
-            fn (FoundReference $reference): bool => $this->typeLoaders->has($reference->reference->type),
-        ));
+        $found = iterator_to_array($this->referenceFinder->inEntry($entry, $contentType), false);
 
-        $existing = [];
-        foreach (ReferenceLoader::idsByType(ReferenceFinder::references($found)) as $type => $ids) {
-            $loader = $this->typeLoaders->get($type);
-            if ($loader instanceof ReferenceTypeLoaderInterface) {
-                $existing[$type] = array_fill_keys($loader->existing($ids), true);
-            }
-        }
-
-        foreach ($found as $reference) {
-            if (isset($existing[$reference->reference->type][$reference->reference->id])) {
-                continue;
-            }
-
-            yield $this->problem($entry, $contentType, $reference);
+        $references = array_map(static fn (FoundReference $reference): Reference => $reference->reference, $found);
+        foreach (array_keys($this->brokenReferences->broken($references)) as $index) {
+            yield $this->problem($entry, $contentType, $found[$index]);
         }
     }
 

@@ -1,7 +1,7 @@
 import * as Popover from '@radix-ui/react-popover';
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { useBuilder, useBuilderState, usePresenceState, usePreviewState, useSettingsState } from '../context';
-import { formatDateTime, fromLocalInput } from '../dates';
+import { formatDateTime } from '../dates';
 import { CONTEXT_FIELD, contextNames } from '../hostPageContext';
 import { useTranslator, type MessageKey, type Translate } from '../i18n';
 import { hasTranslation, localeOf, offeredLocales } from '../locales';
@@ -11,6 +11,7 @@ import { SearchList } from '../search/SearchPicker';
 import searchStyles from '../search/SearchPicker.module.css';
 import type { Sample, SampleResult, SnippetPreviewState } from '../snippetPreview';
 import { locks } from '../store';
+import { useTimeZone } from '../timeZone';
 import { localeCounts } from '../translationState';
 import type { EntryStatus, FieldSchema, Schedule } from '../types';
 import { ArrowLeftIcon, ChevronDownIcon, DesktopIcon, MobileIcon, RedoIcon, UndoIcon } from './icons';
@@ -23,11 +24,11 @@ const statusLabels: Record<EntryStatus, MessageKey> = {
     unpublished_changes: 'setono_sylius_cms.builder.unpublished_changes',
 };
 
-/** The status label of the entry's scheduled publish, the same the entry lists show. */
-export function scheduleLabel(t: Translate, schedule: Schedule): string {
+/** The status label of the entry's scheduled publish, the same the entry lists show, in the time zone the server gives. */
+export function scheduleLabel(t: Translate, schedule: Schedule, timeZone: string): string {
     switch (schedule.status) {
         case 'publishes_at_a_time':
-            return t('setono_sylius_cms.builder.publishes_at', { '%at%': formatDateTime(schedule.at) });
+            return t('setono_sylius_cms.builder.publishes_at', { '%at%': formatDateTime(schedule.at, timeZone) });
         case 'scheduled_publish_overdue':
             return t('setono_sylius_cms.builder.scheduled_publish_overdue');
         case 'scheduled_publish_failed':
@@ -38,6 +39,7 @@ export function scheduleLabel(t: Translate, schedule: Schedule): string {
 export function TopBar() {
     const t = useTranslator();
     const { backUrl, leave, locales } = useBuilder();
+    const timeZone = useTimeZone();
     // The title in the edited locale, or the one it falls back to
     const title = useBuilderState((state) => {
         for (const locale of localeOf(locales, state.locale).fallbackChain) {
@@ -76,7 +78,7 @@ export function TopBar() {
                     </span>
                     {schedule !== null && (
                         <span className={styles.status} data-status={schedule.status}>
-                            {scheduleLabel(t, schedule)}
+                            {scheduleLabel(t, schedule, timeZone)}
                         </span>
                     )}
                 </div>
@@ -329,9 +331,9 @@ function ShownTo() {
 }
 
 /**
- * When the preview shows the page: now, or a date and time the editor picks in their own time zone, which date windows
- * follow. It reloads the preview once the editor leaves the input or presses Enter, rather than at every digit typed,
- * and Now goes back to now.
+ * When the preview shows the page: now, or a date and time the editor picks in the time zone the server gives, which
+ * date windows follow. It reloads the preview once the editor leaves the input or presses Enter, rather than at every
+ * digit typed, and Now goes back to now.
  */
 function PreviewDate() {
     const t = useTranslator();
@@ -486,8 +488,9 @@ function Publish() {
 }
 
 /**
- * The Publish button's menu, which schedules the publish for a time instead, entered in the editor's own time zone.
- * Once it's scheduled, the working copy is locked. See "Scheduled publishes" in docs/spec/publishing.md
+ * The Publish button's menu, which schedules the publish for a time instead, entered in the time zone the server gives,
+ * which it names, whatever the editor's own. Once it's scheduled, the working copy is locked. See "Scheduled publishes"
+ * in docs/spec/publishing.md
  */
 function SchedulePublish({ disabled }: { disabled: boolean }) {
     const t = useTranslator();
@@ -495,22 +498,22 @@ function SchedulePublish({ disabled }: { disabled: boolean }) {
     const scheduleState = useBuilderState((state) => state.scheduleState);
     const scheduleRefusal = useBuilderState((state) => state.scheduleRefusal);
     const [open, setOpen] = useState(false);
-    const [at, setAt] = useState('');
+    // The time entered, in UTC, or null until a whole one is
+    const [at, setAt] = useState<string | null>(null);
     const inputId = useId();
     const menu = t('setono_sylius_cms.builder.schedule_menu');
     const scheduling = scheduleState === 'scheduling';
-    const utc = fromLocalInput(at);
 
     const submit = (event: FormEvent): void => {
         event.preventDefault();
-        if (utc === null) {
+        if (at === null) {
             return;
         }
 
-        void schedule(utc).then((scheduled) => {
+        void schedule(at).then((scheduled) => {
             if (scheduled) {
                 setOpen(false);
-                setAt('');
+                setAt(null);
             }
         });
     };
@@ -528,14 +531,14 @@ function SchedulePublish({ disabled }: { disabled: boolean }) {
                         <label htmlFor={inputId} className={styles.scheduleLabel}>
                             {t('setono_sylius_cms.builder.schedule_at')}
                         </label>
-                        <input id={inputId} type="datetime-local" className={styles.scheduleInput} required value={at} onChange={(event) => setAt(event.currentTarget.value)} />
+                        <LocalDateTimeInput id={inputId} className={styles.scheduleInput} required value={at} commitOn="change" onCommit={setAt} />
                         {scheduleState === 'failed' && (
                             <p role="alert" className={styles.failed}>
                                 {t('setono_sylius_cms.builder.schedule_failed')}
                                 {scheduleRefusal !== null && `: ${scheduleRefusal}`}
                             </p>
                         )}
-                        <button type="submit" className={styles.publishButton} disabled={scheduling || utc === null}>
+                        <button type="submit" className={styles.publishButton} disabled={scheduling || at === null}>
                             {scheduling ? t('setono_sylius_cms.builder.scheduling') : t('setono_sylius_cms.builder.schedule_publish')}
                         </button>
                     </form>

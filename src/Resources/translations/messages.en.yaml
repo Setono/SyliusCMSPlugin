@@ -245,11 +245,16 @@ setono_sylius_cms:
             stale: '%title% changed here at %changed_at%, after the export''s copy from %exported_at%.'
             url_clash: '%title% would have the URL %url%, which %other% has in %channels%.'
         embed_code: 'Embed code is switched off in this shop, so %title% can''t bring in an Embed code block that isn''t published here with the same key and code.'
+        # A JSON file of an export over ExportSources::MAX_JSON_FILE_SIZE, by a zip's directory or by what's read
+        json_file:
+            over_limit: 'The export''s file %path% is over the import limit of %limit% per JSON file.'
         # Why a media item's file in an export is refused, before the checks an upload goes through. See "Media files"
         # in docs/spec/transfer.md
         media_file:
             checksum: '%filename% doesn''t match its checksum, so it isn''t the file that was exported.'
             filename: '"%filename%" isn''t a plain filename.'
+            # Over the smaller of transfer.max_file_size and media.max_upload_size
+            over_limit: '%filename% is over the import limit of %limit% per file.'
         media_refused: 'The media item %name% can''t be imported: %reason%'
         newer_version: '%title% can''t be imported: %reason%. Deploy the code first.'
         not_publishable: '%title% can''t be published: %reason%'
@@ -259,6 +264,10 @@ setono_sylius_cms:
         unknown_block_type: '%title% has blocks of the type "%type%", which the code here doesn''t have. Deploy the code first.'
         unknown_content_type: '%title% is of the content type "%content_type%", which the code here doesn''t have. Deploy the code first.'
         unknown_layout: '%title% has the layout "%layout%", which the code here doesn''t have for its content type. Deploy the code first.'
+        # An export zip over transfer.max_unpacked_size, by its directory, or by what's extracted when its headers lie
+        zip:
+            over_limit: 'The export zip unpacks to more than the import limit of %limit%, more than its directory says.'
+            too_big: 'The export zip unpacks to %size%, over the import limit of %limit%.'
     layout:
         blog_category:
             standard: Standard
@@ -488,6 +497,7 @@ setono_sylius_cms:
         products: Products
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
+        broken_condition_reference: '%field% in a condition of the %block% block refers to %type% that was deleted, so the condition no longer counts it.'
         broken_entry_reference: '%field% refers to %type% that was deleted, so it isn''t shown.'
         broken_entry_rich_text_reference: 'A link in %field% leads to %type% that was deleted, so it shows as plain text.'
         broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'
@@ -496,15 +506,18 @@ setono_sylius_cms:
         broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
         capped_slot_without_catch_all: '"%slot%" is capped at %cap% and has no catch-all placement, with no page scope and a published, enabled snippet for everyone, so some pages or shoppers may see nothing there.'
         category_archive_without_entries: 'Its page lists none of the category''s entries, as no Entries block is left in its blocks. Add an Entries block filled by %source%.'
+        deleted_channel_in_condition: 'The channel "%code%" in a condition of the %block% block was deleted, so the condition no longer counts it.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
+        deleted_locale_in_condition: 'The locale "%code%" in a condition of the %block% block was deleted, so the condition no longer counts it.'
         misfit_entry_value: '%field% holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         page_scope_removed_kind: 'The page scope of the placement in "%slot%" has a condition of the kind "%kind%", which the code no longer has, so the placement shows nothing.'
         page_scope_unprovided: 'The page scope of the placement in "%slot%" has a condition, %kind%, that needs the host-page context "%context%", which the slot no longer provides, so the placement shows nothing.'
         preset_removed_block_type: 'It has blocks of the type %types%, which the code no longer has, so inserting it leaves them out.'
+        homepage_not_in_channel: 'It''s the homepage of %channel%, but isn''t in that channel, so shoppers there see the store''s own homepage. Put it back in the channel, or take the channel out of "Homepage of".'
         placement_hidden_by_homepage: 'The placement in "%slot%" doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         removed_context_key: 'It needs the context key "%key%", which the code no longer has, so none of its placements shows it.'
@@ -514,6 +527,7 @@ setono_sylius_cms:
         snippet_inside_itself: 'The %block% block shows this snippet inside itself, directly or through other snippets, so it''s skipped there.'
         unknown_bindable_property: '%field% in the %block% block is bound to "%property%", which the code no longer has, so it shows its fallback.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
+        unknown_condition_kind: 'A condition of the %block% block is of the kind "%kind%", which the code no longer has, so the block isn''t shown.'
         unknown_layout_bindable_property: '%field% in the layout is bound to "%property%", which the code no longer has, so it shows its fallback.'
         unknown_entry_source: '%field% is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unknown_layout_source: '%field% in the layout is filled by the source "%source%", which the code no longer has, so it lists nothing.'
@@ -522,12 +536,14 @@ setono_sylius_cms:
         url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
     # Each kind of problem, by its code, as the Overview's Needs attention groups them. A project names its own kinds here
     problem_kind:
+        broken_condition_reference: Broken references in conditions
         broken_reference: Broken references
         capped_slot_without_catch_all: Capped slots without a catch-all placement
         category_archive_without_entries: Category pages without an Entries block
         deleted_customer_group: Deleted customer groups
         misfit_value: Values that don't fit their field
         page_scope_mismatch: Page scopes that don't fit their slots
+        homepage_not_in_channel: Homepages of channels the page isn't in
         placement_hidden_by_homepage: Placements a CMS homepage hides
         preset_removed_block_type: Presets with blocks of removed types
         removed_context_key: Removed context keys
@@ -537,6 +553,7 @@ setono_sylius_cms:
         snippet_inside_itself: Snippets inside themselves
         unknown_bindable_property: Bindings of removed properties
         unknown_block_type: Blocks of removed types
+        unknown_condition_kind: Conditions of removed kinds
         unknown_source: Lists filled by removed sources
         url_taken_by_route: URLs taken by Sylius routes
     publish:
@@ -725,6 +742,10 @@ setono_sylius_cms:
                 failed: Failed
                 finished: Finished
                 importing: Importing
+            # The Messenger worker stopped while it checked or imported it, as on a fatal error, which skips Messenger's
+            # retries, so it isn't run again. See "Who runs it" in docs/spec/transfer.md
+            stopped: 'The Messenger worker stopped while it was working on this import, as when PHP runs out of memory or the worker is killed, so it isn''t run again.'
+            stopped_help: Its zip has been deleted. Upload the export again to try once more, and look in the worker's logs for why it stopped.
             title: Import
             unresolved_references: References that don't resolve here
             unresolved_references_help: They import unchanged, and are flagged as broken references.
@@ -805,11 +826,11 @@ setono_sylius_cms:
         scheduled: Scheduled
         scheduled_publish:
             by: 'Scheduled by %name%.'
-            failed: 'The publish scheduled for %at% was stopped when it ran'
+            failed: 'The publish scheduled for %at% (%time_zone%) was stopped when it ran'
             locked: The draft is locked until then. Cancel the schedule to change it.
-            overdue: 'The publish scheduled for %at% hasn''t run'
+            overdue: 'The publish scheduled for %at% (%time_zone%) hasn''t run'
             overdue_help: The Messenger worker may not be running. Publish now, or cancel the schedule.
-            waiting: 'Publishes %at%'
+            waiting: 'Publishes %at% (%time_zone%)'
         search: Search
         share_draft: Share draft
         share_draft_help: 'Anyone with the link sees the draft in the shop, in the channel and language you pick, without signing in. Shown to and Date are fixed now, as the builder''s preview starts them, and the link works until you revoke it.'
@@ -1037,7 +1058,8 @@ setono_sylius_cms:
         has_errors: Has errors
         hidden_in_preview: Hidden in this channel and language
         homepage_of: Homepage of
-        homepage_of_help: It shows at each of these channels' root URL in place of the store's own homepage. A channel has one homepage, so choosing it here takes it off any other page.
+        homepage_of_help: It shows at the root URL of each of these channels, the ones it's in, in place of the store's own homepage. A channel has one homepage, so choosing it here takes it off any other page.
+        homepage_of_left_channel: '%channel% (the page isn''t in this channel)'
         is_inside: is inside
         is_not_one_of: is not one of
         is_one_of: is one of
@@ -1076,8 +1098,8 @@ setono_sylius_cms:
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
-        locked: 'The draft is locked: it publishes %at%. Cancel the schedule to edit it.'
-        locked_overdue: 'The draft is locked: its publish was scheduled for %at% and hasn''t run. The Messenger worker may not be running.'
+        locked: 'The draft is locked: it publishes %at% (%time_zone%). Cancel the schedule to edit it.'
+        locked_overdue: 'The draft is locked: its publish was scheduled for %at% (%time_zone%) and hasn''t run. The Messenger worker may not be running.'
         locale_no_translation: no translation
         locale_outdated: '%count% outdated'
         locale_untranslated: '%count% untranslated'
@@ -1166,7 +1188,7 @@ setono_sylius_cms:
         meta_description: Meta description
         meta_description_help: Search engines may show it under the title in their results.
         meta_title: Meta title
-        meta_title_help: The page's title in search results and the browser tab. Leave it empty to use the title.
+        meta_title_help: The page's title in search results and the browser tab. Leave it empty to use the title followed by the channel's name.
         mobile: Mobile
         more: More
         more_help: Publishing history, revisions, share links and placements are on the entry's overview page.
@@ -1246,7 +1268,7 @@ setono_sylius_cms:
         schedule_in_the_past: Pick a time in the future.
         schedule_menu: Schedule…
         schedule_publish: Schedule the publish
-        schedule_stopped: 'The publish scheduled for %at% was stopped when it ran: %reason%'
+        schedule_stopped: 'The publish scheduled for %at% (%time_zone%) was stopped when it ran: %reason%'
         scheduled_publish_failed: Scheduled publish failed
         scheduled_publish_overdue: Scheduled publish overdue
         scheduling: Scheduling…

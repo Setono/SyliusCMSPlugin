@@ -103,6 +103,15 @@
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>
 
+        <!-- A block's condition of a kind a project removed, on purpose or not: a warning in the admin, so lint leaves it out -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownConditionKind" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownConditionKind">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
         <!-- A list filled by a source the code no longer has, which lists nothing -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownSource" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownSource">
             <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
@@ -185,6 +194,16 @@
             <tag name="setono_sylius_cms.problem_kind"/>
         </service>
 
+        <!--
+        A page that's the homepage of a channel it has left, where the store's own homepage shows: a warning in the
+        admin, so lint leaves it out
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\HomepageNotInChannel" class="Setono\SyliusCMSPlugin\Problem\Kind\HomepageNotInChannel">
+            <argument type="service" id="sylius.repository.channel"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
         <!-- A snippet that needs a context key a project removed: a warning in the admin, so lint leaves it out -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedContextKey" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedContextKey">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
@@ -204,10 +223,17 @@
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup" class="Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup">
             <argument type="service" id="sylius.repository.customer_group"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
             <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <!-- Which references no longer resolve, and which entries may refer to a record, for the broken reference kinds -->
+        <service id="Setono\SyliusCMSPlugin\Problem\BrokenReferences" class="Setono\SyliusCMSPlugin\Problem\BrokenReferences">
+            <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
         </service>
 
         <!-- A reference in a field to a record that was deleted, such as a media item, which setono:cms:lint reports -->
@@ -216,11 +242,27 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
-            <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\BrokenReferences"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
+        <!--
+        A condition naming a channel or locale the store no longer has, or with a parameter referring to a deleted record,
+        such as a product, which setono:cms:lint reports
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\BrokenConditionReference" class="Setono\SyliusCMSPlugin\Problem\Kind\BrokenConditionReference">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\BrokenReferences"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="sylius.repository.locale"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <!-- A snippet that would render inside itself, which setono:cms:lint reports -->
@@ -244,12 +286,14 @@
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishOverdue" class="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishOverdue">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
             <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\AdminTimeZone"/>
 
             <tag name="setono_sylius_cms.problem_kind"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishFailed" class="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishFailed">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\AdminTimeZone"/>
 
             <tag name="setono_sylius_cms.problem_kind"/>
         </service>

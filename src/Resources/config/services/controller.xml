@@ -144,6 +144,7 @@
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\AdminTimeZone"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -192,6 +193,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryPlacements"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\AdminTimeZone"/>
             <argument>%setono_sylius_cms.builder.scripts%</argument>
 
             <tag name="controller.service_arguments"/>

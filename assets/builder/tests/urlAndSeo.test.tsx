@@ -26,6 +26,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
 };
 
 /** Pages live at the root of the shop, and a project's stores under stores. */
@@ -36,7 +37,7 @@ const withUrls: Registry = {
         ...strings,
         'setono_sylius_cms.builder.entry_title': 'Title',
         'setono_sylius_cms.builder.meta_title': 'Meta title',
-        'setono_sylius_cms.builder.meta_title_help': 'Leave it empty to use the title.',
+        'setono_sylius_cms.builder.meta_title_help': 'Leave it empty to use the title followed by the channel\'s name.',
         'setono_sylius_cms.builder.meta_description': 'Meta description',
         'setono_sylius_cms.builder.meta_description_help': 'Search engines may show it under the title.',
         'setono_sylius_cms.builder.noindex': 'Hide from search engines',
@@ -144,7 +145,7 @@ describe('the URL & SEO tab', () => {
         const noindex = panel.getByLabelText('Hide from search engines');
 
         expect(metaTitle).toHaveValue('About us | Shop');
-        expect(metaTitle).toHaveAccessibleDescription('Leave it empty to use the title.');
+        expect(metaTitle).toHaveAccessibleDescription('Leave it empty to use the title followed by the channel\'s name.');
         expect(metaDescription).toHaveValue('All about us');
         expect(metaDescription).toHaveAccessibleDescription('Search engines may show it under the title.');
         expect(noindex).not.toBeChecked();

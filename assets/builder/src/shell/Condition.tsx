@@ -3,6 +3,7 @@ import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator, type MessageKey } from '../i18n';
 import type { ConditionKindDefinition, VisibilityCondition } from '../types';
+import { ErrorList } from './ErrorList';
 import { TrashIcon } from './icons';
 import styles from './SelectionPane.module.css';
 
@@ -18,16 +19,35 @@ export interface ConditionProps {
     unknownHelp?: MessageKey;
     /** The edited locale. Conditions' parameters are shared by all translations. */
     locale: string;
+    /** What publish would refuse in the condition as a whole, such as a kind the code no longer has. */
+    errors?: readonly string[];
+    /** What publish would refuse in one of its parameters, by the parameter's name. */
+    paramErrors?: (name: string) => readonly string[];
     onChange: (condition: VisibilityCondition) => void;
     onRemove: () => void;
 }
 
+const NONE: readonly string[] = [];
+
 /**
  * One condition, a block's visibility condition or one of a placement's page scope: its kind, whether it's negated and
- * its parameters. Picking another kind starts its parameters anew. A kind that can't be picked here is named with why.
- * See "Visibility conditions" in docs/spec/targeting.md and "Page scopes" in docs/spec/slots.md
+ * its parameters, with what publish would refuse in them. Picking another kind starts its parameters anew. A kind that
+ * can't be picked here is named with why. See "Visibility conditions" in docs/spec/targeting.md and "Page scopes" in
+ * docs/spec/slots.md
  */
-export function Condition({ id, number, condition, kinds, unavailable = () => null, unknownHelp = 'setono_sylius_cms.builder.unknown_condition_kind_help', locale, onChange, onRemove }: ConditionProps) {
+export function Condition({
+    id,
+    number,
+    condition,
+    kinds,
+    unavailable = () => null,
+    unknownHelp = 'setono_sylius_cms.builder.unknown_condition_kind_help',
+    locale,
+    errors = NONE,
+    paramErrors = () => NONE,
+    onChange,
+    onRemove,
+}: ConditionProps) {
     const t = useTranslator();
     const kind = kinds.find(({ code }) => code === condition.kind);
     // As the kind words it, such as a date window's "is inside", or else "is one of"
@@ -57,6 +77,7 @@ export function Condition({ id, number, condition, kinds, unavailable = () => nu
                     <TrashIcon />
                 </button>
             </div>
+            <ErrorList messages={errors} />
             {kind === undefined ? (
                 <p className={styles.unknown}>{t(unknownHelp)}</p>
             ) : (
@@ -81,6 +102,7 @@ export function Condition({ id, number, condition, kinds, unavailable = () => nu
                             locale={locale}
                             value={condition.params[name]}
                             onChange={(value) => onChange(withParam(condition, name, value))}
+                            errors={paramErrors(name)}
                             languageBadge={false}
                         />
                     ))}

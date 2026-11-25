@@ -27,6 +27,7 @@ const config: BuilderConfig = {
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
+    timeZone: 'UTC',
     locales: [
         { code: 'en_US', name: 'English', fallbackChain: ['en_US'] },
         { code: 'da_DK', name: 'Danish', fallbackChain: ['da_DK', 'en_US'] },

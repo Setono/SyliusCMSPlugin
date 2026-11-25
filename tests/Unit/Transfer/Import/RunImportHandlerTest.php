@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Model\Import;
 use Setono\SyliusCMSPlugin\Model\ImportInterface;
 use Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface;
 use Setono\SyliusCMSPlugin\Transfer\Import\ConflictKind;
+use Setono\SyliusCMSPlugin\Transfer\Import\ExportSources;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImportAction;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImportConflict;
 use Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface;
@@ -189,13 +190,17 @@ final class RunImportHandlerTest extends TestCase
     }
 
     /**
+     * The import waits for the worker again, so Messenger's retry runs it rather than taking it for a run the worker
+     * stopped while running
+     *
      * @test
      */
     public function it_leaves_an_unexpected_error_to_messenger_to_retry(): void
     {
         $import = $this->confirmed(overwrite: false, publish: false);
+        $applied = ImportResult::applied(new ImportPlan([]), false);
         $this->importer->import(Argument::cetera())->willThrow(new \RuntimeException('The database went away'));
-        $this->storage->delete(Argument::any())->shouldNotBeCalled();
+        $this->manager->flush()->shouldBeCalled();
 
         try {
             $this->handler()(new RunImport($import->getUuid()));
@@ -206,7 +211,73 @@ final class RunImportHandlerTest extends TestCase
 
         self::assertSame(ImportState::Importing, $import->getState());
         self::assertSame(self::PATH, $import->getPath());
-        self::assertSame('2026-11-20T08:00:00+00:00', $import->getStartedAt()?->format(\DATE_ATOM));
+        self::assertFalse($import->isRunning());
+
+        $this->importer->import(Argument::cetera())->willReturn($applied);
+        $this->storage->delete(self::PATH)->shouldBeCalledOnce();
+
+        $this->handler()(new RunImport($import->getUuid()));
+
+        self::assertSame(ImportState::Finished, $import->getState());
+    }
+
+    /**
+     * Saving that the import waits for the worker again can fail too, as when the database went away, and the run's
+     * error is still the one Messenger logs and retries
+     *
+     * @test
+     */
+    public function it_throws_the_error_of_the_run_when_saving_that_the_import_waits_for_the_worker_again_fails(): void
+    {
+        $import = $this->confirmed(overwrite: false, publish: false);
+        $this->importer->import(Argument::cetera())->willThrow(new \RuntimeException('The worker\'s disk is full'));
+        $flushes = 0;
+        // Prophecy binds a closure to the double, so it's static
+        $this->manager->flush()->will(static function () use (&$flushes): void {
+            if (2 === ++$flushes) {
+                throw new \RuntimeException('The database went away');
+            }
+        });
+
+        try {
+            $this->handler()(new RunImport($import->getUuid()));
+            self::fail('The error is thrown');
+        } catch (\RuntimeException $e) {
+            self::assertSame('The worker\'s disk is full', $e->getMessage());
+        }
+
+        self::assertSame(2, $flushes);
+    }
+
+    /**
+     * A fatal error, such as PHP running out of memory, kills the worker without the retry an exception gets, and the
+     * transport hands the message out again with the run still recorded as started. Running it again would kill the
+     * worker again, over and over, so the import fails, and the message is handled
+     *
+     * @test
+     */
+    public function it_fails_an_import_the_worker_stopped_while_running_without_running_it_again_and_deletes_its_zip(): void
+    {
+        $checking = $this->uploaded();
+        $importing = $this->confirmed(overwrite: false, publish: false);
+        foreach ([$checking, $importing] as $import) {
+            $import->start(new \DateTimeImmutable('2026-11-20 07:59:30', new \DateTimeZone('UTC')));
+        }
+
+        $this->importer->import(Argument::cetera())->shouldNotBeCalled();
+        $this->storage->delete(self::PATH)->shouldBeCalledTimes(2);
+        $this->manager->flush()->shouldBeCalled();
+
+        $this->handler()(new RunImport($checking->getUuid()));
+        $this->handler()(new RunImport($importing->getUuid()));
+
+        foreach ([$checking, $importing] as $import) {
+            self::assertSame(ImportState::Failed, $import->getState());
+            self::assertTrue($import->isStopped());
+            self::assertNull($import->getFailure());
+            self::assertNull($import->getPath());
+            self::assertSame('2026-11-20T08:00:00+00:00', $import->getFinishedAt()?->format(\DATE_ATOM));
+        }
     }
 
     /**
@@ -255,6 +326,7 @@ final class RunImportHandlerTest extends TestCase
             new UploadedExports($this->storage->reveal(), new NullLogger()),
             $this->manager->reveal(),
             new MockClock('2026-11-20 08:00:00', 'UTC'),
+            new ExportSources(\PHP_INT_MAX),
         );
     }
 

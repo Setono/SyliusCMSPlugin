@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { BuilderApi } from '../src/api';
 import { App } from '../src/App';
 import { applyChanges, mergeChanges, type Change } from '../src/changeSet';
@@ -173,6 +173,8 @@ const config: BuilderConfig = {
         { code: 'da_DK', name: 'Danish (Denmark)', fallbackChain: ['da_DK', 'en_US'] },
     ],
     customerGroups: [],
+    // PHP's default time zone, which a date window's dates are entered and shown in
+    timeZone: 'Europe/Copenhagen',
 };
 
 const conditionStrings: Record<string, string> = {
@@ -195,13 +197,18 @@ const conditionStrings: Record<string, string> = {
 };
 
 async function openBuilder(...blocks: StoredBlock[]) {
+    return openBuilderWithErrors([], ...blocks);
+}
+
+/** Opens the builder, whose validation finds the errors. */
+async function openBuilderWithErrors(errors: ValidationError[], ...blocks: StoredBlock[]) {
     const edited = entry(blocks);
     const withDanish: Entry = { ...edited, translations: { ...edited.translations, da_DK: { shown: true, fields: { title: 'Om os', slug: 'om-os' }, translated: {} } } };
     const api = {
         fetchRegistry: vi.fn(async () => ({ ...registry, strings: conditionStrings })),
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: withDanish, settings: settings(), status: 'never_published', lockToken: 0, editors: [] })),
         saveChanges: vi.fn(async (_changes: readonly Change[]): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1 })),
-        validate: vi.fn(async (): Promise<ValidationError[]> => []),
+        validate: vi.fn(async (): Promise<ValidationError[]> => errors),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
         discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: withDanish, settings: settings(), status: 'published', lockToken: 0, editors: [] })),
         saveSettings: vi.fn(async () => settings()),
@@ -226,6 +233,10 @@ function selectionPane(): HTMLElement {
 }
 
 describe('the visibility conditions in the right pane', () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
     it('should add a condition, pick its kind, "is not one of" and its values, and autosave them', async () => {
         const api = await openBuilder(block('a', { text: { en_US: 'Hello' } }));
         fireEvent.click(within(tree()).getByRole('button', { name: 'Heading Hello' }));
@@ -248,16 +259,30 @@ describe('the visibility conditions in the right pane', () => {
         await waitFor(() => expect(api.saveChanges).toHaveBeenLastCalledWith([{ op: 'set_conditions', key: 'a', conditions: [notDanish] }], expect.any(Number)));
     });
 
-    it('should word a condition as the registry exports its kind, such as "is inside" and "is outside" for a date window, and take dates and times in the editor\'s time zone', async () => {
-        await openBuilder(withConditions(block('a', { text: { en_US: 'Hello' } }), { kind: 'date_window', negate: true, params: { from: '2026-11-27T00:00:00Z' } }));
+    it('should word a condition as the registry exports its kind, such as "is inside" and "is outside" for a date window, and take dates and times in the time zone the server gives, not the browser\'s', async () => {
+        // The editor's browser is in another time zone than the server's
+        vi.stubEnv('TZ', 'America/New_York');
+        const window: VisibilityCondition = { kind: 'date_window', negate: true, params: { from: '2026-11-27T00:00:00Z' } };
+        const api = await openBuilder(withConditions(block('a', { text: { en_US: 'Hello' } }), window));
         fireEvent.click(within(tree()).getByRole('button', { name: 'Heading Hello' }));
 
         const condition = within(selectionPane()).getByRole('group', { name: 'Condition 1' });
         const match = within(condition).getByRole('combobox', { name: 'Matches when it' });
         expect(within(match).getAllByRole('option').map((option) => option.textContent)).toEqual(['is inside', 'is outside']);
         expect(match).toHaveValue('not');
-        expect(within(condition).getByLabelText('From')).toHaveValue(toLocal('2026-11-27T00:00:00Z'));
+        // Midnight in UTC is 01:00 in Copenhagen
+        expect(within(condition).getByLabelText('From')).toHaveValue('2026-11-27T01:00');
+        expect(within(condition).getByLabelText('From')).toHaveAccessibleDescription('Europe/Copenhagen');
         expect(within(condition).getByLabelText('Until')).toHaveValue('');
+
+        fireEvent.change(within(condition).getByLabelText('Until'), { target: { value: '2026-12-01T00:00' } });
+
+        await waitFor(() =>
+            expect(api.saveChanges).toHaveBeenLastCalledWith(
+                [{ op: 'set_conditions', key: 'a', conditions: [{ ...window, params: { from: '2026-11-27T00:00:00Z', until: '2026-11-30T23:00:00Z' } }] }],
+                expect.any(Number),
+            ),
+        );
     });
 
     it('should remove a condition', async () => {
@@ -284,6 +309,31 @@ describe('the visibility conditions in the right pane', () => {
     });
 });
 
+describe('what publish would refuse in a condition', () => {
+    it('should show an error at the parameter it is in, and one about the condition as a whole in the condition, and flag the block', async () => {
+        const reversed: VisibilityCondition = { kind: 'date_window', negate: false, params: { from: '2026-12-24T00:00:00Z', until: '2026-12-01T00:00:00Z' } };
+        const unknown: VisibilityCondition = { kind: 'weekday', negate: false, params: { days: ['monday'] } };
+        await openBuilderWithErrors(
+            [
+                { block: 'a', field: 'until', locale: null, message: 'Until must come after From.', condition: 1 },
+                { block: 'a', field: null, locale: null, message: 'The condition kind "weekday" no longer exists.', condition: 2 },
+            ],
+            withConditions(block('a', { text: { en_US: 'Hello' } }), notDanish, reversed, unknown),
+        );
+
+        await waitFor(() => expect(within(tree()).getByRole('img', { name: 'Has errors' })).toBeInTheDocument());
+        fireEvent.click(within(tree()).getByRole('button', { name: 'Heading Hello' }));
+
+        const window = within(selectionPane()).getByRole('group', { name: 'Condition 2' });
+        expect(within(window).getByLabelText('Until')).toHaveAccessibleDescription('Until must come after From. Europe/Copenhagen');
+        expect(within(window).getByLabelText('From')).not.toHaveAccessibleDescription('Until must come after From.');
+        expect(within(within(selectionPane()).getByRole('group', { name: 'Condition 3' })).getByText('The condition kind "weekday" no longer exists.')).toBeInTheDocument();
+        expect(within(within(selectionPane()).getByRole('group', { name: 'Condition 1' })).queryByRole('list')).not.toBeInTheDocument();
+        // They're the condition's, not the block's
+        expect(within(selectionPane()).getAllByText('The condition kind "weekday" no longer exists.')).toHaveLength(1);
+    });
+});
+
 describe('the block tree', () => {
     it("should strike through the blocks the preview's language hides, with everything inside them", async () => {
         await openBuilder(withConditions(blockOf('group', 'g', [block('a', { text: { en_US: 'Inside' } })]), notDanish), block('b', { text: { en_US: 'Outside' } }));
@@ -302,11 +352,3 @@ describe('the block tree', () => {
         expect(within(tree()).getAllByRole('img', { name: 'Hidden in this channel and language' })).toHaveLength(2);
     });
 });
-
-/** What a datetime-local input shows for a UTC time, in the time zone the tests run in. */
-function toLocal(utc: string): string {
-    const date = new Date(utc);
-    const pad = (value: number): string => String(value).padStart(2, '0');
-
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}

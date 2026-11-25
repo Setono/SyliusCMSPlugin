@@ -9,6 +9,7 @@ use Pagerfanta\Pagerfanta;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
 use Setono\SyliusCMSPlugin\Admin\ComingUp;
 use Setono\SyliusCMSPlugin\Admin\EntryCategories;
@@ -92,6 +93,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Support\ServerTimeZone;
 use Setono\SyliusCMSPlugin\Tests\Support\SnippetPreviews;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
@@ -139,6 +141,7 @@ use Twig\Test\IntegrationTestCase;
 final class AdminExtensionTest extends IntegrationTestCase
 {
     use ProphecyTrait;
+    use ServerTimeZone;
 
     /** @var list<HomepageInterface> the store's homepage rows */
     private array $homepages = [];
@@ -315,6 +318,18 @@ final class AdminExtensionTest extends IntegrationTestCase
     }
 
     /**
+     * PHP's default time zone, which ServerTimeZone sets back after the test
+     *
+     * @return array{}
+     */
+    public function inTimeZone(string $timeZone): array
+    {
+        $this->useServerTimeZone($timeZone);
+
+        return [];
+    }
+
+    /**
      * A page shown from and until these times, in UTC. Now is 2026-11-17 12:00 UTC
      *
      * @return array{}
@@ -485,7 +500,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             self::contentTypes(),
         );
 
-        $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows, $entryPlacements, $snippetUses);
+        $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows, $entryPlacements, $snippetUses, new AdminTimeZone());
 
         $overviewPanels = $this->overviewRuntime($entryRows, $entries, $problemFinder);
         $pageScopeEditor = $this->pageScopeEditorRuntime();
@@ -667,6 +682,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             ),
             $uiStrings,
             new UrlGenerator($routes, new RequestContext()),
+            new AdminTimeZone(),
         );
     }
 

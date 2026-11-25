@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Targeting;
 
-use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
+use Setono\SyliusCMSPlugin\Field\RecordChoicesProviderInterface;
 use Sylius\Component\Locale\Model\LocaleInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Contracts\Service\ResetInterface;
@@ -13,7 +13,7 @@ use Symfony\Contracts\Service\ResetInterface;
  * The store's locales, by code, with their names in the locale asked for, for a Choice field such as the locale
  * condition's locales. They're read once per request
  */
-final class LocaleChoicesProvider implements ChoicesProviderInterface, ResetInterface
+final class LocaleChoicesProvider implements RecordChoicesProviderInterface, ResetInterface
 {
     /** @var array<LocaleInterface>|null */
     private ?array $locales = null;

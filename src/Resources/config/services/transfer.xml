@@ -30,9 +30,27 @@
 
         <!-- Imports: read, plan, apply all or nothing (docs/spec/transfer.md#what-an-import-does) -->
         <!-- Every file of an export goes through the checks an upload does (docs/spec/transfer.md#media-files) -->
+        <!--
+        The limit an imported media file is checked against: the smaller of media.max_upload_size and
+        transfer.max_file_size, which the limits of the PHP running the import don't lower
+        -->
+        <service id="setono_sylius_cms.transfer.import_limit" class="Setono\SyliusCMSPlugin\Media\UploadLimit">
+            <factory service="Setono\SyliusCMSPlugin\Media\UploadLimit" method="forImports"/>
+            <argument>%setono_sylius_cms.transfer.max_file_size%</argument>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker" class="Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker">
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaFileCheckerInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
+            <argument type="service" id="setono_sylius_cms.transfer.import_limit"/>
+        </service>
+
+        <!--
+        Opens an export folder or zip; a zip unpacks to no more than transfer.max_unpacked_size, and either reads each
+        JSON file up to a fixed cap, which has no config key
+        -->
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\ExportSources" class="Setono\SyliusCMSPlugin\Transfer\Import\ExportSources">
+            <argument>%setono_sylius_cms.transfer.max_unpacked_size%</argument>
+            <argument type="constant">Setono\SyliusCMSPlugin\Transfer\Import\ExportSources::MAX_JSON_FILE_SIZE</argument>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader" class="Setono\SyliusCMSPlugin\Transfer\Import\ExportReader">
@@ -129,6 +147,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Event\AfterCommitMessageBus"/>
             <argument type="service" id="setono_sylius_cms.storage"/>
+            <argument type="service" id="doctrine"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface" alias="Setono\SyliusCMSPlugin\Transfer\Import\Importer"/>
 
@@ -159,6 +178,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\UploadedExports"/>
             <argument type="service" id="setono_sylius_cms.manager.import"/>
             <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ExportSources"/>
 
             <tag name="messenger.message_handler" handles="Setono\SyliusCMSPlugin\Transfer\Import\RunImport"/>
         </service>
@@ -184,6 +204,7 @@
         <service id="Setono\SyliusCMSPlugin\Fixture\ImportFixture" class="Setono\SyliusCMSPlugin\Fixture\ImportFixture">
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface"/>
             <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ExportSources"/>
 
             <tag name="sylius_fixtures.fixture"/>
         </service>

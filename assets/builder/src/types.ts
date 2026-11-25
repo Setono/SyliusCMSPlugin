@@ -201,14 +201,18 @@ export interface Editor {
  * whole, in an entry field, or in the entry as a whole.
  */
 export interface ValidationError {
-    /** The key of the block it's in, or null when it's in the entry. */
+    /** The key of the block it's in, or null when it's in the entry or the layout. */
     block: string | null;
-    /** The field it's in, or null when it's about the block or the entry as a whole. */
+    /** The field it's in, or null when it's about the block, the condition or the entry as a whole. In a condition, one of its parameters. */
     field: string | null;
     /** The locale of a translatable value, or null. */
     locale: string | null;
     /** Translated, ready to show. */
     message: string;
+    /** The index, from 0, of the block's visibility condition it's in. Only there for an error in a condition. */
+    condition?: number;
+    /** Only there, and true, for an error in one of the layout's fields. */
+    layout?: true;
 }
 
 export interface EntryResponse {

@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\HomepageClash;
 use Setono\SyliusCMSPlugin\Tests\Support\Imports;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tests\Support\SentMessages;
@@ -303,6 +304,39 @@ final class ImportTest extends WebTestCase
     }
 
     /**
+     * Another page becomes WEB's homepage while the dry run writes, after it found WEB without one, so the page's
+     * homepage row clashes with it. The worker records the refusal, rather than failing on the entity manager the failed
+     * flush closed
+     *
+     * @test
+     */
+    public function it_records_the_refusal_of_an_import_whose_page_another_page_just_took_a_channels_homepage_from(): void
+    {
+        self::forgetSentMessages();
+        $client = self::signedIn();
+        $other = self::createPage('Sale', 'sale', channels: ['WEB']);
+        $export = $this->copyOfFixture();
+        $file = sprintf('%s/entries/%s.json', $export, self::PAGE);
+        file_put_contents($file, str_replace('"homepageOf": []', '"homepageOf": ["WEB"]', (string) file_get_contents($file)));
+        $this->upload($client, $this->zipOf($export));
+        $import = self::latestImport();
+        HomepageClash::withAnotherPage(self::entityManager(), $other->getId());
+
+        self::consumeMessages();
+
+        $import = self::import($import->getUuid());
+        self::assertSame(ImportState::Finished, $import->getState());
+        self::assertSame(ImportStatus::Refused, self::resultOf($import)->status);
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+        $crawler = $client->request('GET', sprintf('/admin/cms/transfer/imports/%s', $import->getUuid()));
+        self::assertStringContainsString('The import refused. Nothing changed.', $crawler->filter('[data-cms-import-result]')->text());
+        self::assertStringContainsString(
+            'The settings of Autumn sale can\'t be saved: Another page just became this channel\'s homepage. Choose the channel again to make this page its homepage instead.',
+            $crawler->filter('[data-cms-import-reasons]')->text(),
+        );
+    }
+
+    /**
      * @test
      */
     public function it_abandons_an_import_an_admin_user_cancels_and_deletes_its_zip(): void
@@ -388,6 +422,43 @@ final class ImportTest extends WebTestCase
         self::assertSame('failed', $crawler->filter('[data-cms-import-state]')->attr('data-cms-import-state'));
         self::assertCount(0, $crawler->filter('[data-cms-import-progress]'));
         self::assertSame('The import failed with an unexpected error, and the Messenger worker stopped retrying it: The database went away', $crawler->filter('[data-cms-import-failure]')->text());
+    }
+
+    /**
+     * The worker stopped while importing it, as on a fatal error such as PHP running out of memory, which skips
+     * Messenger's retries, and the transport hands the message out again. It isn't run again, so a run that stops the
+     * worker can't do so over and over
+     *
+     * @test
+     */
+    public function it_fails_an_import_the_worker_stopped_while_running_without_running_it_again_and_deletes_its_zip(): void
+    {
+        self::forgetSentMessages();
+        $client = self::signedIn();
+        $this->upload($client, $this->zipOf(self::exportFixture()));
+        $import = self::latestImport();
+        self::assertSame(1, self::consumeMessages());
+        $client->submit($client->request('GET', sprintf('/admin/cms/transfer/imports/%s', $import->getUuid()))->filter('form[data-cms-import-confirm]')->form());
+
+        // The worker started importing it, and stopped before it recorded how that ended
+        $import = self::import($import->getUuid());
+        $path = (string) $import->getPath();
+        $import->start(new \DateTimeImmutable());
+        self::entityManager()->flush();
+
+        self::assertSame(1, self::consumeMessages());
+
+        $import = self::import($import->getUuid());
+        self::assertSame(ImportState::Failed, $import->getState());
+        self::assertTrue($import->isStopped());
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE), 'It isn\'t run again');
+        self::assertFalse(self::storage()->fileExists($path), 'Its zip is deleted');
+        self::assertCount(2, self::acknowledgedMessages(), 'The message is handled, so the transport doesn\'t hand it out again');
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/transfer/imports/%s', $import->getUuid()));
+        self::assertResponseIsSuccessful();
+        self::assertSame('failed', $crawler->filter('[data-cms-import-state]')->attr('data-cms-import-state'));
+        self::assertSame('The Messenger worker stopped while it was working on this import, as when PHP runs out of memory or the worker is killed, so it isn\'t run again.', $crawler->filter('[data-cms-import-failure]')->text());
     }
 
     /**

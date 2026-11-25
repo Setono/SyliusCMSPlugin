@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Homepage;
 
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
+use Setono\SyliusCMSPlugin\Targeting\ChannelNames;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 
@@ -49,11 +50,7 @@ final readonly class CMSHomepageChannels
         }
 
         sort($codes);
-        $names = [];
-        foreach ($this->channelRepository->findBy(['code' => $codes]) as $channel) {
-            $names[(string) $channel->getCode()] = $channel->getName() ?? (string) $channel->getCode();
-        }
 
-        return array_map(static fn (string $code): string => $names[$code] ?? $code, $codes);
+        return array_values(ChannelNames::of($this->channelRepository, $codes));
     }
 }

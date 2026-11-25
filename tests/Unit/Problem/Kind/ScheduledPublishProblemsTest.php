@@ -10,6 +10,7 @@ use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Admin\AdminTimeZone;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
@@ -86,7 +87,7 @@ final class ScheduledPublishProblemsTest extends TestCase
      */
     public function it_finds_an_overdue_error_in_queries_as_of_now_as_the_time_it_becomes_overdue_writes_nothing(): void
     {
-        $kind = new ScheduledPublishOverdue($this->scheduledPublishes->reveal(), new MockClock());
+        $kind = new ScheduledPublishOverdue($this->scheduledPublishes->reveal(), new MockClock(), new AdminTimeZone());
         $queryBuilder = new QueryBuilder($this->prophesize(EntityManagerInterface::class)->reveal());
 
         $condition = $kind->getCondition($queryBuilder, 'o', new \DateTimeImmutable('2026-11-16 13:00:00', new \DateTimeZone('Europe/Copenhagen')));
@@ -147,7 +148,7 @@ final class ScheduledPublishProblemsTest extends TestCase
      */
     private function overdue(string $now): iterable
     {
-        return (new ScheduledPublishOverdue($this->scheduledPublishes->reveal(), new MockClock($now, 'UTC')))->findIn($this->page);
+        return (new ScheduledPublishOverdue($this->scheduledPublishes->reveal(), new MockClock($now, 'UTC'), new AdminTimeZone()))->findIn($this->page);
     }
 
     /**
@@ -155,7 +156,7 @@ final class ScheduledPublishProblemsTest extends TestCase
      */
     private function failed(): iterable
     {
-        return (new ScheduledPublishFailed($this->scheduledPublishes->reveal()))->findIn($this->page);
+        return (new ScheduledPublishFailed($this->scheduledPublishes->reveal(), new AdminTimeZone()))->findIn($this->page);
     }
 
     private function scheduledPublish(string $at): ScheduledPublish

@@ -11,7 +11,7 @@ import { fieldFallback, localeOf, outdatedValue } from '../../locales';
 import { locks } from '../../store';
 import { entryTranslated, entryValues } from '../../translationState';
 import type { AudienceMode, FieldSchema } from '../../types';
-import { entryFieldMessages } from '../../validation';
+import { entryFieldMessages, layoutFieldMessages } from '../../validation';
 import { readFieldValue } from '../../values';
 import { saveStateText } from '../saveStateText';
 import styles from '../SettingsPane.module.css';
@@ -140,9 +140,10 @@ export function useShownByLayout(field: string): boolean {
 }
 
 /**
- * The entry's layout: a card per layout to pick from, when there's more than one, the fields of the layout it's in, and a
- * warning when its layout was removed from code or disabled, until another is picked. Switching layout and the layout's
- * fields are drafted. See "Picking and switching" in docs/spec/layouts-and-presets.md
+ * The entry's layout: a card per layout to pick from, when there's more than one, the fields of the layout it's in, with
+ * what publish would refuse in them, and a warning when its layout was removed from code or disabled, until another is
+ * picked. Switching layout and the layout's fields are drafted. See "Picking and switching" in
+ * docs/spec/layouts-and-presets.md
  */
 function Layout() {
     const t = useTranslator();
@@ -150,6 +151,7 @@ function Layout() {
     const layouts = useBuilderState((state) => state.layouts);
     const stored = useBuilderState((state) => state.entry.tree.layout);
     const locale = useBuilderState((state) => state.locale);
+    const errors = useValidationState((state) => state.errors);
     const name = useId();
 
     if (layouts.length === 0) {
@@ -207,6 +209,7 @@ function Layout() {
                             locale={locale}
                             value={readFieldValue(values, field, schema['x-cms-translatable'], locale)}
                             onChange={(value) => store.getState().setLayoutValue(field, value)}
+                            errors={layoutFieldMessages(errors, field, locale)}
                             // A bound field's fallback is translated like its value
                             fallback={schema['x-cms-translatable'] ? fieldFallback(locales, translatedValues(values[field]), locale) : undefined}
                             binding={{ stored: values[field], set: (value) => store.getState().setLayoutBinding(field, value) }}
@@ -374,7 +377,7 @@ function DateWindow() {
     );
 }
 
-/** A date and time in the editor's time zone, saved in UTC when the editor leaves the input. */
+/** A date and time in the time zone the server gives, saved in UTC when the editor leaves the input. */
 function DateTimeInput({ label, value, onCommit }: { label: string; value: string | null; onCommit: (value: string | null) => void }) {
     const id = useId();
 
@@ -484,14 +487,16 @@ function Audience() {
 }
 
 /**
- * "Homepage of", for a page: the store's channels it shows at the root URL of, in place of the store's own homepage. A
- * channel has one homepage, so choosing it here takes it off any other page. Unlike the channel picker it shows in a
- * store with one channel too. See "Homepage" in docs/spec/urls-and-seo.md
+ * "Homepage of", for a page: the channels it shows at the root URL of, in place of the store's own homepage. It offers
+ * the channels the page is in, as it can only be the homepage of those. A channel it has left stays its homepage until
+ * it's taken out here, and says so. A channel has one homepage, so choosing it here takes it off any other page. Unlike
+ * the channel picker it shows in a store with one channel too. See "Homepage" in docs/spec/urls-and-seo.md
  */
 function HomepageOf() {
     const t = useTranslator();
     const { settings, channels, homepage } = useBuilder();
     const selected = useSettingsState((state) => state.settings.homepageOf);
+    const inChannels = useSettingsState((state) => state.settings.channels);
     const helpId = useId();
     const hintId = useId();
 
@@ -502,16 +507,18 @@ function HomepageOf() {
     return (
         <fieldset className={styles.setting} aria-describedby={`${helpId} ${hintId}`}>
             <legend className={formStyles.label}>{t('setono_sylius_cms.builder.homepage_of')}</legend>
-            {channels.map(({ code, name }) => (
-                <label key={code} className={styles.check}>
-                    <input
-                        type="checkbox"
-                        checked={selected.includes(code)}
-                        onChange={(event) => void settings.getState().save({ homepageOf: toggle(selected, code, event.currentTarget.checked) })}
-                    />
-                    {name}
-                </label>
-            ))}
+            {channels
+                .filter(({ code }) => inChannels.includes(code) || selected.includes(code))
+                .map(({ code, name }) => (
+                    <label key={code} className={styles.check}>
+                        <input
+                            type="checkbox"
+                            checked={selected.includes(code)}
+                            onChange={(event) => void settings.getState().save({ homepageOf: toggle(selected, code, event.currentTarget.checked) })}
+                        />
+                        {inChannels.includes(code) ? name : t('setono_sylius_cms.builder.homepage_of_left_channel', { '%channel%': name })}
+                    </label>
+                ))}
             <p id={helpId} className={formStyles.help}>
                 {t('setono_sylius_cms.builder.homepage_of_help')}
             </p>

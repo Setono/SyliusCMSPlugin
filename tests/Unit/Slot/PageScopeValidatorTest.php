@@ -8,17 +8,27 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Condition\Kind\ProductInTaxonKind;
 use Setono\SyliusCMSPlugin\Condition\Kind\TaxonKind;
+use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
+use Setono\SyliusCMSPlugin\Field\DateHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\ListFieldHandler;
+use Setono\SyliusCMSPlugin\Field\NumberHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Slot\PageScopeValidator;
+use Setono\SyliusCMSPlugin\Targeting\ChannelChoicesProvider;
 use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\StoreChannels;
+use Setono\SyliusCMSPlugin\Tests\Unit\Slot\Fixture\DiscountedBy;
+use Setono\SyliusCMSPlugin\Tests\Unit\Slot\Fixture\ReleasedBetween;
+use Setono\SyliusCMSPlugin\Tests\Unit\Slot\Fixture\SoldIn;
+use Setono\SyliusCMSPlugin\Validation\ConditionValidator;
 use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 use Setono\SyliusCMSPlugin\Validation\FieldValidator;
 use Sylius\Component\Core\Model\ProductInterface;
@@ -125,6 +135,66 @@ final class PageScopeValidatorTest extends TestCase
     }
 
     /**
+     * The same checks as a block's visibility condition gets on publish
+     *
+     * @test
+     */
+    public function it_refuses_parameter_values_that_do_not_fit_together_such_as_a_span_that_ends_before_it_starts(): void
+    {
+        $kind = self::conditionKinds()->get('released_between');
+
+        self::assertEquals(
+            [new TranslatableMessage('setono_sylius_cms.page_scope.field', [
+                '%number%' => 1,
+                '%kind%' => new TranslatableMessage($kind->label),
+                '%field%' => new TranslatableMessage($kind->fields['until']->field->label),
+                '%message%' => 'setono_sylius_cms.field.ends_before_start',
+            ], 'validators')],
+            $this->validator()->validate('product.after_price', [['kind' => 'released_between', 'negate' => false, 'params' => ['from' => '2026-12-01', 'until' => '2026-11-01']]]),
+        );
+        self::assertSame([], $this->validator()->validate('product.after_price', [['kind' => 'released_between', 'negate' => false, 'params' => ['from' => '2026-11-01', 'until' => '2026-12-01']]]));
+    }
+
+    /**
+     * A constraint on the parameters class may report a violation at no parameter
+     *
+     * @test
+     */
+    public function it_refuses_parameter_values_that_do_not_fit_together_at_the_condition_when_the_violation_is_at_no_parameter(): void
+    {
+        self::assertEquals(
+            [new TranslatableMessage('setono_sylius_cms.page_scope.condition', [
+                '%number%' => 1,
+                '%kind%' => new TranslatableMessage(self::conditionKinds()->get('discounted_by')->label),
+                '%message%' => 'setono_sylius_cms.block.exactly_one_of',
+            ], 'validators')],
+            $this->validator()->validate('product.after_price', [['kind' => 'discounted_by', 'negate' => false, 'params' => []]]),
+        );
+    }
+
+    /**
+     * Nothing flags a deleted record in a page scope yet, so a parameter refuses a channel the store no longer has, as
+     * a block's field does, though a block's visibility condition keeps it. See "Validation" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_refuses_a_channel_the_store_no_longer_has(): void
+    {
+        $kind = self::conditionKinds()->get('sold_in');
+
+        self::assertEquals(
+            [new TranslatableMessage('setono_sylius_cms.page_scope.field', [
+                '%number%' => 1,
+                '%kind%' => new TranslatableMessage($kind->label),
+                '%field%' => new TranslatableMessage($kind->fields['channels']->field->label),
+                '%message%' => 'setono_sylius_cms.field.invalid_choice',
+            ], 'validators')],
+            $this->validator()->validate('product.after_price', [['kind' => 'sold_in', 'negate' => false, 'params' => ['channels' => ['WEB', 'OUTLET']]]]),
+        );
+        self::assertSame([], $this->validator()->validate('product.after_price', [['kind' => 'sold_in', 'negate' => false, 'params' => ['channels' => ['WEB', 'B2B']]]]));
+    }
+
+    /**
      * A placement in a slot a deploy removed shows nothing, and can only lose its scope
      *
      * @test
@@ -148,18 +218,30 @@ final class PageScopeValidatorTest extends TestCase
         return ['kind' => 'product_in_taxon', 'negate' => false, 'params' => ['taxons' => $taxons]];
     }
 
+    private static function conditionKinds(): ConditionKindRegistry
+    {
+        return Conditions::registry(['product_in_taxon' => new ProductInTaxonKind(), 'taxon' => new TaxonKind(), 'released_between' => new ReleasedBetween(), 'discounted_by' => new DiscountedBy(), 'sold_in' => new SoldIn()]);
+    }
+
     private function validator(): PageScopeValidator
     {
         $translator = new IdentityTranslator();
+        // The store's channels, WEB and B2B
+        $choiceHandler = new ChoiceHandler($translator, new ServiceLocator([ChannelChoicesProvider::class => static fn (): StoreChannels => new StoreChannels()]));
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             ListFieldHandler::class => static fn (): ListFieldHandler => Sources::listFieldHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
+            DateHandler::class => static fn (): DateHandler => new DateHandler(),
+            NumberHandler::class => static fn (): NumberHandler => new NumberHandler(),
+            ChoiceHandler::class => static fn (): ChoiceHandler => $choiceHandler,
         ]));
 
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
 
+        $conditionKinds = self::conditionKinds();
+
         return new PageScopeValidator(
-            Conditions::registry(['product_in_taxon' => new ProductInTaxonKind(), 'taxon' => new TaxonKind()]),
+            $conditionKinds,
             new SlotRegistry([
                 'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
                 'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null],
@@ -168,13 +250,13 @@ final class PageScopeValidatorTest extends TestCase
                 'product' => ['class' => ProductInterface::class, 'label' => 'setono_sylius_cms.context_key.product'],
                 'taxon' => ['class' => TaxonInterface::class, 'label' => 'setono_sylius_cms.context_key.taxon'],
             ]),
-            new FieldValidator(
+            new ConditionValidator($conditionKinds, new FieldValidator(
                 new FieldConstraints($handlers, $validator),
                 new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'))),
                 $validator,
                 $translator,
                 Bindings::validator(),
-            ),
+            ), $choiceHandler, $translator),
         );
     }
 }

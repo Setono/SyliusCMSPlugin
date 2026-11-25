@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Targeting;
 
-use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
+use Setono\SyliusCMSPlugin\Field\RecordChoicesProviderInterface;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Contracts\Service\ResetInterface;
@@ -15,7 +15,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * customer groups, by code, with their names. The groups are read once per request.
  * See "Reserved customer group values" in docs/spec/content-model.md
  */
-final class CustomerGroupChoicesProvider implements ChoicesProviderInterface, ResetInterface
+final class CustomerGroupChoicesProvider implements RecordChoicesProviderInterface, ResetInterface
 {
     /** @var array<array-key, string>|null */
     private ?array $groups = null;

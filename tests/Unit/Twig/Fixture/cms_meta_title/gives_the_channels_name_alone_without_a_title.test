@@ -1,0 +1,8 @@
+--TEST--
+cms_meta_title() gives the channel's name alone, as Sylius's shop layout titles a page, for an entry with neither a meta title nor a title in the chain, such as an untitled draft in the builder's preview
+--TEMPLATE--
+[{{ cms_meta_title(entry) }}]
+--DATA--
+return $this->rendering(['entry' => $this->pageWith(['en_US' => ['title' => null, 'slug' => 'about-us']])], channel: $this->channel([], name: 'Fashion Web Store'))
+--EXPECT--
+[Fashion Web Store]

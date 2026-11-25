@@ -10,11 +10,14 @@ use Setono\SyliusCMSPlugin\Block\Button;
 use Setono\SyliusCMSPlugin\Block\Column;
 use Setono\SyliusCMSPlugin\Block\Columns;
 use Setono\SyliusCMSPlugin\Block\Heading;
+use Setono\SyliusCMSPlugin\Condition\Kind\ChannelKind;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
+use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\LinkHandler;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Layout\Page\Standard;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -22,19 +25,27 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
+use Setono\SyliusCMSPlugin\Targeting\ChannelChoicesProvider;
 use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
 use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductPage;
+use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\StoreChannels;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Campaign;
+use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\ChannelNotice;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Offer;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Testimonial;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Validation\BlockTreeValidator;
+use Setono\SyliusCMSPlugin\Validation\ConditionValidator;
 use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 use Setono\SyliusCMSPlugin\Validation\FieldValidator;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
@@ -384,6 +395,122 @@ final class BlockTreeValidatorTest extends TestCase
     }
 
     /**
+     * See "Visibility conditions" in docs/spec/targeting.md
+     *
+     * @test
+     */
+    public function it_validates_each_visibility_condition_of_a_block_at_any_depth_at_the_condition(): void
+    {
+        $heading = self::heading(self::A, 'Hello');
+        $heading->conditions = [
+            ['kind' => 'locale_is', 'negate' => false, 'params' => ['locales' => ['da_DK']]],
+            ['kind' => 'date_window', 'negate' => false, 'params' => ['from' => '2026-12-01T00:00:00Z', 'until' => '2026-11-01T00:00:00Z']],
+            ['kind' => 'brand', 'negate' => false, 'params' => []],
+        ];
+        $column = new StoredBlock(self::C, 'column', 1, conditions: [['kind' => 'locale_is', 'negate' => true, 'params' => ['locales' => ['sv_SE']]]]);
+        $columns = new StoredBlock(self::B, 'columns', 1, children: [$column, new StoredBlock(self::D, 'column', 1)]);
+
+        self::assertEquals(
+            [
+                new ValidationError(self::A, 'until', null, 'Until must come after From.', condition: 1),
+                new ValidationError(self::A, null, null, 'The condition kind "brand" no longer exists, so the block isn\'t shown. Remove the condition.', condition: 2),
+                new ValidationError(self::C, 'locales', null, 'The value you selected is not a valid choice.', condition: 0),
+            ],
+            $this->validator()->validate(new StoredTree(null, [$heading, $columns]), 'page', ['en_US']),
+        );
+    }
+
+    /**
+     * A block's field refuses a channel the store no longer has, as it refuses any choice it no longer offers, and the
+     * block's visibility condition keeps it, as the admin flags it there (ADR 0002). See "Validation" in
+     * docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_refuses_a_channel_the_store_no_longer_has_in_a_block_field_but_not_in_the_blocks_visibility_condition(): void
+    {
+        $notice = new StoredBlock(self::A, 'channel_notice', 1, conditions: [['kind' => 'channel', 'negate' => false, 'params' => ['channels' => ['WEB', 'OUTLET']]]]);
+        $notice->setValue('channel', null, 'OUTLET');
+
+        self::assertEquals(
+            [new ValidationError(self::A, 'channel', null, 'The value you selected is not a valid choice.')],
+            $this->validator()->validate(new StoredTree(null, [$notice]), 'page', ['en_US']),
+        );
+    }
+
+    /**
+     * A block of a type the code no longer has isn't shown, so its conditions don't matter until the type is back
+     *
+     * @test
+     */
+    public function it_leaves_the_conditions_of_a_block_of_a_type_the_code_no_longer_has_alone(): void
+    {
+        $unknown = new StoredBlock(self::A, 'banner', 1, conditions: [['kind' => 'brand', 'negate' => false, 'params' => []]]);
+
+        self::assertEquals(
+            [new ValidationError(self::A, null, null, 'Its block type "banner" no longer exists, so it isn\'t shown.')],
+            $this->validator()->validate(new StoredTree(null, [$unknown]), 'page', ['en_US']),
+        );
+    }
+
+    /**
+     * See "Layout fields" in docs/spec/layouts-and-presets.md
+     *
+     * @test
+     */
+    public function it_validates_the_fields_of_the_trees_layout_as_a_blocks_in_the_layout(): void
+    {
+        $layout = new StoredLayout('campaign', 1);
+        $layout->setValue('headline', 'da_DK', 'Vinterudsalg');
+        $layout->setValue('badge', null, ['Too long a badge']);
+
+        self::assertEquals(
+            [
+                new ValidationError(null, 'headline', 'en_US', 'This field is required.', inLayout: true),
+                new ValidationError(null, 'badge', null, 'This value should be text.', inLayout: true),
+            ],
+            $this->validator()->validate(new StoredTree($layout, [self::heading(self::A, 'Hello')]), 'page', ['en_US', 'da_DK']),
+        );
+
+        $layout->setValue('headline', 'en_US', 'Winter sale');
+        $layout->setValue('badge', null, 'Winter only');
+        self::assertEquals(
+            [new ValidationError(null, 'badge', null, 'This value is too long. It should have 5 characters or less.', inLayout: true)],
+            $this->validator()->validate(new StoredTree($layout, []), 'page', ['en_US', 'da_DK']),
+        );
+    }
+
+    /**
+     * A tree without a layout renders in the default one, whose first value stores it
+     *
+     * @test
+     */
+    public function it_validates_the_default_layouts_fields_for_a_tree_without_a_layout(): void
+    {
+        $validator = $this->validator(new LayoutRegistry(['page' => ['standard' => Standard::class, 'campaign' => Campaign::class]], new FieldReader(), ['page' => 'campaign']));
+
+        self::assertEquals(
+            [new ValidationError(null, 'headline', 'en_US', 'This field is required.', inLayout: true)],
+            $validator->validate(new StoredTree(null, []), 'page', ['en_US']),
+        );
+    }
+
+    /**
+     * Its entries render in the default layout, which ignores the stored values, until a layout is picked. See "A removed
+     * layout" in docs/spec/layouts-and-presets.md
+     *
+     * @test
+     */
+    public function it_validates_no_layout_fields_in_a_tree_whose_layout_was_removed_or_disabled_or_of_a_content_type_without_layouts(): void
+    {
+        $disabled = $this->validator(new LayoutRegistry(['page' => ['standard' => Standard::class, 'campaign' => Campaign::class]], new FieldReader(), disabled: ['page.campaign']));
+
+        self::assertSame([], $this->validator()->validate(new StoredTree(new StoredLayout('gone', 1), []), 'page', ['en_US']));
+        self::assertSame([], $disabled->validate(new StoredTree(new StoredLayout('campaign', 1), []), 'page', ['en_US']));
+        self::assertSame([], $this->validator()->validate(new StoredTree(new StoredLayout('campaign', 1), []), 'recipe', ['en_US']));
+    }
+
+    /**
      * @param array<string, string> $label
      */
     private static function button(string $key, array $label): StoredBlock
@@ -437,7 +564,7 @@ final class BlockTreeValidatorTest extends TestCase
         return $translator;
     }
 
-    private function validator(): BlockTreeValidator
+    private function validator(?LayoutRegistry $layouts = null): BlockTreeValidator
     {
         $fallbackChain = $this->prophesize(FallbackChainInterface::class);
         $fallbackChain->localesFor('en_US')->willReturn(['en_US']);
@@ -451,15 +578,26 @@ final class BlockTreeValidatorTest extends TestCase
             'testimonial' => Testimonial::class,
             'button' => Button::class,
             'offer' => Offer::class,
+            'channel_notice' => ChannelNotice::class,
         ], new FieldReader());
+        // The store's channels, WEB and B2B
+        $choiceHandler = new ChoiceHandler($translator, new ServiceLocator([ChannelChoicesProvider::class => static fn (): StoreChannels => new StoreChannels()]));
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             RichTextHandler::class => Links::richTextHandler(...),
             LinkHandler::class => static fn (): LinkHandler => Links::handler(properties: [new ProductPage()]),
-            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
+            ChoiceHandler::class => static fn (): ChoiceHandler => $choiceHandler,
+            DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
         ]));
 
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
+        $fieldValidator = new FieldValidator(
+            new FieldConstraints($handlers, $validator),
+            new FallbackValues($handlers, $fallbackChain->reveal()),
+            $validator,
+            $translator,
+            Bindings::validator([new ProductBrand(), new ProductPage()]),
+        );
 
         return new BlockTreeValidator(
             $blockTypes,
@@ -468,14 +606,10 @@ final class BlockTreeValidatorTest extends TestCase
                 'landing' => ['model' => Landing::class, 'translation' => LandingTranslation::class, 'resource' => 'app.landing'],
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             ])),
-            new FieldValidator(
-                new FieldConstraints($handlers, $validator),
-                new FallbackValues($handlers, $fallbackChain->reveal()),
-                $validator,
-                $translator,
-                Bindings::validator([new ProductBrand(), new ProductPage()]),
-            ),
+            $fieldValidator,
             $translator,
+            $layouts ?? new LayoutRegistry(['page' => ['standard' => Standard::class, 'campaign' => Campaign::class]], new FieldReader()),
+            new ConditionValidator(Conditions::registry(['channel' => new ChannelKind()]), $fieldValidator, $choiceHandler, $translator),
         );
     }
 }

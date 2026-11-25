@@ -5,9 +5,10 @@
  #   blocks   the visible top-level blocks, as BlockViews: render them with cms_blocks(blocks)
  #   context  the host-page context: {entry: entry}
  #
- # It fills the shop layout's title block with the entry's meta title, and its metatags block with the entry's head
- # tags: the meta description, robots, the canonical URL and the hreflang links. No Open Graph tags
- # (docs/spec/urls-and-seo.md#head-tags). A layout that overrides either block calls the same function
+ # It fills the shop layout's title block with the entry's meta title, or else its title followed by the channel's name,
+ # and its metatags block with the entry's head tags: the meta description, robots, the canonical URL and the hreflang
+ # links. No Open Graph tags (docs/spec/urls-and-seo.md#head-tags). A layout that overrides either block calls the same
+ # function
  #}
 {% extends '@SyliusShop/layout.html.twig' %}
 
