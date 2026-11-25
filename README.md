@@ -242,9 +242,14 @@ These are the plugin's messages, all dispatched on `sylius.event_bus`:
 
 Every upload in the admin, a media file or an export to import, is capped by PHP's `upload_max_filesize` and
 `post_max_size`, and a media file also by `setono_sylius_cms.media.max_upload_size` when you set it. Import a bigger
-export with `bin/console setono:cms:import`. An import, on the CLI, in the fixture or on the worker, checks each media
-file in the export against `media.max_upload_size` alone, since it doesn't upload them through PHP: the CLI's own
-`upload_max_filesize` doesn't apply, and without a configured limit a file of any size is imported.
+export with `bin/console setono:cms:import`. An import, on the CLI, in the fixture or on the worker, doesn't upload the
+files in the export through PHP, so the CLI's own `upload_max_filesize` doesn't apply. Instead it refuses:
+
+- a media file over `setono_sylius_cms.transfer.max_file_size` (`100M` by default), or over `media.max_upload_size`
+  when that's smaller
+- a zip that unpacks to more than `setono_sylius_cms.transfer.max_unpacked_size` (`1G` by default), checked from the
+  zip's directory before anything is extracted and again while extracting
+- a JSON file over 16 MB
 
 ### Run the cron commands
 
