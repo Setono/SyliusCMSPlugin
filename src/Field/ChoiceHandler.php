@@ -12,7 +12,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Handles Choice fields: one of the fixed choices, or of the choices its provider gives, or a list of them when multiple.
- * A provider of the store's records gives codes, which hold references (RecordChoicesProviderInterface)
+ * A value it no longer offers doesn't fit, even the code of a record the store no longer has
+ * (RecordChoicesProviderInterface), which only a block's visibility condition keeps (keepingDeletedRecords())
  */
 final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
 {
@@ -72,17 +73,15 @@ final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
     }
 
     /**
-     * One of the choices the field still offers, or for a multiple choice a list of them. Choices of the store's records
-     * (RecordChoicesProviderInterface) are codes: one the store no longer has is a broken reference, not a value that
-     * doesn't fit
+     * One of the choices the field still offers, or for a multiple choice a list of them
      */
     public function fits(Field $field, mixed $value): bool
     {
         $field = self::choice($field);
-        $fitsOne = $this->holdsRecords($field) ? Codes::isCode(...) : fn (mixed $item): bool => in_array($item, $this->values($field, $this->locale()), true);
+        $values = $this->values($field, $this->locale());
 
         if (!$field->multiple) {
-            return $fitsOne($value);
+            return in_array($value, $values, true);
         }
 
         if (!is_array($value) || !array_is_list($value)) {
@@ -90,7 +89,7 @@ final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
         }
 
         foreach ($value as $item) {
-            if (!$fitsOne($item)) {
+            if (!in_array($item, $values, true)) {
                 return false;
             }
         }
@@ -98,9 +97,29 @@ final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
         return true;
     }
 
-    private function holdsRecords(Choice $field): bool
+    /**
+     * The field as a block's visibility condition holds it, which keeps a channel, locale or customer group the store
+     * no longer has: the admin flags it there as a broken reference rather than publish refusing it (ADR 0002). For a
+     * Choice of the store's records (RecordChoicesProviderInterface), that's the field with the codes the value names
+     * among its choices, the store's and those it no longer has, so a value of the right shape fits: a code, or for a
+     * multiple choice a list of codes. Any other Choice is itself. See "Validation" in docs/spec/publishing.md
+     */
+    public function keepingDeletedRecords(Choice $field, mixed $value): Choice
     {
-        return null !== $field->choicesProvider && $this->provider($field->choicesProvider) instanceof RecordChoicesProviderInterface;
+        if (null === $field->choicesProvider || !$this->provider($field->choicesProvider) instanceof RecordChoicesProviderInterface) {
+            return $field;
+        }
+
+        $named = $field->multiple ? (Codes::isCodeList($value) ? $value : []) : (Codes::isCode($value) ? [$value] : []);
+
+        return new Choice(
+            $field->label,
+            $this->choices($field, $this->locale()) + array_combine($named, $named),
+            $field->multiple,
+            $field->help,
+            $field->required,
+            $field->translatable,
+        );
     }
 
     /**

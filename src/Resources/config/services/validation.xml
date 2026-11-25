@@ -28,6 +28,7 @@
         <service id="Setono\SyliusCMSPlugin\Validation\ConditionValidator" class="Setono\SyliusCMSPlugin\Validation\ConditionValidator">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldValidator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\ChoiceHandler"/>
             <argument type="service" id="translator"/>
         </service>
 

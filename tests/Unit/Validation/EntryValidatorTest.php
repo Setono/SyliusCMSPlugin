@@ -293,15 +293,16 @@ final class EntryValidatorTest extends TestCase
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             'article' => ['model' => Article::class, 'translation' => null, 'resource' => 'app.article'],
         ]);
+        $choiceHandler = new ChoiceHandler($translator);
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
-            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
+            ChoiceHandler::class => static fn (): ChoiceHandler => $choiceHandler,
         ]));
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
         $fieldValidator = new FieldValidator(new FieldConstraints($handlers, $validator), new FallbackValues($handlers, $fallbackChain->reveal()), $validator, $translator, Bindings::validator());
 
         return new EntryValidator(
-            new BlockTreeValidator($blockTypes, new NestingRules($blockTypes, $contentTypes), $fieldValidator, $translator, new LayoutRegistry([], new FieldReader()), new ConditionValidator(Conditions::registry(), $fieldValidator, $translator)),
+            new BlockTreeValidator($blockTypes, new NestingRules($blockTypes, $contentTypes), $fieldValidator, $translator, new LayoutRegistry([], new FieldReader()), new ConditionValidator(Conditions::registry(), $fieldValidator, $choiceHandler, $translator)),
             $fieldValidator,
             new ContentTypeFields(new FieldReader()),
             $contentTypes,

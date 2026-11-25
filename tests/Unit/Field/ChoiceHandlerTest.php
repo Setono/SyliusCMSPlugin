@@ -256,21 +256,24 @@ final class ChoiceHandlerTest extends TestCase
     }
 
     /**
-     * A code the store no longer has is a broken reference, as a deleted product's code is in a Product field, which the
-     * admin flags (ADR 0002), so it fits and isn't refused. It doesn't count, so hydrating leaves it out
+     * A Choice of the store's records refuses a code the store no longer has as it refuses any value it no longer
+     * offers, in a block's, a layout's or an entry's field, and hydrating leaves it out. Only a block's visibility
+     * condition keeps one (keepingDeletedRecords()). See "Validation" in docs/spec/publishing.md
      *
      * @test
      */
-    public function it_fits_and_accepts_a_code_a_record_choices_provider_no_longer_gives_and_hydrates_it_as_missing(): void
+    public function it_refuses_a_code_a_record_choices_provider_no_longer_gives_and_hydrates_it_as_missing(): void
     {
-        $handler = new ChoiceHandler(new IdentityTranslator(), new ServiceLocator([StoreChannels::class => static fn (): StoreChannels => new StoreChannels()]));
+        $handler = self::storeChannels();
         $channels = new Choice(label: 'Channels', multiple: true, choicesProvider: StoreChannels::class);
         $channel = new Choice(label: 'Channel', choicesProvider: StoreChannels::class);
+        $builder = $this->prophesize(ConstraintViolationBuilderInterface::class);
+        $builder->addViolation()->shouldBeCalledTimes(2);
         $context = $this->prophesize(ExecutionContextInterface::class);
-        $context->buildViolation(Argument::cetera())->shouldNotBeCalled();
+        $context->buildViolation('setono_sylius_cms.field.invalid_choice')->willReturn($builder->reveal())->shouldBeCalledTimes(2);
 
-        self::assertTrue($handler->fits($channels, ['WEB', 'OUTLET']));
-        self::assertTrue($handler->fits($channel, 'OUTLET'));
+        self::assertFalse($handler->fits($channels, ['WEB', 'OUTLET']));
+        self::assertFalse($handler->fits($channel, 'OUTLET'));
         $handler->validate($channels, ['WEB', 'OUTLET'], $context->reveal());
         $handler->validate($channel, 'OUTLET', $context->reveal());
 
@@ -279,14 +282,40 @@ final class ChoiceHandlerTest extends TestCase
     }
 
     /**
+     * A block's visibility condition keeps a channel, locale or customer group the store no longer has, which the admin
+     * flags as a broken reference (ADR 0002), so its parameter is validated with the codes it names kept as choices
+     *
+     * @test
+     */
+    public function it_keeps_the_codes_a_value_names_that_a_record_choices_provider_no_longer_gives_as_choices(): void
+    {
+        $handler = self::storeChannels();
+        $channels = $handler->keepingDeletedRecords(new Choice(label: 'Channels', multiple: true, choicesProvider: StoreChannels::class), ['WEB', 'OUTLET']);
+        $channel = $handler->keepingDeletedRecords(new Choice(label: 'Channel', required: true, choicesProvider: StoreChannels::class), 'OUTLET');
+        $context = $this->prophesize(ExecutionContextInterface::class);
+        $context->buildViolation(Argument::cetera())->shouldNotBeCalled();
+
+        self::assertTrue($handler->fits($channels, ['WEB', 'OUTLET']));
+        self::assertTrue($handler->fits($channels, ['B2B']));
+        self::assertFalse($handler->fits($channels, ['GONE']));
+        self::assertTrue($handler->fits($channel, 'OUTLET'));
+        $handler->validate($channels, ['WEB', 'OUTLET'], $context->reveal());
+        $handler->validate($channel, 'OUTLET', $context->reveal());
+        self::assertSame(['Channels', true, false, true], [$channels->label, $channels->multiple, $channels->required, null === $channels->choicesProvider]);
+        self::assertSame(['Channel', false, true], [$channel->label, $channel->multiple, $channel->required]);
+    }
+
+    /**
+     * Only a code, or for a multiple choice a list of codes, is kept
+     *
      * @test
      *
      * @dataProvider provideValuesOfTheWrongShape
      */
-    public function it_refuses_a_value_of_the_wrong_shape_from_a_record_choices_provider(bool $multiple, mixed $value): void
+    public function it_refuses_a_value_of_the_wrong_shape_from_a_record_choices_provider_even_where_deleted_records_are_kept(bool $multiple, mixed $value): void
     {
-        $handler = new ChoiceHandler(new IdentityTranslator(), new ServiceLocator([StoreChannels::class => static fn (): StoreChannels => new StoreChannels()]));
-        $field = new Choice(label: 'Channels', multiple: $multiple, choicesProvider: StoreChannels::class);
+        $handler = self::storeChannels();
+        $field = $handler->keepingDeletedRecords(new Choice(label: 'Channels', multiple: $multiple, choicesProvider: StoreChannels::class), $value);
         $builder = $this->prophesize(ConstraintViolationBuilderInterface::class);
         $builder->addViolation()->shouldBeCalledOnce();
         $context = $this->prophesize(ExecutionContextInterface::class);
@@ -302,10 +331,25 @@ final class ChoiceHandlerTest extends TestCase
     public function provideValuesOfTheWrongShape(): iterable
     {
         yield 'a number for a single choice' => [false, 7];
+        yield 'an empty string for a single choice' => [false, ''];
         yield 'a list for a single choice' => [false, ['WEB']];
         yield 'a string for a multiple choice' => [true, 'WEB'];
         yield 'a non-string in a multiple choice' => [true, ['WEB', 7]];
         yield 'a map for a multiple choice' => [true, ['a' => 'WEB']];
+    }
+
+    /**
+     * Fixed choices, and a provider's that aren't the store's records, such as the card displays, are no references
+     *
+     * @test
+     */
+    public function it_keeps_no_codes_for_fixed_choices_or_a_provider_of_other_choices(): void
+    {
+        $fixed = new Choice(label: 'Level', choices: self::CHOICES);
+        $other = self::fromProvider();
+
+        self::assertSame($fixed, $this->handler()->keepingDeletedRecords($fixed, 'h3'));
+        self::assertSame($other, $this->providing(new IdentityTranslator())->keepingDeletedRecords($other, ['OUTLET']));
     }
 
     /**
@@ -338,6 +382,11 @@ final class ChoiceHandlerTest extends TestCase
     private function providing(TranslatorInterface $translator): ChoiceHandler
     {
         return new ChoiceHandler($translator, new ServiceLocator([ChannelsByLocale::class => static fn (): ChannelsByLocale => new ChannelsByLocale()]));
+    }
+
+    private static function storeChannels(): ChoiceHandler
+    {
+        return new ChoiceHandler(new IdentityTranslator(), new ServiceLocator([StoreChannels::class => static fn (): StoreChannels => new StoreChannels()]));
     }
 
     private function handler(): ChoiceHandler
