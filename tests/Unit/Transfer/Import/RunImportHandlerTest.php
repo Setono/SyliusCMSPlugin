@@ -222,6 +222,34 @@ final class RunImportHandlerTest extends TestCase
     }
 
     /**
+     * Saving that the import waits for the worker again can fail too, as when the database went away, and the run's
+     * error is still the one Messenger logs and retries
+     *
+     * @test
+     */
+    public function it_throws_the_error_of_the_run_when_saving_that_the_import_waits_for_the_worker_again_fails(): void
+    {
+        $import = $this->confirmed(overwrite: false, publish: false);
+        $this->importer->import(Argument::cetera())->willThrow(new \RuntimeException('The worker\'s disk is full'));
+        $flushes = 0;
+        // Prophecy binds a closure to the double, so it's static
+        $this->manager->flush()->will(static function () use (&$flushes): void {
+            if (2 === ++$flushes) {
+                throw new \RuntimeException('The database went away');
+            }
+        });
+
+        try {
+            $this->handler()(new RunImport($import->getUuid()));
+            self::fail('The error is thrown');
+        } catch (\RuntimeException $e) {
+            self::assertSame('The worker\'s disk is full', $e->getMessage());
+        }
+
+        self::assertSame(2, $flushes);
+    }
+
+    /**
      * A fatal error, such as PHP running out of memory, kills the worker without the retry an exception gets, and the
      * transport hands the message out again with the run still recorded as started. Running it again would kill the
      * worker again, over and over, so the import fails, and the message is handled

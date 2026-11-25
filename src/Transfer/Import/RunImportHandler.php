@@ -66,9 +66,7 @@ final readonly class RunImportHandler
                 ? new ImportOptions(dryRun: true, overwrite: true)
                 : new ImportOptions(publish: $import->isPublish(), overwrite: $import->isOverwrite()));
         } catch (\Throwable $e) {
-            // Messenger retries it, which runs it again. The importer clears the entity manager after it rolls back
-            $this->imports->findOneByUuid($message->importUuid)?->retry();
-            $this->manager->flush();
+            $this->retry($message->importUuid);
 
             throw $e;
         }
@@ -98,6 +96,22 @@ final readonly class RunImportHandler
 
             return $this->importer->import($source, $options);
         });
+    }
+
+    /**
+     * Has the import wait for the worker again after its run threw, as Messenger retries it, which runs it again. The
+     * importer clears the entity manager after it rolls back, so it's read again. A failure to save that, as when the
+     * database went away, doesn't replace the run's error, which Messenger logs and retries: the retry then finds the
+     * import still running, and fails it as one the worker stopped while running
+     */
+    private function retry(string $importUuid): void
+    {
+        try {
+            $this->imports->findOneByUuid($importUuid)?->retry();
+            $this->manager->flush();
+        } catch (\Throwable) {
+            // The run's error is the one thrown
+        }
     }
 
     /**
